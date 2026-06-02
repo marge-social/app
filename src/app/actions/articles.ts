@@ -6,11 +6,13 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { articles } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
+import { articleApUri } from "@/lib/config";
+import { renderMarkdown, slugify } from "@/lib/markdown";
 import {
-  deriveSummary,
-  renderMarkdown,
-  slugify,
-} from "@/lib/markdown";
+  deliverCreate,
+  deliverDelete,
+  deliverUpdate,
+} from "@/federation/delivery";
 
 export interface ArticleFormState {
   error?: string;
@@ -61,11 +63,18 @@ export async function saveArticleAction(
   if (!contentMarkdown) return { error: "Le contenu ne peut pas être vide." };
 
   const contentHtml = renderMarkdown(contentMarkdown);
-  const summary = deriveSummary(contentMarkdown, summaryInput);
+  // On stocke le chapô explicite de l'auteur tel quel (souvent vide) ; le
+  // résumé effectif est dérivé du contenu à l'affichage/fédération, donc
+  // toujours frais. Voir effectiveSummary().
+  const summary = summaryInput;
   const now = new Date();
 
   let slug: string;
   let articleId: string;
+
+  // `create` = première mise en ligne (émettra Create) ; `update` = ré-édition
+  // d'un article déjà publié (émettra Update).
+  let federate: "create" | "update" | null = null;
 
   if (id) {
     // Édition : on vérifie la propriété et on conserve le slug existant.
@@ -77,6 +86,7 @@ export async function saveArticleAction(
     }
     slug = existing.slug;
     const wasPublished = existing.status === "published";
+    if (intent === "publish") federate = wasPublished ? "update" : "create";
     await db
       .update(articles)
       .set({
@@ -87,6 +97,9 @@ export async function saveArticleAction(
         status: intent === "publish" ? "published" : existing.status,
         publishedAt:
           intent === "publish" && !wasPublished ? now : existing.publishedAt,
+        apUri:
+          existing.apUri ??
+          (intent === "publish" ? articleApUri(user.handle, slug) : null),
         updatedAt: now,
       })
       .where(eq(articles.id, id));
@@ -94,6 +107,7 @@ export async function saveArticleAction(
   } else {
     // Création.
     slug = await uniqueSlug(user.id, slugify(title));
+    if (intent === "publish") federate = "create";
     const [created] = await db
       .insert(articles)
       .values({
@@ -105,9 +119,21 @@ export async function saveArticleAction(
         slug,
         status: intent === "publish" ? "published" : "draft",
         publishedAt: intent === "publish" ? now : null,
+        apUri: intent === "publish" ? articleApUri(user.handle, slug) : null,
       })
       .returning({ id: articles.id });
     articleId = created.id;
+  }
+
+  // Fédération sortante (après écriture en base).
+  if (federate) {
+    const row = await db.query.articles.findFirst({
+      where: eq(articles.id, articleId),
+    });
+    if (row) {
+      if (federate === "create") await deliverCreate(user.handle, row);
+      else await deliverUpdate(user.handle, row);
+    }
   }
 
   revalidatePath(`/@${user.handle}`);
@@ -131,7 +157,10 @@ export async function deleteArticleAction(formData: FormData): Promise<void> {
     where: eq(articles.id, id),
   });
   if (existing && existing.authorId === user.id) {
+    const wasPublished = existing.status === "published";
     await db.delete(articles).where(eq(articles.id, id));
+    // Émet Delete(Tombstone) si l'article était publié/fédéré.
+    if (wasPublished) await deliverDelete(user.handle, existing.slug);
     revalidatePath(`/@${user.handle}`);
   }
   redirect(`/@${user.handle}`);

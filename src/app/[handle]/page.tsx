@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { articles, users } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { fediverseHandle } from "@/lib/config";
+import { effectiveSummary } from "@/lib/markdown";
 
 interface ProfileParams {
   params: Promise<{ handle: string }>;
@@ -40,6 +41,7 @@ export default async function ProfilePage({ params }: ProfileParams) {
       title: true,
       slug: true,
       summary: true,
+      contentMarkdown: true,
       publishedAt: true,
     },
   });
@@ -103,9 +105,9 @@ export default async function ProfilePage({ params }: ProfileParams) {
                     })}
                   </time>
                 )}
-                {a.summary && (
-                  <p className="text-sm text-foreground/80">{a.summary}</p>
-                )}
+                <p className="text-sm text-foreground/80">
+                  {effectiveSummary(a.contentMarkdown, a.summary)}
+                </p>
               </li>
             ))}
           </ul>

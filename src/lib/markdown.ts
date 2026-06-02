@@ -39,6 +39,17 @@ export function deriveSummary(
   return `${cut.slice(0, lastSpace > 0 ? lastSpace : maxLen).trim()}…`;
 }
 
+/**
+ * Résumé effectif d'un article : le chapô explicite de l'auteur s'il existe,
+ * sinon dérivé du contenu courant (donc jamais périmé après une édition).
+ */
+export function effectiveSummary(
+  contentMarkdown: string,
+  authorSummary?: string | null,
+): string {
+  return deriveSummary(contentMarkdown, authorSummary ?? undefined);
+}
+
 /** Temps de lecture estimé en minutes (≈ 200 mots/min), au moins 1. */
 export function readingTimeMinutes(markdown: string): number {
   const words = htmlToText(renderMarkdown(markdown)).split(/\s+/).filter(Boolean)

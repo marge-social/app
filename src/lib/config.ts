@@ -19,7 +19,12 @@ export function actorUri(handle: string): string {
   return `${APP_URL}/users/${handle}`;
 }
 
-/** Permalien d'un article. */
+/** Permalien (humain) d'un article. */
 export function articleUrl(handle: string, slug: string): string {
   return `${APP_URL}/@${handle}/${slug}`;
+}
+
+/** URI ActivityPub (machine) de l'objet Article — déréférençable par Fedify. */
+export function articleApUri(handle: string, slug: string): string {
+  return `${APP_URL}/users/${handle}/articles/${slug}`;
 }
