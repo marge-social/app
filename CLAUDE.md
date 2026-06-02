@@ -67,7 +67,23 @@ Postgres via Homebrew (`brew services start postgresql@16`). Base `marge`.
   sortant) ; fil `/feed` fusionnant articles locaux suivis + objets distants en
   ordre chronologique strict. Vérifié localement : follow/unfollow interne →
   fil alimenté. Ingestion entrante & suivi distant réels : via le test Mastodon.
-- S4→S7 : voir le plan. Prochain : **S4 (flux RSS : référencement + suivi)**.
+- **S4 ✅** (vérifié en local) : lib RSS (`src/lib/rss.ts` : auto-découverte
+  `<link rel=alternate>`, parsing `rss-parser`, User-Agent crawler pointant vers
+  `/feeds/[id]`, extrait), référencement orphelin + Blocklist (`src/lib/blocklist.ts`),
+  polling mutualisé + dé-doublonnage GUID (`src/lib/poll.ts`), endpoint cron
+  `/api/cron/poll` (protégé `CRON_SECRET`), abonnement `FeedSubscription`
+  (indépendant du follow de compte), pages `/feeds` et `/feeds/[id]`, items
+  (extrait + lien) dans le fil unifié.
+- S5→S7 : voir le plan. Prochain : **S5 (propriété des flux : réclamation +
+  opt-out)**.
+
+### Cron RSS
+`curl -H "Authorization: Bearer $CRON_SECRET" $APP_URL/api/cron/poll`. À brancher
+sur une vraie tâche cron en prod.
+
+### Fixtures de test RSS
+`public/test-feed.xml` + `public/test-blog.html` (auto-découverte) servent au
+test local du référencement/polling.
 
 ### Note résumé d'article
 `articles.summary` stocke le **chapô explicite** de l'auteur (souvent vide) ;

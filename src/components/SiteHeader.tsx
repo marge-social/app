@@ -21,6 +21,9 @@ export async function SiteHeader() {
               <Link href="/feed" className="hover:underline">
                 Mon fil
               </Link>
+              <Link href="/feeds" className="hover:underline">
+                Flux
+              </Link>
               <Link href="/compose" className="hover:underline">
                 Écrire
               </Link>

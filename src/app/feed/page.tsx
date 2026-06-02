@@ -2,7 +2,16 @@ import Link from "next/link";
 import { and, desc, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
-import { articles, follows, remoteActors, remoteObjects, users } from "@/db/schema";
+import {
+  articles,
+  feedItems,
+  feedSubscriptions,
+  feeds,
+  follows,
+  remoteActors,
+  remoteObjects,
+  users,
+} from "@/db/schema";
 import {
   unfollowLocalAction,
   unfollowRemoteAction,
@@ -20,7 +29,7 @@ interface FeedEntry {
   summary: string;
   href: string;
   internal: boolean;
-  source: "compte Marge" | "Fediverse";
+  source: "compte Marge" | "Fediverse" | "flux RSS";
 }
 
 export default async function FeedPage() {
@@ -115,6 +124,47 @@ export default async function FeedPage() {
         href: r.url ?? r.objectUri,
         internal: false,
         source: "Fediverse",
+      });
+    }
+  }
+
+  // Items des flux RSS suivis (FeedSubscription, indépendant du follow compte).
+  const subRows = await db
+    .select({
+      feedId: feedSubscriptions.feedId,
+      feedTitle: feeds.title,
+      feedUrl: feeds.feedUrl,
+    })
+    .from(feedSubscriptions)
+    .innerJoin(feeds, eq(feeds.id, feedSubscriptions.feedId))
+    .where(eq(feedSubscriptions.userId, viewer.id));
+  if (subRows.length > 0) {
+    const feedLabel = new Map(
+      subRows.map((s) => [s.feedId, s.feedTitle || s.feedUrl]),
+    );
+    const rows = await db
+      .select()
+      .from(feedItems)
+      .where(
+        inArray(
+          feedItems.feedId,
+          subRows.map((s) => s.feedId),
+        ),
+      )
+      .orderBy(desc(feedItems.publishedAt))
+      .limit(100);
+    for (const r of rows) {
+      entries.push({
+        key: `f:${r.id}`,
+        title: r.title,
+        authorLabel: r.author
+          ? `${r.author} · ${feedLabel.get(r.feedId)}`
+          : (feedLabel.get(r.feedId) ?? ""),
+        date: r.publishedAt ?? r.fetchedAt,
+        summary: r.excerpt,
+        href: r.link,
+        internal: false,
+        source: "flux RSS",
       });
     }
   }

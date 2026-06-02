@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Le blog de test</title>
+    <link>http://localhost:3000/test-blog.html</link>
+    <description>Un flux RSS de démonstration pour Marge</description>
+    <item>
+      <title>Premier billet de test</title>
+      <link>http://localhost:3000/test-blog.html#1</link>
+      <guid>test-blog-item-1</guid>
+      <author>Blogueur Test</author>
+      <pubDate>Mon, 02 Jun 2026 09:00:00 GMT</pubDate>
+      <description>Ceci est l'extrait du premier billet. Il décrit brièvement le contenu et invite à lire la suite sur le site source.</description>
+    </item>
+    <item>
+      <title>Deuxième billet de test</title>
+      <link>http://localhost:3000/test-blog.html#2</link>
+      <guid>test-blog-item-2</guid>
+      <author>Blogueur Test</author>
+      <pubDate>Tue, 03 Jun 2026 09:00:00 GMT</pubDate>
+      <description>Extrait du deuxième billet, publié un jour plus tard pour vérifier l'ordre chronologique du fil.</description>
+    </item>
+  </channel>
+</rss>
