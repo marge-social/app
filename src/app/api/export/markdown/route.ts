@@ -1,4 +1,4 @@
-import { and, asc, eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { articles } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";

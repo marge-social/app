@@ -66,15 +66,19 @@ export default async function SettingsPage() {
         <p className="text-sm text-foreground/70">
           Tes données t’appartiennent et restent portables (standards ouverts).
         </p>
+        {/* Endpoints de téléchargement (Content-Disposition) : un <a> natif
+            est requis, pas <Link> (qui ferait une navigation RSC). */}
         <div className="flex flex-wrap gap-3 text-sm">
           <a
             href="/api/export/markdown"
+            download
             className="rounded border border-black/20 px-3 py-1.5 hover:bg-black/5 dark:border-white/25 dark:hover:bg-white/10"
           >
             Mes textes (Markdown)
           </a>
           <a
             href="/api/export/opml"
+            download
             className="rounded border border-black/20 px-3 py-1.5 hover:bg-black/5 dark:border-white/25 dark:hover:bg-white/10"
           >
             Mes abonnements (OPML)
