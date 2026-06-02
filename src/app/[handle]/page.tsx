@@ -2,7 +2,11 @@ import Link from "next/link";
 import { and, desc, eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { db } from "@/db";
-import { articles, users } from "@/db/schema";
+import { articles, follows, users } from "@/db/schema";
+import {
+  followLocalAction,
+  unfollowLocalAction,
+} from "@/app/actions/follows";
 import { getCurrentUser } from "@/lib/auth";
 import { fediverseHandle } from "@/lib/config";
 import { effectiveSummary } from "@/lib/markdown";
@@ -29,6 +33,16 @@ export default async function ProfilePage({ params }: ProfileParams) {
 
   const viewer = await getCurrentUser();
   const isSelf = viewer?.id === profile.id;
+
+  const isFollowing = viewer
+    ? !!(await db.query.follows.findFirst({
+        where: and(
+          eq(follows.followerUserId, viewer.id),
+          eq(follows.followingUserId, profile.id),
+        ),
+        columns: { id: true },
+      }))
+    : false;
 
   const published = await db.query.articles.findMany({
     where: and(
@@ -57,19 +71,34 @@ export default async function ProfilePage({ params }: ProfileParams) {
         </p>
         {profile.bio && <p className="text-foreground/90">{profile.bio}</p>}
 
-        {!isSelf && (
-          // Deux gestes de suivi distincts, jamais couplés (cf. §2).
-          // Inertes au S0 : la mécanique fédérée arrive en S2/S3.
+        {!isSelf && viewer && (
+          // Suivi du COMPTE (fédéré). Distinct et jamais couplé au suivi des
+          // flux RSS de l'auteur (cf. §2).
           <div className="mt-2 flex gap-3">
-            <button
-              type="button"
-              disabled
-              title="Disponible au sprint S2/S3"
-              className="rounded border border-black/20 px-3 py-1 text-sm opacity-50 dark:border-white/25"
+            <form
+              action={isFollowing ? unfollowLocalAction : followLocalAction}
             >
-              Suivre le compte
-            </button>
+              <input type="hidden" name="targetUserId" value={profile.id} />
+              <button
+                type="submit"
+                className={
+                  isFollowing
+                    ? "rounded border border-black/20 px-3 py-1 text-sm hover:bg-black/5 dark:border-white/25 dark:hover:bg-white/10"
+                    : "rounded bg-foreground px-3 py-1 text-sm font-medium text-background hover:opacity-90"
+                }
+              >
+                {isFollowing ? "Ne plus suivre le compte" : "Suivre le compte"}
+              </button>
+            </form>
           </div>
+        )}
+        {!isSelf && !viewer && (
+          <p className="mt-2 text-sm text-foreground/60">
+            <Link href="/login" className="underline">
+              Connecte-toi
+            </Link>{" "}
+            pour suivre ce compte.
+          </p>
         )}
       </header>
 

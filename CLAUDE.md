@@ -60,7 +60,14 @@ Postgres via Homebrew (`brew services start postgresql@16`). Base `marge`.
   émission `Create`/`Update`/`Delete` à la publication/édition/suppression.
   **Reste à faire par l'utilisateur** : test interop réel via tunnel public
   (`APP_URL`/`INSTANCE_DOMAIN` à pointer dessus) + compte Mastodon.
-- S3→S7 : voir le plan. Prochain : **S3 (fédération entrante + follow interne)**.
+- **S3 ✅** (code + vérif locale) : inbox étendu (Create/Update/Delete →
+  `remote_objects`, Accept → follow sortant accepté) ; follow interne
+  Marge↔Marge (relation en base, Accept immédiat, bouton profil) ; suivre un
+  acteur distant (`followRemoteActor` : WebFinger `lookupObject`, Follow
+  sortant) ; fil `/feed` fusionnant articles locaux suivis + objets distants en
+  ordre chronologique strict. Vérifié localement : follow/unfollow interne →
+  fil alimenté. Ingestion entrante & suivi distant réels : via le test Mastodon.
+- S4→S7 : voir le plan. Prochain : **S4 (flux RSS : référencement + suivi)**.
 
 ### Note résumé d'article
 `articles.summary` stocke le **chapô explicite** de l'auteur (souvent vide) ;

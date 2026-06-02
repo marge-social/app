@@ -3,11 +3,14 @@ import {
   Accept,
   Article,
   Create,
+  Delete,
   Endpoints,
   Follow,
+  Note,
   Person,
   PUBLIC_COLLECTION,
   Undo,
+  Update,
 } from "@fedify/fedify/vocab";
 import { PostgresKvStore, PostgresMessageQueue } from "@fedify/postgres";
 import { Temporal } from "@js-temporal/polyfill";
@@ -17,6 +20,7 @@ import {
   articles,
   follows,
   remoteActors,
+  remoteObjects,
   users,
 } from "@/db/schema";
 import { loadActorKeyPairs } from "@/federation/keys";
@@ -197,7 +201,42 @@ federation.setOutboxDispatcher(
   },
 );
 
-// --- Inbox : Follow / Undo(Follow) (minimum pour être suivable) ----------
+/**
+ * Enregistre/MAJ un objet distant (Note/Article) reçu, pour alimenter le feed.
+ * Ne stocke que ce qui est nécessaire à un aperçu honnête (extrait + lien).
+ */
+async function upsertRemoteObject(object: Note | Article): Promise<void> {
+  if (object.id == null || object.attributionId == null) return;
+  const url =
+    object.url instanceof URL
+      ? object.url.href
+      : (object.url?.href?.toString() ?? null);
+  await db
+    .insert(remoteObjects)
+    .values({
+      objectUri: object.id.href,
+      attributedToUri: object.attributionId.href,
+      type: object instanceof Article ? "Article" : "Note",
+      name: object.name?.toString() ?? null,
+      contentHtml: object.content?.toString() ?? null,
+      summary: object.summary?.toString() ?? null,
+      url,
+      publishedAt: object.published
+        ? new Date(object.published.toString())
+        : null,
+    })
+    .onConflictDoUpdate({
+      target: remoteObjects.objectUri,
+      set: {
+        name: object.name?.toString() ?? null,
+        contentHtml: object.content?.toString() ?? null,
+        summary: object.summary?.toString() ?? null,
+        fetchedAt: new Date(),
+      },
+    });
+}
+
+// --- Inbox : Follow / Undo, Create / Update / Delete, Accept -------------
 
 federation
   .setInboxListeners("/users/{identifier}/inbox", "/inbox")
@@ -268,6 +307,43 @@ federation
         and(
           eq(follows.followerUri, followerUri),
           eq(follows.followingUri, ctx.getActorUri(parsed.identifier).href),
+        ),
+      );
+  })
+  // Contenu distant entrant → alimente le feed (extrait + lien).
+  .on(Create, async (_ctx, create) => {
+    const object = await create.getObject();
+    if (object instanceof Note || object instanceof Article) {
+      await upsertRemoteObject(object);
+    }
+  })
+  .on(Update, async (_ctx, update) => {
+    const object = await update.getObject();
+    if (object instanceof Note || object instanceof Article) {
+      await upsertRemoteObject(object);
+    }
+  })
+  .on(Delete, async (_ctx, del) => {
+    const objectId = del.objectId;
+    if (objectId == null) return;
+    await db
+      .delete(remoteObjects)
+      .where(eq(remoteObjects.objectUri, objectId.href));
+  })
+  // Accept de NOTRE Follow sortant → on marque la relation acceptée.
+  .on(Accept, async (_ctx, accept) => {
+    const object = await accept.getObject();
+    if (!(object instanceof Follow)) return;
+    const localFollowerUri = object.actorId?.href; // notre acteur
+    const remoteUri = accept.actorId?.href; // l'acteur distant suivi
+    if (!localFollowerUri || !remoteUri) return;
+    await db
+      .update(follows)
+      .set({ status: "accepted" })
+      .where(
+        and(
+          eq(follows.followerUri, localFollowerUri),
+          eq(follows.followingUri, remoteUri),
         ),
       );
   });
