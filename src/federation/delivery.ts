@@ -59,6 +59,32 @@ export async function deliverUpdate(
   }
 }
 
+/**
+ * Émet `Delete(Person)` aux followers à la suppression d'un compte, pour que
+ * les instances distantes purgent l'acteur (RGPD / suppression effective).
+ * À appeler AVANT de supprimer l'utilisateur (les clés doivent exister).
+ */
+export async function deliverActorDelete(handle: string): Promise<void> {
+  try {
+    await ensureFederationStorage();
+    const ctx = context();
+    const actor = ctx.getActorUri(handle);
+    await ctx.sendActivity(
+      { identifier: handle },
+      "followers",
+      new Delete({
+        id: new URL(`${actor.href}#delete`),
+        actor,
+        object: actor,
+      }),
+      // Livraison immédiate : les clés de signature disparaissent avec le compte.
+      { immediate: true },
+    );
+  } catch (err) {
+    console.error("[federation] deliverActorDelete failed:", err);
+  }
+}
+
 /** Émet `Delete(Tombstone)` après suppression d'un article publié. */
 export async function deliverDelete(
   handle: string,

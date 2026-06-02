@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { feeds } from "@/db/schema";
 import { ReferenceFeedForm } from "@/components/ReferenceFeedForm";
+import { deleteAccountAction } from "@/app/actions/account";
 import { getCurrentUser } from "@/lib/auth";
 import { fediverseHandle } from "@/lib/config";
 
@@ -88,6 +89,29 @@ export default async function SettingsPage() {
           réclamer (preuve de contrôle par jeton) depuis sa page.
         </p>
         <ReferenceFeedForm />
+      </section>
+
+      <section className="flex flex-col gap-3 rounded border border-red-500/30 p-4">
+        <h2 className="text-lg font-semibold text-red-700 dark:text-red-300">
+          Supprimer mon compte
+        </h2>
+        <p className="text-sm text-foreground/70">
+          Action définitive : tes textes, abonnements et relations sont
+          supprimés, et un <code>Delete</code> fédéré est envoyé aux instances
+          qui te suivent. Les flux que tu possèdes redeviennent orphelins.
+        </p>
+        <form action={deleteAccountAction} className="flex flex-col gap-3">
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" name="confirm" required />
+            Je comprends que cette action est irréversible.
+          </label>
+          <button
+            type="submit"
+            className="w-fit rounded border border-red-500/50 px-3 py-1.5 text-sm text-red-700 hover:bg-red-500/10 dark:text-red-300"
+          >
+            Supprimer définitivement mon compte
+          </button>
+        </form>
       </section>
     </div>
   );

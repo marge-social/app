@@ -295,6 +295,25 @@ export const remoteObjects = pgTable(
   ],
 );
 
+/**
+ * Blocage d'un acteur distant par un utilisateur (modération minimale, F7).
+ * Le contenu de l'acteur bloqué est exclu du fil et le suivi est rompu.
+ */
+export const actorBlocks = pgTable(
+  "actor_blocks",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    actorUri: text("actor_uri").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [unique("actor_blocks_unq").on(t.userId, t.actorUri)],
+);
+
 // --- Relations (pour les requêtes typées Drizzle) -----------------------
 
 export const usersRelations = relations(users, ({ many }) => ({

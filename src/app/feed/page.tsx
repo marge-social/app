@@ -3,6 +3,7 @@ import { and, desc, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
 import {
+  actorBlocks,
   articles,
   feedItems,
   feedSubscriptions,
@@ -16,6 +17,10 @@ import {
   unfollowLocalAction,
   unfollowRemoteAction,
 } from "@/app/actions/follows";
+import {
+  blockActorAction,
+  unblockActorAction,
+} from "@/app/actions/moderation";
 import { RemoteFollowForm } from "@/components/RemoteFollowForm";
 import { getCurrentUser } from "@/lib/auth";
 import { fediverseHandle } from "@/lib/config";
@@ -69,6 +74,13 @@ export default async function FeedPage() {
       and(eq(follows.followerUserId, viewer.id), isNull(follows.followingUserId)),
     );
 
+  // Acteurs distants bloqués (modération minimale) : exclus du fil.
+  const blockedRows = await db
+    .select({ actorUri: actorBlocks.actorUri })
+    .from(actorBlocks)
+    .where(eq(actorBlocks.userId, viewer.id));
+  const blockedUris = new Set(blockedRows.map((b) => b.actorUri));
+
   const entries: FeedEntry[] = [];
 
   // Articles des comptes Marge suivis.
@@ -108,7 +120,9 @@ export default async function FeedPage() {
   }
 
   // Contenus distants des comptes Fediverse suivis.
-  const remoteUris = remoteFollows.map((f) => f.uri);
+  const remoteUris = remoteFollows
+    .map((f) => f.uri)
+    .filter((uri) => !blockedUris.has(uri));
   if (remoteUris.length > 0) {
     const rows = await db
       .select()
@@ -233,6 +247,35 @@ export default async function FeedPage() {
                   <input type="hidden" name="remoteUri" value={f.uri} />
                   <button className="text-xs text-foreground/50 underline">
                     ne plus suivre
+                  </button>
+                </form>
+                <form action={blockActorAction}>
+                  <input type="hidden" name="actorUri" value={f.uri} />
+                  <button className="text-xs text-red-700/70 underline dark:text-red-300/70">
+                    bloquer
+                  </button>
+                </form>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {blockedRows.length > 0 && (
+        <section className="flex flex-col gap-2">
+          <h2 className="text-sm font-semibold">
+            Comptes bloqués ({blockedRows.length})
+          </h2>
+          <ul className="flex flex-col gap-1 text-sm">
+            {blockedRows.map((b) => (
+              <li key={b.actorUri} className="flex items-center gap-2">
+                <span className="font-mono text-foreground/60">
+                  {b.actorUri}
+                </span>
+                <form action={unblockActorAction}>
+                  <input type="hidden" name="actorUri" value={b.actorUri} />
+                  <button className="text-xs text-foreground/50 underline">
+                    débloquer
                   </button>
                 </form>
               </li>

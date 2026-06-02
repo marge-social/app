@@ -86,8 +86,16 @@ Postgres via Homebrew (`brew services start postgresql@16`). Base `marge`.
   Fediverse, flux RSS) avec aperçus honnêtes (titre, source, date, extrait,
   temps de lecture) et aucun compteur d'engagement ; export Markdown
   (`/api/export/markdown`) et OPML (`/api/export/opml`), liens dans /settings.
-- S7 : voir le plan. Prochain : **S7 (NFR : a11y, suppression de compte +
-  Delete fédérés, RGPD, blocage acteur)**.
+- **S7 ✅** (vérifié en local) : suppression de compte effective (RGPD) avec
+  émission immédiate d'un `Delete(Person)` fédéré avant purge en cascade
+  (`src/app/actions/account.ts`, danger zone dans `/settings`) ; accessibilité
+  (lien d'évitement, `:focus-visible`, `lang=fr`, HTML sémantique, labels) ;
+  modération minimale : blocage d'un acteur distant (table `actor_blocks`,
+  rupture du suivi + exclusion du fil, déblocage). Signalement & modération
+  avancée : V2.
+
+**MVP COMPLET (S0–S7).** Tous les critères §9 du cahier sont satisfaits en
+local. Reste : tests d'interop Mastodon réels (S2/S3) via tunnel public.
 
 ### Cron RSS
 `curl -H "Authorization: Bearer $CRON_SECRET" $APP_URL/api/cron/poll`. À brancher
