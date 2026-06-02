@@ -50,4 +50,8 @@ Postgres via Homebrew (`brew services start postgresql@16`). Base `marge`.
 ## Avancement
 
 - **S0 ✅** : socle, schéma complet (11 tables), auth multi-comptes, profils.
-- S1→S7 : voir le plan de sprints. Prochain : S1 (publication Markdown).
+- **S1 ✅** : éditeur Markdown, rendu/sanitisation, permaliens stables, vue
+  lecture, brouillons privés, CRUD articles.
+- S2→S7 : voir le plan de sprints. Prochain : **S2 (fédération sortante)** —
+  nécessite un tunnel public (ngrok/cloudflared) + un compte Mastodon de test
+  pour valider l'interop. Sur Next 16 : hook Fedify dans `proxy.ts`.
