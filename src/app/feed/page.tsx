@@ -19,7 +19,11 @@ import {
 import { RemoteFollowForm } from "@/components/RemoteFollowForm";
 import { getCurrentUser } from "@/lib/auth";
 import { fediverseHandle } from "@/lib/config";
-import { effectiveSummary, htmlToText } from "@/lib/markdown";
+import {
+  effectiveSummary,
+  htmlToText,
+  readingTimeMinutes,
+} from "@/lib/markdown";
 
 interface FeedEntry {
   key: string;
@@ -30,6 +34,7 @@ interface FeedEntry {
   href: string;
   internal: boolean;
   source: "compte Marge" | "Fediverse" | "flux RSS";
+  readingMinutes?: number;
 }
 
 export default async function FeedPage() {
@@ -97,6 +102,7 @@ export default async function FeedPage() {
         href: `/@${r.handle}/${r.slug}`,
         internal: true,
         source: "compte Marge",
+        readingMinutes: readingTimeMinutes(r.content),
       });
     }
   }
@@ -261,6 +267,12 @@ export default async function FeedPage() {
                   </time>
                   <span aria-hidden>·</span>
                   <span>{e.source}</span>
+                  {e.readingMinutes && (
+                    <>
+                      <span aria-hidden>·</span>
+                      <span>{e.readingMinutes} min</span>
+                    </>
+                  )}
                 </div>
                 <h3 className="text-lg font-semibold">
                   {e.internal ? (

@@ -82,7 +82,12 @@ Postgres via Homebrew (`brew services start postgresql@16`). Base `marge`.
   distinct du suivi de compte), déclaration depuis `/settings`.
   ⚠️ L'opt-out bloque l'**URL exacte** (pas le domaine) pour ne pas sur-bloquer
   les hébergeurs multi-tenant.
-- S6→S7 : voir le plan. Prochain : **S6 (feed unifié + export OPML/Markdown)**.
+- **S6 ✅** : fil unifié chronologique strict des 3 sources (comptes Marge,
+  Fediverse, flux RSS) avec aperçus honnêtes (titre, source, date, extrait,
+  temps de lecture) et aucun compteur d'engagement ; export Markdown
+  (`/api/export/markdown`) et OPML (`/api/export/opml`), liens dans /settings.
+- S7 : voir le plan. Prochain : **S7 (NFR : a11y, suppression de compte +
+  Delete fédérés, RGPD, blocage acteur)**.
 
 ### Cron RSS
 `curl -H "Authorization: Bearer $CRON_SECRET" $APP_URL/api/cron/poll`. À brancher

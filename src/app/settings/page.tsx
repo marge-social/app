@@ -61,6 +61,27 @@ export default async function SettingsPage() {
       </section>
 
       <section className="flex flex-col gap-3">
+        <h2 className="text-lg font-semibold">Exporter mes données</h2>
+        <p className="text-sm text-foreground/70">
+          Tes données t’appartiennent et restent portables (standards ouverts).
+        </p>
+        <div className="flex flex-wrap gap-3 text-sm">
+          <a
+            href="/api/export/markdown"
+            className="rounded border border-black/20 px-3 py-1.5 hover:bg-black/5 dark:border-white/25 dark:hover:bg-white/10"
+          >
+            Mes textes (Markdown)
+          </a>
+          <a
+            href="/api/export/opml"
+            className="rounded border border-black/20 px-3 py-1.5 hover:bg-black/5 dark:border-white/25 dark:hover:bg-white/10"
+          >
+            Mes abonnements (OPML)
+          </a>
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">Déclarer un flux</h2>
         <p className="text-sm text-foreground/70">
           Référence l’adresse de ton blog ou de ton flux : tu pourras ensuite le
