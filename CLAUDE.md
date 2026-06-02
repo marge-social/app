@@ -74,8 +74,15 @@ Postgres via Homebrew (`brew services start postgresql@16`). Base `marge`.
   `/api/cron/poll` (protégé `CRON_SECRET`), abonnement `FeedSubscription`
   (indépendant du follow de compte), pages `/feeds` et `/feeds/[id]`, items
   (extrait + lien) dans le fil unifié.
-- S5→S7 : voir le plan. Prochain : **S5 (propriété des flux : réclamation +
-  opt-out)**.
+- **S5 ✅** (vérifié en local) : vérification par jeton (preuve de contrôle
+  commune réclamation/opt-out — `src/app/actions/claims.ts`), réclamation
+  (→ `claimed`, propriétaire, toggle texte intégral), opt-out (dé-référencement
+  feed+items+subs + Blocklist + re-référencement bloqué). Page publique du flux
+  `/feeds/[id]` (`ClaimPanel`), flux déclarés sur le profil (suivi de flux
+  distinct du suivi de compte), déclaration depuis `/settings`.
+  ⚠️ L'opt-out bloque l'**URL exacte** (pas le domaine) pour ne pas sur-bloquer
+  les hébergeurs multi-tenant.
+- S6→S7 : voir le plan. Prochain : **S6 (feed unifié + export OPML/Markdown)**.
 
 ### Cron RSS
 `curl -H "Authorization: Bearer $CRON_SECRET" $APP_URL/api/cron/poll`. À brancher

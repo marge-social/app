@@ -1,4 +1,9 @@
+import Link from "next/link";
+import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
+import { db } from "@/db";
+import { feeds } from "@/db/schema";
+import { ReferenceFeedForm } from "@/components/ReferenceFeedForm";
 import { getCurrentUser } from "@/lib/auth";
 import { fediverseHandle } from "@/lib/config";
 
@@ -6,21 +11,63 @@ export default async function SettingsPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
+  const ownedFeeds = await db.query.feeds.findMany({
+    where: eq(feeds.ownerId, user.id),
+    columns: {
+      id: true,
+      title: true,
+      feedUrl: true,
+      fullTextAllowed: true,
+    },
+  });
+
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-8">
       <h1 className="text-2xl font-bold tracking-tight">Réglages</h1>
-      <dl className="grid grid-cols-[8rem_1fr] gap-2 text-sm">
-        <dt className="text-foreground/60">Nom affiché</dt>
-        <dd>{user.displayName}</dd>
-        <dt className="text-foreground/60">Handle fédéré</dt>
-        <dd className="font-mono">{fediverseHandle(user.handle)}</dd>
-        <dt className="text-foreground/60">Email</dt>
-        <dd>{user.email}</dd>
-      </dl>
-      <p className="text-foreground/70">
-        L’édition du profil et la déclaration de flux RSS arriveront aux sprints
-        suivants.
-      </p>
+
+      <section className="flex flex-col gap-2">
+        <h2 className="text-lg font-semibold">Compte</h2>
+        <dl className="grid grid-cols-[8rem_1fr] gap-2 text-sm">
+          <dt className="text-foreground/60">Nom affiché</dt>
+          <dd>{user.displayName}</dd>
+          <dt className="text-foreground/60">Handle fédéré</dt>
+          <dd className="font-mono">{fediverseHandle(user.handle)}</dd>
+          <dt className="text-foreground/60">Email</dt>
+          <dd>{user.email}</dd>
+        </dl>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-lg font-semibold">Mes flux RSS déclarés</h2>
+        {ownedFeeds.length === 0 ? (
+          <p className="text-sm text-foreground/60">
+            Aucun flux déclaré. Référence un flux ci-dessous puis prouve que tu
+            le contrôles (jeton) sur sa page pour le rattacher à ton compte.
+          </p>
+        ) : (
+          <ul className="flex flex-col gap-2 text-sm">
+            {ownedFeeds.map((f) => (
+              <li key={f.id} className="flex items-center gap-2">
+                <Link href={`/feeds/${f.id}`} className="font-medium hover:underline">
+                  {f.title || f.feedUrl}
+                </Link>
+                <span className="text-xs text-foreground/60">
+                  {f.fullTextAllowed ? "texte intégral activé" : "extrait + lien"}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-lg font-semibold">Déclarer un flux</h2>
+        <p className="text-sm text-foreground/70">
+          Référence l’adresse de ton blog ou de ton flux : tu pourras ensuite le
+          réclamer (preuve de contrôle par jeton) depuis sa page.
+        </p>
+        <ReferenceFeedForm />
+      </section>
     </div>
   );
 }

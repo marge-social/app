@@ -3,7 +3,7 @@
   <channel>
     <title>Le blog de test</title>
     <link>http://localhost:3000/test-blog.html</link>
-    <description>Un flux RSS de démonstration pour Marge</description>
+    <description>Un flux RSS de démonstration pour Marge. Jeton de vérification : marge-verify-75eb8373e7f0a4dbd21644afe6773a11</description>
     <item>
       <title>Premier billet de test</title>
       <link>http://localhost:3000/test-blog.html#1</link>

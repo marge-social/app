@@ -7,6 +7,8 @@ import {
   subscribeFeedAction,
   unsubscribeFeedAction,
 } from "@/app/actions/feeds";
+import { toggleFullTextAction } from "@/app/actions/claims";
+import { ClaimPanel } from "@/components/ClaimPanel";
 import { getCurrentUser } from "@/lib/auth";
 
 interface FeedParams {
@@ -106,15 +108,39 @@ export default async function FeedDetailPage({ params }: FeedParams) {
         )}
       </header>
 
-      {/* Encart d'information destiné à l'auteur du blog (réclamation/opt-out
-          complet en S5). C'est la page vers laquelle pointe le User-Agent du
-          crawler. */}
-      {feed.ownershipStatus === "orphan" && (
+      {/* Page vers laquelle pointe le User-Agent du crawler : réclamation /
+          opt-out (preuve de contrôle par jeton) et contrôles propriétaire. */}
+      {viewer && feed.ownerId === viewer.id ? (
+        <section className="flex flex-col gap-3 rounded border border-black/15 p-4 dark:border-white/20">
+          <h3 className="font-semibold">Vous êtes propriétaire de ce flux</h3>
+          <form action={toggleFullTextAction} className="flex items-center gap-3">
+            <input type="hidden" name="feedId" value={feed.id} />
+            <button
+              type="submit"
+              className="rounded border border-black/20 px-3 py-1.5 text-sm hover:bg-black/5 dark:border-white/25 dark:hover:bg-white/10"
+            >
+              {feed.fullTextAllowed
+                ? "Désactiver le texte intégral"
+                : "Activer le texte intégral"}
+            </button>
+            <span className="text-sm text-foreground/70">
+              Texte intégral réhébergé :{" "}
+              {feed.fullTextAllowed ? "activé" : "désactivé (extrait + lien)"}
+            </span>
+          </form>
+        </section>
+      ) : viewer ? (
+        <ClaimPanel
+          feedId={feed.id}
+          ownershipStatus={feed.ownershipStatus as "orphan" | "claimed"}
+        />
+      ) : (
         <aside className="rounded border border-black/10 bg-black/[0.03] p-4 text-sm text-foreground/75 dark:border-white/15 dark:bg-white/[0.03]">
-          C’est votre blog ? Ce flux est référencé sans propriétaire. Vous
-          pourrez bientôt le <strong>réclamer</strong> (preuve de contrôle) ou en
-          demander le <strong>retrait</strong> (opt-out). — disponible au sprint
-          S5.
+          C’est votre blog ?{" "}
+          <Link href="/login" className="underline">
+            Connectez-vous
+          </Link>{" "}
+          pour réclamer ce flux ou en demander le retrait (opt-out).
         </aside>
       )}
 

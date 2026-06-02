@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Blog à retirer</title>
+    <link>http://localhost:3000/test-feed2.xml</link>
+    <description>Flux servant à tester l'opt-out. marge-verify-d25029b5259a413dfa5dbcf91c7c209a</description>
+    <item>
+      <title>Un billet</title>
+      <link>http://localhost:3000/test-feed2.xml#1</link>
+      <guid>feed2-item-1</guid>
+      <pubDate>Mon, 02 Jun 2026 10:00:00 GMT</pubDate>
+      <description>Contenu de test pour l'opt-out.</description>
+    </item>
+  </channel>
+</rss>

@@ -2,11 +2,18 @@ import Link from "next/link";
 import { and, desc, eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { db } from "@/db";
-import { articles, follows, users } from "@/db/schema";
+import {
+  articles,
+  feedSubscriptions,
+  feeds,
+  follows,
+  users,
+} from "@/db/schema";
 import {
   followLocalAction,
   unfollowLocalAction,
 } from "@/app/actions/follows";
+import { subscribeFeedAction, unsubscribeFeedAction } from "@/app/actions/feeds";
 import { getCurrentUser } from "@/lib/auth";
 import { fediverseHandle } from "@/lib/config";
 import { effectiveSummary } from "@/lib/markdown";
@@ -43,6 +50,22 @@ export default async function ProfilePage({ params }: ProfileParams) {
         columns: { id: true },
       }))
     : false;
+
+  // Flux RSS déclarés (réclamés) par cet auteur.
+  const declaredFeeds = await db.query.feeds.findMany({
+    where: eq(feeds.ownerId, profile.id),
+    columns: { id: true, title: true, feedUrl: true, description: true },
+  });
+  const mySubs = viewer
+    ? new Set(
+        (
+          await db
+            .select({ feedId: feedSubscriptions.feedId })
+            .from(feedSubscriptions)
+            .where(eq(feedSubscriptions.userId, viewer.id))
+        ).map((r) => r.feedId),
+      )
+    : new Set<string>();
 
   const published = await db.query.articles.findMany({
     where: and(
@@ -147,9 +170,46 @@ export default async function ProfilePage({ params }: ProfileParams) {
         <h2 id="feeds-heading" className="text-lg font-semibold">
           Flux RSS déclarés
         </h2>
-        <p className="text-sm text-foreground/60">
-          Aucun flux déclaré pour l’instant.
-        </p>
+        {declaredFeeds.length === 0 ? (
+          <p className="text-sm text-foreground/60">
+            Aucun flux déclaré pour l’instant.
+          </p>
+        ) : (
+          <ul className="flex flex-col gap-3">
+            {declaredFeeds.map((f) => {
+              const subscribed = mySubs.has(f.id);
+              return (
+                <li key={f.id} className="flex flex-col gap-1">
+                  <Link
+                    href={`/feeds/${f.id}`}
+                    className="font-medium hover:underline"
+                  >
+                    {f.title || f.feedUrl}
+                  </Link>
+                  {f.description && (
+                    <p className="text-sm text-foreground/70">{f.description}</p>
+                  )}
+                  {viewer && (
+                    // Suivi du FLUX, distinct du suivi du compte (§2).
+                    <form
+                      action={
+                        subscribed ? unsubscribeFeedAction : subscribeFeedAction
+                      }
+                    >
+                      <input type="hidden" name="feedId" value={f.id} />
+                      <button
+                        type="submit"
+                        className="w-fit rounded border border-black/20 px-2 py-1 text-xs hover:bg-black/5 dark:border-white/25 dark:hover:bg-white/10"
+                      >
+                        {subscribed ? "Ne plus suivre ce flux" : "Suivre ce flux"}
+                      </button>
+                    </form>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </section>
     </div>
   );
