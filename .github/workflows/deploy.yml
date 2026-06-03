@@ -1,0 +1,49 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+jobs:
+  # Garde-fou : on ne déploie que si le code compile et passe le lint.
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+      - run: npm ci
+      - run: npm run lint
+      - run: npx tsc --noEmit
+      - run: npm run build
+        env:
+          # Valeurs factices : le build n'ouvre pas de connexion (pages dynamiques).
+          DATABASE_URL: postgresql://x:x@localhost:5432/x
+          APP_URL: https://example.org
+          INSTANCE_DOMAIN: example.org
+          KEY_ENCRYPTION_SECRET: "0000000000000000000000000000000000000000000000000000000000000000"
+          CRON_SECRET: ci
+
+  deploy:
+    needs: check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Déploiement SSH (pull + rebuild + migrate + up)
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            set -euo pipefail
+            cd ${{ secrets.DEPLOY_PATH }}
+            git pull --ff-only
+            docker compose up -d --build
+            docker image prune -f

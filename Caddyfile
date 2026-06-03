@@ -1,0 +1,9 @@
+# HTTPS automatique (Let's Encrypt) + reverse proxy vers l'app.
+{
+	email {$ACME_EMAIL}
+}
+
+{$DOMAIN} {
+	encode zstd gzip
+	reverse_proxy app:3000
+}
