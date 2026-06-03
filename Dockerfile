@@ -9,7 +9,9 @@ ENV NODE_ENV=production
 # --- Dépendances complètes (pour le build) ---
 FROM base AS deps
 COPY package.json package-lock.json ./
-RUN npm ci
+# NODE_ENV=production (hérité de base) ferait sauter les devDependencies à npm ci.
+# --include=dev les réintègre : nécessaires au build (@tailwindcss/postcss, etc.).
+RUN npm ci --include=dev
 
 # --- Build Next.js ---
 FROM base AS builder
