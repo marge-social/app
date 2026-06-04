@@ -14,7 +14,7 @@ import {
 } from "@fedify/fedify/vocab";
 import { PostgresKvStore, PostgresMessageQueue } from "@fedify/postgres";
 import { Temporal } from "@js-temporal/polyfill";
-import { and, desc, eq } from "drizzle-orm";
+import { and, count, desc, eq } from "drizzle-orm";
 import { db, sql } from "@/db";
 import {
   articles,
@@ -24,7 +24,7 @@ import {
   users,
 } from "@/db/schema";
 import { loadActorKeyPairs } from "@/federation/keys";
-import { APP_URL, articleUrl } from "@/lib/config";
+import { APP_URL, INSTANCE_DOMAIN, articleUrl } from "@/lib/config";
 import { effectiveSummary } from "@/lib/markdown";
 
 /**
@@ -35,7 +35,16 @@ import { effectiveSummary } from "@/lib/markdown";
 export const kv = new PostgresKvStore(sql);
 export const queue = new PostgresMessageQueue(sql);
 
-export const federation = createFederation<void>({ kv, queue });
+// Origine canonique EXPLICITE : derrière le reverse proxy (Caddy), Fedify
+// déduirait sinon son origine de la requête interne (`localhost:3000`), ce qui
+// contaminerait tous les URI d'acteur (id, inbox, outbox, followers,
+// publicKey.id, sharedInbox…) et ferait échouer WebFinger (mismatch d'hôte).
+// `webOrigin` sert aux URL absolues ; `handleHost` à la résolution WebFinger.
+export const federation = createFederation<void>({
+  kv,
+  queue,
+  origin: { webOrigin: APP_URL, handleHost: INSTANCE_DOMAIN },
+});
 
 let storageReady: Promise<void> | null = null;
 
@@ -200,6 +209,37 @@ federation.setOutboxDispatcher(
     };
   },
 );
+
+// --- NodeInfo (découverte d'instance) -----------------------------------
+
+/**
+ * Document NodeInfo 2.1. Sans dispatcher, `/.well-known/nodeinfo` renvoie
+ * `{"links":[]}`. On publie ici le logiciel, le protocole (ActivityPub) et des
+ * statistiques honnêtes (comptes locaux + articles publiés ; aucun compteur
+ * d'engagement). Le service entrant `rss2.0` reflète l'agrégation de flux.
+ */
+federation.setNodeInfoDispatcher("/nodeinfo/2.1", async () => {
+  const [userStats] = await db.select({ value: count() }).from(users);
+  const [postStats] = await db
+    .select({ value: count() })
+    .from(articles)
+    .where(eq(articles.status, "published"));
+  return {
+    software: {
+      name: "marge",
+      version: "0.1.0",
+      homepage: new URL(APP_URL),
+    },
+    protocols: ["activitypub"],
+    services: { inbound: ["rss2.0"], outbound: [] },
+    openRegistrations: true,
+    usage: {
+      users: { total: userStats?.value ?? 0 },
+      localPosts: postStats?.value ?? 0,
+      localComments: 0,
+    },
+  };
+});
 
 /**
  * Enregistre/MAJ un objet distant (Note/Article) reçu, pour alimenter le feed.
