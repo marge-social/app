@@ -4,7 +4,7 @@ import { desc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { notifications } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
-import { INSTANCE_DOMAIN } from "@/lib/config";
+import { humanObjectUrl, INSTANCE_DOMAIN } from "@/lib/config";
 import { relativeTimeFr } from "@/lib/relative-time";
 import {
   markAllNotificationsReadAction,
@@ -74,9 +74,41 @@ function ActorLink({ n }: { n: NotificationRow }) {
   );
 }
 
-/** Rendu par type — extensible (§2.6). V1 n'émet que `follow`. */
+/** Phrase selon le type d'interaction (§4.1), au singulier ou au pluriel
+ *  (notification groupée de digest, « N personnes ont … », §4.4). */
+function notificationText(
+  type: NotificationRow["type"],
+  plural: boolean,
+): string {
+  const v = (s: string, p: string) => (plural ? p : s);
+  switch (type) {
+    case "follow":
+      return v("vous suit", "vous suivent");
+    case "like":
+      return v("a aimé votre publication", "ont aimé votre publication");
+    case "comment":
+      return v(
+        "a commenté votre publication",
+        "ont commenté votre publication",
+      );
+    case "reply":
+      return v(
+        "a répondu à votre publication",
+        "ont répondu à votre publication",
+      );
+    case "announce":
+      return v("a partagé votre publication", "ont partagé votre publication");
+    case "mention":
+      return v("vous a mentionné", "vous ont mentionné");
+    default:
+      return v("a interagi avec vous", "ont interagi avec vous");
+  }
+}
+
+/** Rendu par type — extensible (§4). Lien profond vers le contenu visé (§4.4). */
 function NotificationLine({ n }: { n: NotificationRow }) {
   const unread = n.readAt == null;
+  const href = n.objectUri ? humanObjectUrl(n.objectUri) : null;
   return (
     <li
       className={`flex items-start gap-3 px-4 py-3 ${
@@ -86,12 +118,34 @@ function NotificationLine({ n }: { n: NotificationRow }) {
       <ActorAvatar n={n} />
       <div className="min-w-0 flex-1">
         <p className="text-sm">
-          <ActorLink n={n} />{" "}
-          {n.type === "follow" ? (
-            <span>vous suit</span>
-          ) : (
-            <span>a interagi avec vous</span>
-          )}
+          <ActorLink n={n} />
+          {n.groupCount > 1 && (
+            <span>
+              {" "}
+              et {n.groupCount - 1} autre{n.groupCount - 1 > 1 ? "s" : ""}
+            </span>
+          )}{" "}
+          <span>{notificationText(n.type, n.groupCount > 1)}</span>
+          {href &&
+            (href.startsWith("/") ? (
+              <>
+                {" — "}
+                <Link href={href} className="hover:underline">
+                  voir
+                </Link>
+              </>
+            ) : (
+              <>
+                {" — "}
+                <a
+                  href={href}
+                  rel="noopener noreferrer nofollow"
+                  className="hover:underline"
+                >
+                  voir
+                </a>
+              </>
+            ))}
         </p>
         <p className="text-xs text-black/55 dark:text-white/55">
           {n.actorHandle} · {relativeTimeFr(n.createdAt)}

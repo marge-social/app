@@ -1,14 +1,16 @@
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   boolean,
   customType,
   index,
+  integer,
   jsonb,
   pgEnum,
   pgTable,
   text,
   timestamp,
   unique,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 
@@ -57,9 +59,41 @@ export const userRole = pgEnum("user_role", ["user", "admin"]);
 export const notificationType = pgEnum("notification_type", [
   "follow",
   "like",
+  "comment",
   "reply",
   "mention",
   "announce",
+]);
+
+/**
+ * Type d'interaction sociale journalisée (§2 du module Interactions). `Like` et
+ * `Announce` sont des bascules (réversibles via `undone_at`) ; `Comment` et
+ * `Reply` sont des objets `Note`/`Article` à part entière (un par interaction),
+ * journalisés ici pour le compte des réponses rattachées via `inReplyTo`.
+ */
+export const interactionType = pgEnum("interaction_type", [
+  "Like",
+  "Announce",
+  "Comment",
+  "Reply",
+]);
+
+/**
+ * Canal de remise d'une notification (§4.2). `realtime` = interrompt
+ * immédiatement ; `digest` = accumulé en silence, regroupé périodiquement ;
+ * `off` = désactivé.
+ */
+export const notificationChannel = pgEnum("notification_channel", [
+  "realtime",
+  "digest",
+  "off",
+]);
+
+/** Portée d'une notification (§4.2) : origine(s) prise(s) en compte. */
+export const notificationScope = pgEnum("notification_scope", [
+  "all", // local + fédéré
+  "local",
+  "federated",
 ]);
 
 // --- Users / identité fédérée -------------------------------------------
@@ -116,6 +150,10 @@ export const articles = pgTable(
     summary: text("summary").notNull().default(""),
     slug: text("slug").notNull(),
     status: articleStatus("status").notNull().default("draft"),
+    // IRI de l'objet auquel ce billet répond (§2.3, réponse-billet). null =
+    // billet autonome. Renseigné → double existence : reste en top-level du fil
+    // ET rattaché au contenu d'origine via inReplyTo.
+    inReplyToUri: text("in_reply_to_uri"),
     // URI ActivityPub de l'objet Article (rempli à la publication, dès S2).
     apUri: text("ap_uri"),
     publishedAt: timestamp("published_at", { withTimezone: true }),
@@ -130,6 +168,7 @@ export const articles = pgTable(
     // Permalien stable : /@handle/[slug] → unique par auteur.
     unique("articles_author_slug_unq").on(t.authorId, t.slug),
     index("articles_published_idx").on(t.publishedAt),
+    index("articles_in_reply_to_idx").on(t.inReplyToUri),
   ],
 );
 
@@ -148,6 +187,10 @@ export const posts = pgTable(
     // Source Markdown + rendu HTML sanitisé (même pipeline que les articles).
     contentMarkdown: text("content_markdown").notNull(),
     contentHtml: text("content_html").notNull(),
+    // IRI de l'objet auquel cette Note répond (§2.2). null = Note autonome
+    // (composer) ; renseigné = commentaire court, affiché sous son parent et
+    // exclu du fil top-level.
+    inReplyToUri: text("in_reply_to_uri"),
     publishedAt: timestamp("published_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -158,6 +201,7 @@ export const posts = pgTable(
   (t) => [
     index("posts_author_idx").on(t.authorId),
     index("posts_published_idx").on(t.publishedAt),
+    index("posts_in_reply_to_idx").on(t.inReplyToUri),
   ],
 );
 
@@ -356,6 +400,9 @@ export const remoteObjects = pgTable(
     contentHtml: text("content_html"),
     summary: text("summary"),
     url: text("url"),
+    // IRI du parent quand l'objet distant est une réponse (§2.2). Permet de
+    // l'afficher sous son parent (commentaire) plutôt qu'en top-level du fil.
+    inReplyToUri: text("in_reply_to_uri"),
     publishedAt: timestamp("published_at", { withTimezone: true }),
     fetchedAt: timestamp("fetched_at", { withTimezone: true })
       .notNull()
@@ -364,6 +411,7 @@ export const remoteObjects = pgTable(
   (t) => [
     index("remote_objects_author_idx").on(t.attributedToUri),
     index("remote_objects_published_idx").on(t.publishedAt),
+    index("remote_objects_in_reply_to_idx").on(t.inReplyToUri),
   ],
 );
 
@@ -407,6 +455,9 @@ export const notifications = pgTable(
     actorIconUrl: text("actor_icon_url"),
     // Objet concerné (billet liké/répondu) ; null pour un `follow`.
     objectUri: text("object_uri"),
+    // Nombre d'acteurs regroupés (§4.4) : 1 pour une notif temps réel ; >1 pour
+    // une notif de digest (« N personnes ont aimé … »). `actor*` = représentant.
+    groupCount: integer("group_count").notNull().default(1),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -419,6 +470,96 @@ export const notifications = pgTable(
       t.createdAt.desc(),
     ),
     index("notifications_recipient_read_idx").on(t.recipientUserId, t.readAt),
+  ],
+);
+
+/**
+ * Préférences de notification par utilisateur et par type d'interaction (§4.2,
+ * matrice réglable). On ne stocke que les **dérogations** : en l'absence de
+ * ligne, les défauts « calm by default » du §4.3 s'appliquent (résolus en code).
+ * `type` ∈ {like, comment, reply, announce} (le `follow` n'est pas réglable).
+ */
+export const notificationSettings = pgTable(
+  "notification_settings",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    type: notificationType("type").notNull(),
+    channel: notificationChannel("channel").notNull(),
+    scope: notificationScope("scope").notNull(),
+  },
+  (t) => [unique("notification_settings_user_type_unq").on(t.userId, t.type)],
+);
+
+/**
+ * File des signaux mis en **digest** (§4.3) : chaque interaction routée vers le
+ * canal `digest` y atterrit au lieu de créer une notification temps réel. Le
+ * moteur de digest (cron) les regroupe périodiquement en notifications « N
+ * personnes ont … » puis renseigne `digestedAt`. `origin` permet d'honorer la
+ * portée a posteriori si besoin ; l'acteur est projeté pour l'affichage.
+ */
+export const digestItems = pgTable(
+  "digest_items",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    recipientUserId: uuid("recipient_user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    type: notificationType("type").notNull(),
+    origin: text("origin").notNull().default("local"), // "local" | "federated"
+    actorUri: text("actor_uri").notNull(),
+    actorHandle: text("actor_handle").notNull(),
+    actorName: text("actor_name"),
+    actorIconUrl: text("actor_icon_url"),
+    objectUri: text("object_uri"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    // null = en attente de regroupement ; renseigné quand digéré.
+    digestedAt: timestamp("digested_at", { withTimezone: true }),
+  },
+  (t) => [
+    index("digest_items_pending_idx").on(t.recipientUserId, t.digestedAt),
+  ],
+);
+
+/**
+ * Journal des interactions sociales reçues et émises (§3 du module
+ * Interactions). On stocke systématiquement les **IRI** de l'acteur et de
+ * l'objet (jamais une clé locale seule) pour traiter local et fédéré de façon
+ * homogène. `Like`/`Announce` sont des bascules : l'annulation renseigne
+ * `undoneAt` (la ligne est conservée) plutôt que de supprimer. Le compte public
+ * d'une interaction = lignes du type voulu, `objectIri` donné, `undoneAt` nul.
+ */
+export const interactions = pgTable(
+  "interactions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    type: interactionType("type").notNull(),
+    // Acteur à l'origine (local ou distant) et objet visé — IRI canoniques.
+    actorIri: text("actor_iri").notNull(),
+    objectIri: text("object_iri").notNull(),
+    // IRI de l'activité émise/reçue (utile pour l'Undo et l'audit). Pour un Like
+    // local, reconstructible, mais stocké pour les activités distantes reçues.
+    activityIri: text("activity_iri"),
+    origin: text("origin").notNull().default("local"), // "local" | "federated"
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    // null = active ; renseigné quand l'interaction (Like/Announce) est annulée.
+    undoneAt: timestamp("undone_at", { withTimezone: true }),
+  },
+  (t) => [
+    index("interactions_object_idx").on(t.objectIri),
+    index("interactions_actor_idx").on(t.actorIri),
+    // Un acteur ne peut liker/partager qu'UNE fois un même objet (idempotence,
+    // §2.1) : unicité partielle réservée aux bascules. Les commentaires/réponses
+    // (un objet par interaction) ne sont pas contraints.
+    uniqueIndex("interactions_toggle_unq")
+      .on(t.type, t.actorIri, t.objectIri)
+      .where(sql`type in ('Like', 'Announce')`),
   ],
 );
 

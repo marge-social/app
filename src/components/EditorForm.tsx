@@ -45,7 +45,17 @@ function SubmitButtons() {
   );
 }
 
-export function EditorForm({ article }: { article?: EditorArticle }) {
+export function EditorForm({
+  article,
+  inReplyTo,
+  replyToHref,
+}: {
+  article?: EditorArticle;
+  /** IRI du contenu d'origine pour une réponse-billet (§2.3). */
+  inReplyTo?: string;
+  /** Lien humain vers ce contenu, pour le bandeau de contexte. */
+  replyToHref?: string;
+}) {
   const [state, action] = useActionState<ArticleFormState, FormData>(
     saveArticleAction,
     {},
@@ -63,6 +73,21 @@ export function EditorForm({ article }: { article?: EditorArticle }) {
   return (
     <form action={action} className="flex flex-col gap-4">
       {article?.id && <input type="hidden" name="id" value={article.id} />}
+      {inReplyTo && <input type="hidden" name="inReplyTo" value={inReplyTo} />}
+
+      {inReplyTo && (
+        <p className="rounded border border-black/10 bg-black/[0.03] px-3 py-2 text-sm text-foreground/70 dark:border-white/15 dark:bg-white/[0.05]">
+          En réponse à{" "}
+          {replyToHref ? (
+            <a href={replyToHref} className="underline">
+              un contenu publié
+            </a>
+          ) : (
+            "un contenu publié"
+          )}
+          . Votre billet apparaîtra dans le fil et sera rattaché à ce contenu.
+        </p>
+      )}
 
       {state.error && (
         <p

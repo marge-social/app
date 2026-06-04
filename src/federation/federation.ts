@@ -1,12 +1,15 @@
 import { createFederation, type Context } from "@fedify/fedify";
 import {
   Accept,
+  type Actor,
+  Announce,
   Article,
   Create,
   Delete,
   Endpoints,
   Follow,
   Image,
+  Like,
   Note,
   Person,
   PUBLIC_COLLECTION,
@@ -34,7 +37,12 @@ import {
   noteUrl,
 } from "@/lib/config";
 import { effectiveSummary } from "@/lib/markdown";
-import { createFollowNotification } from "@/lib/notifications";
+import { resolveInteractionTarget, setToggle } from "@/lib/interactions";
+import {
+  type NotificationActor,
+  createFollowNotification,
+  routeInteractionNotification,
+} from "@/lib/notifications";
 
 /**
  * Objet Federation Fedify. Cache + file de livraison sortante adossés à
@@ -84,6 +92,8 @@ export function buildArticleObject(
     content: article.contentHtml,
     // Dégradation gracieuse Mastodon : résumé soigné + permalien bien visible.
     summary: effectiveSummary(article.contentMarkdown, article.summary) || undefined,
+    // Réponse-billet (§2.3) : `inReplyTo` pointe le contenu d'origine.
+    replyTarget: article.inReplyToUri ? new URL(article.inReplyToUri) : undefined,
     url: new URL(articleUrl(handle, article.slug)),
     published: Temporal.Instant.from(date.toISOString()),
     to: PUBLIC_COLLECTION,
@@ -91,11 +101,16 @@ export function buildArticleObject(
   });
 }
 
-/** Enveloppe un Article dans un `Create` adressé aux followers. */
+/**
+ * Enveloppe un Article dans un `Create` adressé aux followers. Pour une
+ * réponse-billet (§2.3), `ccActor` ajoute l'auteur du contenu d'origine aux
+ * destinataires (son instance reçoit et thread la réponse).
+ */
 export function buildCreateForArticle(
   ctx: Context<void>,
   handle: string,
   article: ArticleRow,
+  opts?: { ccActor?: string },
 ): Create {
   const object = buildArticleObject(ctx, handle, article);
   return new Create({
@@ -103,7 +118,9 @@ export function buildCreateForArticle(
     actor: ctx.getActorUri(handle),
     object,
     to: PUBLIC_COLLECTION,
-    cc: ctx.getFollowersUri(handle),
+    ccs: opts?.ccActor
+      ? [ctx.getFollowersUri(handle), new URL(opts.ccActor)]
+      : [ctx.getFollowersUri(handle)],
   });
 }
 
@@ -124,6 +141,8 @@ export function buildNoteObject(
     id: ctx.getObjectUri(Note, { identifier: handle, id: post.id }),
     attribution: ctx.getActorUri(handle),
     content: post.contentHtml,
+    // Commentaire court (§2.2) : `inReplyTo` pointe l'objet d'origine.
+    replyTarget: post.inReplyToUri ? new URL(post.inReplyToUri) : undefined,
     url: new URL(noteUrl(handle, post.id)),
     published: Temporal.Instant.from(date.toISOString()),
     to: PUBLIC_COLLECTION,
@@ -131,17 +150,65 @@ export function buildNoteObject(
   });
 }
 
-/** Enveloppe une Note dans un `Create` adressé aux followers. */
+/**
+ * Enveloppe une Note dans un `Create` adressé aux followers. Pour un
+ * commentaire (§2.2), `ccActor` ajoute l'auteur du contenu d'origine aux
+ * destinataires, afin que son instance reçoive et thread la réponse.
+ */
 export function buildCreateForNote(
   ctx: Context<void>,
   handle: string,
   post: PostRow,
+  opts?: { ccActor?: string },
 ): Create {
   const object = buildNoteObject(ctx, handle, post);
   return new Create({
     id: new URL(`${object.id?.href}#create`),
     actor: ctx.getActorUri(handle),
     object,
+    to: PUBLIC_COLLECTION,
+    ccs: opts?.ccActor
+      ? [ctx.getFollowersUri(handle), new URL(opts.ccActor)]
+      : [ctx.getFollowersUri(handle)],
+  });
+}
+
+/**
+ * Construit une activité `Like` ciblant `objectIri`, adressée à l'auteur de
+ * l'objet (§2.1). L'`id` est déterministe (`#likes/<objet>`) pour qu'un `Undo`
+ * puisse réenvelopper exactement le même Like sans le persister.
+ */
+export function buildLike(
+  ctx: Context<void>,
+  handle: string,
+  objectIri: string,
+  authorActorUri: string,
+): Like {
+  const actor = ctx.getActorUri(handle);
+  return new Like({
+    id: new URL(`${actor.href}#likes/${encodeURIComponent(objectIri)}`),
+    actor,
+    object: new URL(objectIri),
+    to: new URL(authorActorUri),
+  });
+}
+
+/**
+ * Construit un `Announce` (partage, §2.4) réémettant `objectIri` vers les
+ * followers du partageur. `id` déterministe (`#announces/<objet>`) pour qu'un
+ * `Undo` réenveloppe exactement le même Announce. Transmis tel quel, sans
+ * surcouche d'amplification (§6).
+ */
+export function buildAnnounce(
+  ctx: Context<void>,
+  handle: string,
+  objectIri: string,
+): Announce {
+  const actor = ctx.getActorUri(handle);
+  return new Announce({
+    id: new URL(`${actor.href}#announces/${encodeURIComponent(objectIri)}`),
+    actor,
+    object: new URL(objectIri),
     to: PUBLIC_COLLECTION,
     cc: ctx.getFollowersUri(handle),
   });
@@ -355,6 +422,7 @@ async function upsertRemoteObject(object: Note | Article): Promise<void> {
       contentHtml: object.content?.toString() ?? null,
       summary: object.summary?.toString() ?? null,
       url,
+      inReplyToUri: object.replyTargetId?.href ?? null,
       publishedAt: object.published
         ? new Date(object.published.toString())
         : null,
@@ -365,9 +433,81 @@ async function upsertRemoteObject(object: Note | Article): Promise<void> {
         name: object.name?.toString() ?? null,
         contentHtml: object.content?.toString() ?? null,
         summary: object.summary?.toString() ?? null,
+        inReplyToUri: object.replyTargetId?.href ?? null,
         fetchedAt: new Date(),
       },
     });
+}
+
+/**
+ * Met en cache (upsert) la projection d'affichage d'un acteur distant et la
+ * renvoie pour réutilisation immédiate (notifications). Best-effort sur
+ * l'avatar : un échec de résolution ne fait jamais échouer l'inbox (§2.5).
+ */
+async function cacheRemoteActor(actor: Actor): Promise<NotificationActor> {
+  const uri = actor.id!.href;
+  const name = actor.name?.toString() ?? null;
+  const username = actor.preferredUsername?.toString() ?? null;
+  const handle = username ? `@${username}@${actor.id!.host}` : `@${actor.id!.host}`;
+  let iconUrl: string | null = null;
+  try {
+    const icon = await actor.getIcon();
+    const u = icon?.url;
+    iconUrl = u instanceof URL ? u.href : (u?.href?.href ?? null);
+  } catch {
+    // Avatar indisponible : dégradation gracieuse.
+  }
+  await db
+    .insert(remoteActors)
+    .values({
+      uri,
+      handle,
+      name,
+      inboxUrl: actor.inboxId?.href ?? null,
+      sharedInboxUrl: actor.endpoints?.sharedInbox?.href ?? null,
+      url: actor.url instanceof URL ? actor.url.href : null,
+      iconUrl,
+    })
+    .onConflictDoUpdate({
+      target: remoteActors.uri,
+      set: {
+        handle,
+        name,
+        inboxUrl: actor.inboxId?.href ?? null,
+        sharedInboxUrl: actor.endpoints?.sharedInbox?.href ?? null,
+        iconUrl,
+        fetchedAt: new Date(),
+      },
+    });
+  return { uri, handle, name, iconUrl };
+}
+
+/**
+ * Notifie l'auteur local d'un objet qu'un acteur distant l'a liké/partagé
+ * (routé par la matrice §4.2, défaut digest §4.3). Best-effort : un échec ne
+ * doit pas rompre le traitement de l'inbox.
+ */
+async function notifyToggleTarget(
+  activity: Like | Announce,
+  objectIri: string,
+  type: "like" | "announce",
+): Promise<void> {
+  try {
+    const target = await resolveInteractionTarget(objectIri);
+    if (!target?.authorIsLocal || !target.authorUserId) return;
+    const actor = await activity.getActor();
+    if (actor?.id == null) return;
+    const projection = await cacheRemoteActor(actor);
+    await routeInteractionNotification({
+      recipientUserId: target.authorUserId,
+      type,
+      origin: "federated",
+      actor: projection,
+      objectUri: objectIri,
+    });
+  } catch (err) {
+    console.error("Échec de notification d'interaction entrante :", err);
+  }
 }
 
 // --- Inbox : Follow / Undo, Create / Update / Delete, Accept -------------
@@ -389,54 +529,16 @@ federation
     const follower = await follow.getActor();
     if (follower?.id == null || follower.inboxId == null) return;
 
-    // Projection d'affichage de l'acteur distant (réutilisée pour le cache ET
-    // la notification). La résolution de l'avatar est best-effort : un échec ne
-    // doit jamais faire échouer le traitement de l'inbox (§2.5).
-    const followerUri = follower.id.href;
-    const followerName = follower.name?.toString() ?? null;
-    const username = follower.preferredUsername?.toString() ?? null;
-    const followerHandle = username
-      ? `@${username}@${follower.id.host}`
-      : `@${follower.id.host}`;
-    let followerIcon: string | null = null;
-    try {
-      const icon = await follower.getIcon();
-      const iconUrl = icon?.url;
-      followerIcon =
-        iconUrl instanceof URL ? iconUrl.href : (iconUrl?.href?.href ?? null);
-    } catch {
-      // Avatar indisponible : dégradation gracieuse.
-    }
-
-    // Cache de l'acteur distant.
-    await db
-      .insert(remoteActors)
-      .values({
-        uri: followerUri,
-        handle: followerHandle,
-        name: followerName,
-        inboxUrl: follower.inboxId.href,
-        sharedInboxUrl: follower.endpoints?.sharedInbox?.href ?? null,
-        url: follower.url instanceof URL ? follower.url.href : null,
-        iconUrl: followerIcon,
-      })
-      .onConflictDoUpdate({
-        target: remoteActors.uri,
-        set: {
-          handle: followerHandle,
-          name: followerName,
-          inboxUrl: follower.inboxId.href,
-          sharedInboxUrl: follower.endpoints?.sharedInbox?.href ?? null,
-          iconUrl: followerIcon,
-          fetchedAt: new Date(),
-        },
-      });
+    // Cache + projection d'affichage de l'acteur distant (réutilisée pour la
+    // notification). Best-effort sur l'avatar : un échec ne doit jamais faire
+    // échouer le traitement de l'inbox (§2.5).
+    const projection = await cacheRemoteActor(follower);
 
     // Persiste le Follow (Accept automatique au MVP).
     await db
       .insert(follows)
       .values({
-        followerUri,
+        followerUri: projection.uri,
         followingUri: ctx.getActorUri(localHandle).href,
         followingUserId: local.id,
         status: "accepted",
@@ -446,12 +548,7 @@ federation
     // Notifie le destinataire (§2.5). Best-effort : une erreur ici ne doit pas
     // empêcher l'émission de l'Accept ni rompre la fédération.
     try {
-      await createFollowNotification(local.id, {
-        uri: followerUri,
-        handle: followerHandle,
-        name: followerName,
-        iconUrl: followerIcon,
-      });
+      await createFollowNotification(local.id, projection);
     } catch (err) {
       console.error("Échec de création de la notification de suivi :", err);
     }
@@ -467,6 +564,22 @@ federation
   })
   .on(Undo, async (ctx, undo) => {
     const object = await undo.getObject();
+
+    // Undo(Like) ou Undo(Announce) entrant → on désactive la bascule (§2.1/§2.4).
+    if (object instanceof Like || object instanceof Announce) {
+      const objectId = object.objectId;
+      const actorId = object.actorId ?? undo.actorId;
+      if (objectId == null || actorId == null) return;
+      await setToggle({
+        type: object instanceof Like ? "Like" : "Announce",
+        actorIri: actorId.href,
+        objectIri: objectId.href,
+        origin: "federated",
+        active: false,
+      });
+      return;
+    }
+
     if (!(object instanceof Follow) || object.objectId == null) return;
     const parsed = ctx.parseUri(object.objectId);
     if (parsed?.type !== "actor") return;
@@ -481,11 +594,79 @@ federation
         ),
       );
   })
+  // Like entrant ciblant un de nos objets locaux → journalisé (compteur public)
+  // + notification routée par la matrice de l'auteur (défaut like=digest, §4.3).
+  .on(Like, async (_ctx, like) => {
+    const objectId = like.objectId;
+    const actorId = like.actorId;
+    if (objectId == null || actorId == null) return;
+    if (!objectId.href.startsWith(`${APP_URL}/users/`)) return;
+    await setToggle({
+      type: "Like",
+      actorIri: actorId.href,
+      objectIri: objectId.href,
+      origin: "federated",
+      activityIri: like.id?.href ?? null,
+      active: true,
+    });
+    await notifyToggleTarget(like, objectId.href, "like");
+  })
+  // Announce entrant (un acteur suivi partage un objet, §2.4) → journalisé +
+  // ingestion de l'objet partagé pour le réémettre dans le fil des abonnés +
+  // notification de l'auteur si l'objet est local (matrice, défaut digest §4.3).
+  .on(Announce, async (_ctx, announce) => {
+    const objectId = announce.objectId;
+    const actorId = announce.actorId;
+    if (objectId == null || actorId == null) return;
+    await setToggle({
+      type: "Announce",
+      actorIri: actorId.href,
+      objectIri: objectId.href,
+      origin: "federated",
+      activityIri: announce.id?.href ?? null,
+      active: true,
+    });
+    // L'objet partagé est distant : on le déréférence pour pouvoir l'afficher.
+    if (!objectId.href.startsWith(`${APP_URL}/users/`)) {
+      try {
+        const obj = await announce.getObject();
+        if (obj instanceof Note || obj instanceof Article) {
+          await upsertRemoteObject(obj);
+        }
+      } catch {
+        // Objet indisponible : on garde tout de même la trace de l'Announce.
+      }
+    } else {
+      await notifyToggleTarget(announce, objectId.href, "announce");
+    }
+  })
   // Contenu distant entrant → alimente le feed (extrait + lien).
   .on(Create, async (_ctx, create) => {
     const object = await create.getObject();
-    if (object instanceof Note || object instanceof Article) {
-      await upsertRemoteObject(object);
+    if (!(object instanceof Note || object instanceof Article)) return;
+    await upsertRemoteObject(object);
+
+    // Réponse entrante ciblant un de NOS objets locaux → notification (§4.1).
+    // Une Note→« commentaire », un Article→« réponse ». Le défaut est temps
+    // réel pour les deux (§4.3) : on notifie immédiatement.
+    const parentUri = object.replyTargetId?.href;
+    if (!parentUri) return;
+    const target = await resolveInteractionTarget(parentUri);
+    if (!target?.authorIsLocal || !target.authorUserId) return;
+
+    const actor = await create.getActor();
+    if (actor?.id == null) return;
+    const projection = await cacheRemoteActor(actor);
+    try {
+      await routeInteractionNotification({
+        recipientUserId: target.authorUserId,
+        type: object instanceof Article ? "reply" : "comment",
+        origin: "federated",
+        actor: projection,
+        objectUri: parentUri,
+      });
+    } catch (err) {
+      console.error("Échec de création de la notification de réponse :", err);
     }
   })
   .on(Update, async (_ctx, update) => {
