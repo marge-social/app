@@ -34,7 +34,7 @@ COPY --from=builder /app/.next ./.next
 COPY public ./public
 COPY package.json next.config.ts ./
 COPY src/db/migrations ./src/db/migrations
-COPY scripts/migrate.mjs ./scripts/migrate.mjs
+COPY scripts ./scripts
 USER nextjs
 EXPOSE 3000
 CMD ["npm", "run", "start"]
