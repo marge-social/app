@@ -19,13 +19,17 @@ export default async function HomePage({
     return (
       <div className="flex flex-col gap-6">
         <h1 className="text-3xl font-bold tracking-tight">
-          Des textes longs, sourcés, fédérés.
+          Un média social pour le débat démocratique.
         </h1>
         <p className="text-lg text-foreground/80">
           Marge est un média social à contre-courant de l’économie
-          attentionnelle : on y publie des textes argumentés, on agrège des flux
-          qu’on a choisis, et tout est nativement fédéré (ActivityPub) — suivable
-          depuis Mastodon.
+          attentionnelle : on y publie des textes long, on agrège des flux
+          qu’on a choisis, et tout est nativement fédéré et interopérable
+          (ActivityPub).
+        </p>
+        <p className="text-lg text-foreground/80">
+          En ce moment, on pose les fondations. Vous pouvez vous inscrire, mais
+          c’est encore peu utilisable.
         </p>
         <div className="flex gap-3">
           <Link
