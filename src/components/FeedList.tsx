@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { CommentView, FeedEntry } from "@/lib/feed";
+import { Attachments } from "@/components/Attachments";
 import {
   createCommentAction,
   toggleAnnounceAction,
@@ -241,6 +242,7 @@ export function FeedList({ entries }: { entries: FeedEntry[] }) {
               )}
             </>
           )}
+          <Attachments media={e.media} />
           {e.objectUri && (
             <>
               <div className="mt-1 flex items-center gap-3">

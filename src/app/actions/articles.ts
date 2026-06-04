@@ -8,6 +8,7 @@ import { articles } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { actorUri, articleApUri, fediverseHandle } from "@/lib/config";
 import { renderMarkdown, slugify } from "@/lib/markdown";
+import { persistMedia, processUpload } from "@/lib/media";
 import { resolveInteractionTarget } from "@/lib/interactions";
 import { routeInteractionNotification } from "@/lib/notifications";
 import {
@@ -66,6 +67,20 @@ export async function saveArticleAction(
 
   if (!title) return { error: "Le titre est requis." };
   if (!contentMarkdown) return { error: "Le contenu ne peut pas être vide." };
+
+  // Pièce jointe (à la création uniquement, comme inReplyTo). Validation AVANT
+  // toute écriture pour rejeter type/taille immédiatement.
+  const file = formData.get("media");
+  const alt = ((formData.get("alt") as string) ?? "").trim();
+  let processed = null;
+  if (!id && file instanceof File && file.size > 0) {
+    const result = await processUpload(file);
+    if (!result.ok) return { error: result.error };
+    if (result.kind === "image" && !alt) {
+      return { error: "Le texte alternatif est obligatoire pour une image." };
+    }
+    processed = result;
+  }
 
   const contentHtml = renderMarkdown(contentMarkdown);
   // On stocke le chapô explicite de l'auteur tel quel (souvent vide) ; le
@@ -129,6 +144,20 @@ export async function saveArticleAction(
       })
       .returning({ id: articles.id });
     articleId = created.id;
+
+    // Téléversement S3 + persistance du média, rattaché au nouvel article.
+    if (processed) {
+      try {
+        await persistMedia({
+          ownerUserId: user.id,
+          processed,
+          altText: alt || null,
+          articleId,
+        });
+      } catch (err) {
+        console.error("[media] échec du téléversement (article) :", err);
+      }
+    }
   }
 
   // Fédération sortante (après écriture en base).

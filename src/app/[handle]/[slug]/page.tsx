@@ -4,8 +4,10 @@ import { and, eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { db } from "@/db";
 import { articles, users } from "@/db/schema";
+import { Attachments } from "@/components/Attachments";
 import { getCurrentUser } from "@/lib/auth";
 import { fediverseHandle } from "@/lib/config";
+import { loadMediaForArticles } from "@/lib/media";
 import { readingTimeMinutes } from "@/lib/markdown";
 
 interface ArticleParams {
@@ -54,6 +56,7 @@ export default async function ArticlePage({ params }: ArticleParams) {
   if (article.status !== "published" && !isAuthor) notFound();
 
   const date = article.publishedAt ?? article.createdAt;
+  const media = (await loadMediaForArticles([article.id])).get(article.id) ?? [];
 
   return (
     <article className="flex flex-col gap-6">
@@ -89,6 +92,8 @@ export default async function ArticlePage({ params }: ArticleParams) {
           </Link>
         )}
       </header>
+
+      <Attachments media={media} />
 
       <div
         className="prose-marge"

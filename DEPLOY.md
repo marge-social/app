@@ -56,6 +56,39 @@ Le script bascule `role=admin` sur le compte ciblé. Réversible en base si beso
 (`UPDATE users SET role='user' WHERE handle='karl';`). C'est l'**unique** voie
 d'amorçage : pas de variable d'environnement, pas d'auto-promotion.
 
+## 2 ter. Stockage des médias (OVH Object Storage)
+
+Les médias (pièces jointes des posts/billets, avatars) sont stockés sur un
+bucket S3 OVH et servis depuis un **sous-domaine dédié** `media.<DOMAIN>`. Rien
+n'atterrit sur le disque du VPS.
+
+1. **Créer le bucket** (OVH Object Storage, région ex. GRA) — ex. `marge-media`.
+   Générer une **clé d'accès S3** (access key + secret) avec droits d'écriture.
+2. **Lecture publique** : sur la région GRA, les *bucket policies* ne sont pas
+   disponibles (`PutBucketPolicy` → `NotImplemented`). L'app pose donc l'ACL
+   **`public-read`** **et** le `Content-Type` validé sur chaque `PutObject`
+   (déjà fait dans le code) — rien à configurer côté bucket. CORS inutile (les
+   médias sont servis via de simples `<img>`/`<video>`, pas d'accès navigateur
+   direct au bucket).
+3. **DNS** : créer un enregistrement `media` (A → IP du VPS), de sorte que
+   `media.<DOMAIN>` résolve vers le VPS. Caddy (bloc `{$MEDIA_DOMAIN}` du
+   `Caddyfile`) *reverse-proxy* ce sous-domaine vers le bucket en réécrivant
+   l'en-tête `Host` (HTTPS auto Let's Encrypt).
+4. **Variables `.env`** (cf. `.env.production.example`) :
+   - `MEDIA_DOMAIN` (ex. `media.marge.exemple.org`) — vu par Caddy.
+   - `MEDIA_BUCKET_HOST` (ex. `marge-media.s3.gra.io.cloud.ovh.net`) — hôte S3 du
+     bucket vers lequel Caddy proxifie.
+   - `MEDIA_BASE_URL` (ex. `https://media.marge.exemple.org`) — vu par l'app pour
+     construire les URL publiques des médias.
+   - `S3_ENDPOINT`, `S3_REGION`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`,
+     `S3_SECRET_ACCESS_KEY`, `S3_FORCE_PATH_STYLE`.
+
+> Limite de 5 Mo/fichier (validée côté serveur **et** plafonnée par Caddy via
+> `request_body max_size 6MB`). Les images sont re-encodées et leurs métadonnées
+> EXIF purgées ; les PDF sont servis en téléchargement (`Content-Disposition`).
+> La migration `media` (table + `users.avatar_media_id`) est appliquée
+> automatiquement par le conteneur `migrate`.
+
 ## 3. Déploiement des commits suivants (auto via GitHub Actions)
 
 À chaque `push` sur `main`, le workflow `.github/workflows/deploy.yml` :

@@ -1,5 +1,6 @@
 import { relations, sql } from "drizzle-orm";
 import {
+  type AnyPgColumn,
   boolean,
   customType,
   index,
@@ -21,6 +22,19 @@ const bytea = customType<{ data: Buffer; default: false }>({
   },
 });
 
+/**
+ * Pièce jointe d'un objet distant (cahier médias §4.2), stockée en jsonb sur
+ * `remote_objects.attachments`. `url` pointe l'origine distante (jamais re-hébergé).
+ */
+export interface RemoteAttachment {
+  kind: "image" | "video" | "audio" | "pdf";
+  url: string;
+  mediaType: string;
+  name?: string | null;
+  width?: number | null;
+  height?: number | null;
+}
+
 // --- Enums ---------------------------------------------------------------
 
 /** Statut de propriété d'un flux RSS (cf. §4 / F3). */
@@ -35,6 +49,14 @@ export const feedTechStatus = pgEnum("feed_tech_status", ["active", "error"]);
 
 /** Statut d'un article. */
 export const articleStatus = pgEnum("article_status", ["draft", "published"]);
+
+/** Nature d'un média stocké (liste blanche §3.2 du cahier médias). */
+export const mediaKind = pgEnum("media_kind", [
+  "image",
+  "video",
+  "audio",
+  "pdf",
+]);
 
 /** Type de demande sur un flux. */
 export const feedClaimType = pgEnum("feed_claim_type", ["claim", "opt_out"]);
@@ -112,9 +134,14 @@ export const users = pgTable("users", {
   bio: text("bio").notNull().default(""),
   // Rôle de supervision (admin = accès aux vues /admin en lecture seule, §3).
   role: userRole("role").notNull().default("user"),
-  // Renseigné quand un avatar est défini (octets dans `userAvatars`). Sert de
-  // garde d'affichage ET de jeton de cache-busting (mtime). null = pas d'avatar.
+  // Renseigné quand un avatar est défini. Sert de garde d'affichage ET de jeton
+  // de cache-busting (mtime). null = pas d'avatar.
   avatarUpdatedAt: timestamp("avatar_updated_at", { withTimezone: true }),
+  // Avatar stocké sur le stockage objet (cahier médias) : référence la ligne
+  // `media`. null = avatar legacy (octets dans `userAvatars`) ou aucun avatar.
+  avatarMediaId: uuid("avatar_media_id").references((): AnyPgColumn => media.id, {
+    onDelete: "set null",
+  }),
   // Paires de clés de l'acteur AP (RSA-PKCS#1-v1.5 + Ed25519).
   // publicKeys : JWK publics en clair. privateKeys : JWK privés chiffrés (AES-GCM).
   publicKeys: jsonb("public_keys"),
@@ -220,6 +247,52 @@ export const userAvatars = pgTable("user_avatars", {
     .notNull()
     .defaultNow(),
 });
+
+/**
+ * Média générique stocké sur le stockage objet (cahier médias). Sert aux pièces
+ * jointes des posts/articles ET aux avatars. Les octets vivent dans le bucket
+ * S3 (jamais en base) ; ici seulement les métadonnées + l'URL publique stable.
+ *
+ * Lien post↔média : `postId`/`articleId` nullable — **un seul média par post**
+ * en V1 (contrôle applicatif), modèle extensible à plusieurs (plusieurs lignes
+ * pointant le même parent). Le `name` original n'est pas conservé comme clé
+ * (UUID généré, anti-collision/path-traversal).
+ */
+export const media = pgTable(
+  "media",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    ownerUserId: uuid("owner_user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    kind: mediaKind("kind").notNull(),
+    // Type MIME validé par les magic bytes (jamais celui fourni par le client).
+    mimeType: text("mime_type").notNull(),
+    storageKey: text("storage_key").notNull(),
+    url: text("url").notNull(),
+    thumbnailKey: text("thumbnail_key"),
+    thumbnailUrl: text("thumbnail_url"),
+    sizeBytes: integer("size_bytes").notNull(),
+    width: integer("width"),
+    height: integer("height"),
+    // Texte alternatif (obligatoire pour les images, §4.1).
+    altText: text("alt_text"),
+    // Rattachement à un contenu (au plus un des deux). null/null = média non
+    // encore attaché (ex. avatar, référencé via users.avatarMediaId).
+    postId: uuid("post_id").references(() => posts.id, { onDelete: "cascade" }),
+    articleId: uuid("article_id").references(() => articles.id, {
+      onDelete: "cascade",
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("media_post_idx").on(t.postId),
+    index("media_article_idx").on(t.articleId),
+    index("media_owner_idx").on(t.ownerUserId),
+  ],
+);
 
 // --- Flux RSS (interne) --------------------------------------------------
 
@@ -403,6 +476,10 @@ export const remoteObjects = pgTable(
     // IRI du parent quand l'objet distant est une réponse (§2.2). Permet de
     // l'afficher sous son parent (commentaire) plutôt qu'en top-level du fil.
     inReplyToUri: text("in_reply_to_uri"),
+    // Pièces jointes du contenu distant (cahier médias §4.2) : liste blanche des
+    // Document/Image reçus, pour les afficher. Servis depuis leur origine
+    // distante, jamais re-stockés.
+    attachments: jsonb("attachments").$type<RemoteAttachment[]>(),
     publishedAt: timestamp("published_at", { withTimezone: true }),
     fetchedAt: timestamp("fetched_at", { withTimezone: true })
       .notNull()

@@ -6,6 +6,7 @@ import {
   Article,
   Create,
   Delete,
+  Document,
   Endpoints,
   Follow,
   Image,
@@ -23,6 +24,7 @@ import { db, sql } from "@/db";
 import {
   articles,
   follows,
+  media,
   posts,
   remoteActors,
   remoteObjects,
@@ -37,7 +39,14 @@ import {
   noteUrl,
 } from "@/lib/config";
 import { effectiveSummary } from "@/lib/markdown";
+import {
+  type MediaView,
+  loadMediaForArticles,
+  loadMediaForPosts,
+  mediaKindForMime,
+} from "@/lib/media";
 import { resolveInteractionTarget, setToggle } from "@/lib/interactions";
+import type { RemoteAttachment } from "@/db/schema";
 import {
   type NotificationActor,
   createFollowNotification,
@@ -75,11 +84,28 @@ export function ensureFederationStorage(): Promise<void> {
 
 type ArticleRow = typeof articles.$inferSelect;
 
+/**
+ * Convertit un média local en pièce jointe AP (`Image` pour une image, sinon
+ * `Document`) avec `mediaType`, `url` et `name` = texte alternatif (repris tel
+ * quel par Mastodon, §4.2). Les médias sont sur des URL publiques stables.
+ */
+function toAttachment(m: MediaView): Document | Image {
+  const props = {
+    mediaType: m.mimeType,
+    url: new URL(m.url),
+    name: m.alt ?? undefined,
+    width: m.width ?? undefined,
+    height: m.height ?? undefined,
+  };
+  return m.kind === "image" ? new Image(props) : new Document(props);
+}
+
 /** Construit l'objet AP `Article` dérefençable pour un article publié. */
 export function buildArticleObject(
   ctx: Context<void>,
   handle: string,
   article: ArticleRow,
+  attachments: MediaView[] = [],
 ): Article {
   const date = article.publishedAt ?? article.createdAt;
   return new Article({
@@ -94,6 +120,7 @@ export function buildArticleObject(
     summary: effectiveSummary(article.contentMarkdown, article.summary) || undefined,
     // Réponse-billet (§2.3) : `inReplyTo` pointe le contenu d'origine.
     replyTarget: article.inReplyToUri ? new URL(article.inReplyToUri) : undefined,
+    attachments: attachments.map(toAttachment),
     url: new URL(articleUrl(handle, article.slug)),
     published: Temporal.Instant.from(date.toISOString()),
     to: PUBLIC_COLLECTION,
@@ -110,9 +137,9 @@ export function buildCreateForArticle(
   ctx: Context<void>,
   handle: string,
   article: ArticleRow,
-  opts?: { ccActor?: string },
+  opts?: { ccActor?: string; attachments?: MediaView[] },
 ): Create {
-  const object = buildArticleObject(ctx, handle, article);
+  const object = buildArticleObject(ctx, handle, article, opts?.attachments);
   return new Create({
     id: new URL(`${object.id?.href}#create`),
     actor: ctx.getActorUri(handle),
@@ -135,6 +162,7 @@ export function buildNoteObject(
   ctx: Context<void>,
   handle: string,
   post: PostRow,
+  attachments: MediaView[] = [],
 ): Note {
   const date = post.publishedAt ?? post.createdAt;
   return new Note({
@@ -143,6 +171,7 @@ export function buildNoteObject(
     content: post.contentHtml,
     // Commentaire court (§2.2) : `inReplyTo` pointe l'objet d'origine.
     replyTarget: post.inReplyToUri ? new URL(post.inReplyToUri) : undefined,
+    attachments: attachments.map(toAttachment),
     url: new URL(noteUrl(handle, post.id)),
     published: Temporal.Instant.from(date.toISOString()),
     to: PUBLIC_COLLECTION,
@@ -159,9 +188,9 @@ export function buildCreateForNote(
   ctx: Context<void>,
   handle: string,
   post: PostRow,
-  opts?: { ccActor?: string },
+  opts?: { ccActor?: string; attachments?: MediaView[] },
 ): Create {
-  const object = buildNoteObject(ctx, handle, post);
+  const object = buildNoteObject(ctx, handle, post, opts?.attachments);
   return new Create({
     id: new URL(`${object.id?.href}#create`),
     actor: ctx.getActorUri(handle),
@@ -224,16 +253,25 @@ federation
     if (!user) return null;
 
     const keys = await ctx.getActorKeyPairs(identifier);
+    // Avatar fédéré (§4.2) : URL publique stable du média S3 si défini, sinon
+    // l'avatar legacy servi depuis Postgres (/api/avatar). null = pas d'avatar.
+    let iconUrl: string | null = null;
+    if (user.avatarMediaId) {
+      const avatarMedia = await db.query.media.findFirst({
+        where: eq(media.id, user.avatarMediaId),
+        columns: { url: true },
+      });
+      iconUrl = avatarMedia?.url ?? null;
+    } else if (user.avatarUpdatedAt) {
+      iconUrl = avatarUrl(identifier);
+    }
     return new Person({
       id: ctx.getActorUri(identifier),
       preferredUsername: identifier,
       name: user.displayName,
       summary: user.bio || undefined,
       url: new URL(`${APP_URL}/@${identifier}`),
-      // Avatar fédéré quand il est défini (servi depuis Postgres).
-      icon: user.avatarUpdatedAt
-        ? new Image({ url: new URL(avatarUrl(identifier)) })
-        : undefined,
+      icon: iconUrl ? new Image({ url: new URL(iconUrl) }) : undefined,
       inbox: ctx.getInboxUri(identifier),
       outbox: ctx.getOutboxUri(identifier),
       followers: ctx.getFollowersUri(identifier),
@@ -263,7 +301,9 @@ federation.setObjectDispatcher(
       ),
     });
     if (!article) return null;
-    return buildArticleObject(ctx, values.identifier, article);
+    const attachments =
+      (await loadMediaForArticles([article.id])).get(article.id) ?? [];
+    return buildArticleObject(ctx, values.identifier, article, attachments);
   },
 );
 
@@ -282,7 +322,8 @@ federation.setObjectDispatcher(
       where: and(eq(posts.authorId, user.id), eq(posts.id, values.id)),
     });
     if (!post) return null;
-    return buildNoteObject(ctx, values.identifier, post);
+    const attachments = (await loadMediaForPosts([post.id])).get(post.id) ?? [];
+    return buildNoteObject(ctx, values.identifier, post, attachments);
   },
 );
 
@@ -352,15 +393,25 @@ federation.setOutboxDispatcher(
       }),
     ]);
 
+    // Pièces jointes des deux types, chargées en lot (pas de N+1).
+    const [articleMedia, postMedia] = await Promise.all([
+      loadMediaForArticles(articleRows.map((a) => a.id)),
+      loadMediaForPosts(postRows.map((p) => p.id)),
+    ]);
+
     // Fusion chronologique stricte des deux types d'objets.
     const items = [
       ...articleRows.map((a) => ({
         date: (a.publishedAt ?? a.createdAt).getTime(),
-        activity: buildCreateForArticle(ctx, identifier, a),
+        activity: buildCreateForArticle(ctx, identifier, a, {
+          attachments: articleMedia.get(a.id) ?? [],
+        }),
       })),
       ...postRows.map((p) => ({
         date: (p.publishedAt ?? p.createdAt).getTime(),
-        activity: buildCreateForNote(ctx, identifier, p),
+        activity: buildCreateForNote(ctx, identifier, p, {
+          attachments: postMedia.get(p.id) ?? [],
+        }),
       })),
     ]
       .sort((a, b) => b.date - a.date)
@@ -412,6 +463,7 @@ async function upsertRemoteObject(object: Note | Article): Promise<void> {
     object.url instanceof URL
       ? object.url.href
       : (object.url?.href?.toString() ?? null);
+  const attachments = await extractRemoteAttachments(object);
   await db
     .insert(remoteObjects)
     .values({
@@ -423,6 +475,7 @@ async function upsertRemoteObject(object: Note | Article): Promise<void> {
       summary: object.summary?.toString() ?? null,
       url,
       inReplyToUri: object.replyTargetId?.href ?? null,
+      attachments: attachments.length > 0 ? attachments : null,
       publishedAt: object.published
         ? new Date(object.published.toString())
         : null,
@@ -434,9 +487,43 @@ async function upsertRemoteObject(object: Note | Article): Promise<void> {
         contentHtml: object.content?.toString() ?? null,
         summary: object.summary?.toString() ?? null,
         inReplyToUri: object.replyTargetId?.href ?? null,
+        attachments: attachments.length > 0 ? attachments : null,
         fetchedAt: new Date(),
       },
     });
+}
+
+/**
+ * Extrait les pièces jointes d'un objet distant (§4.2) en ne gardant que les
+ * `mediaType` de la liste blanche (§3.2). Best-effort : un attachment illisible
+ * est ignoré, jamais re-téléchargé (URL distante conservée telle quelle).
+ */
+async function extractRemoteAttachments(
+  object: Note | Article,
+): Promise<RemoteAttachment[]> {
+  const out: RemoteAttachment[] = [];
+  try {
+    for await (const att of object.getAttachments()) {
+      if (!(att instanceof Document || att instanceof Image)) continue;
+      const mediaType = att.mediaType ?? null;
+      const kind = mediaKindForMime(mediaType);
+      if (!kind || !mediaType) continue;
+      const u = att.url;
+      const href = u instanceof URL ? u.href : (u?.href?.href ?? null);
+      if (!href) continue;
+      out.push({
+        kind,
+        url: href,
+        mediaType,
+        name: att.name?.toString() ?? null,
+        width: att.width ?? null,
+        height: att.height ?? null,
+      });
+    }
+  } catch {
+    // Pièces jointes indisponibles : on garde l'objet sans média.
+  }
+  return out;
 }
 
 /**

@@ -17,6 +17,7 @@ import {
 } from "@/federation/federation";
 import { articles, posts } from "@/db/schema";
 import { APP_URL } from "@/lib/config";
+import { loadMediaForArticles, loadMediaForPosts } from "@/lib/media";
 
 type ArticleRow = typeof articles.$inferSelect;
 type PostRow = typeof posts.$inferSelect;
@@ -43,12 +44,12 @@ export async function deliverCreate(
     const remoteParent =
       parentAuthorActorUri != null &&
       !parentAuthorActorUri.startsWith(`${APP_URL}/users/`);
-    const create = buildCreateForArticle(
-      ctx,
-      handle,
-      article,
-      remoteParent ? { ccActor: parentAuthorActorUri! } : undefined,
-    );
+    const attachments =
+      (await loadMediaForArticles([article.id])).get(article.id) ?? [];
+    const create = buildCreateForArticle(ctx, handle, article, {
+      ccActor: remoteParent ? parentAuthorActorUri! : undefined,
+      attachments,
+    });
     await ctx.sendActivity({ identifier: handle }, "followers", create);
     if (remoteParent) {
       const actor = await ctx.lookupObject(parentAuthorActorUri!).catch(() => null);
@@ -69,10 +70,11 @@ export async function deliverCreateNote(
   try {
     await ensureFederationStorage();
     const ctx = context();
+    const attachments = (await loadMediaForPosts([post.id])).get(post.id) ?? [];
     await ctx.sendActivity(
       { identifier: handle },
       "followers",
-      buildCreateForNote(ctx, handle, post),
+      buildCreateForNote(ctx, handle, post, { attachments }),
     );
   } catch (err) {
     console.error("[federation] deliverCreateNote failed:", err);
@@ -214,7 +216,9 @@ export async function deliverUpdate(
   try {
     await ensureFederationStorage();
     const ctx = context();
-    const object = buildArticleObject(ctx, handle, article);
+    const attachments =
+      (await loadMediaForArticles([article.id])).get(article.id) ?? [];
+    const object = buildArticleObject(ctx, handle, article, attachments);
     await ctx.sendActivity(
       { identifier: handle },
       "followers",

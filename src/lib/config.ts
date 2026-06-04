@@ -45,6 +45,21 @@ export function avatarUrl(handle: string): string {
 }
 
 /**
+ * Origine publique stable des médias (cahier médias §2). Servie depuis un
+ * sous-domaine dédié (ex. `https://media.marge.social`) qui *reverse-proxy* le
+ * bucket S3 — origine séparée de l'app pour isoler tout contenu des cookies.
+ * Lue paresseusement (pas de secret au niveau module).
+ */
+export function mediaBaseUrl(): string {
+  return (process.env.MEDIA_BASE_URL ?? `${APP_URL}/media`).replace(/\/+$/, "");
+}
+
+/** URL publique d'un objet média à partir de sa clé de stockage. */
+export function mediaUrl(storageKey: string): string {
+  return `${mediaBaseUrl()}/${storageKey}`;
+}
+
+/**
  * Permalien humain d'un objet à partir de son URI ActivityPub local
  * (`/users/h/notes/id` → `/@h/notes/id`, `/users/h/articles/slug` → `/@h/slug`).
  * Pour un IRI distant (ou non reconnu), renvoie l'IRI tel quel.

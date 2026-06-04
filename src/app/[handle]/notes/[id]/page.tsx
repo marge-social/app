@@ -4,7 +4,9 @@ import { and, eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { db } from "@/db";
 import { posts, users } from "@/db/schema";
+import { Attachments } from "@/components/Attachments";
 import { fediverseHandle } from "@/lib/config";
+import { loadMediaForPosts } from "@/lib/media";
 import { htmlToText } from "@/lib/markdown";
 
 interface NoteParams {
@@ -46,6 +48,7 @@ export default async function NotePage({ params }: NoteParams) {
   if (!data) notFound();
   const { author, post } = data;
   const date = post.publishedAt ?? post.createdAt;
+  const media = (await loadMediaForPosts([post.id])).get(post.id) ?? [];
 
   return (
     <article className="flex flex-col gap-6">
@@ -70,6 +73,8 @@ export default async function NotePage({ params }: NoteParams) {
         className="prose-marge"
         dangerouslySetInnerHTML={{ __html: post.contentHtml }}
       />
+
+      <Attachments media={media} />
     </article>
   );
 }

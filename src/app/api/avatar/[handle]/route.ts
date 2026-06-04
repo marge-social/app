@@ -1,10 +1,12 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { userAvatars, users } from "@/db/schema";
+import { media, userAvatars, users } from "@/db/schema";
 
 /**
- * Sert l'avatar d'un compte local, stocké en base (§Lot 5). Servi aussi bien
- * aux navigateurs qu'aux serveurs Fediverse (Person.icon pointe ici).
+ * Sert l'avatar d'un compte local. Avatar récent → **redirige** (302) vers
+ * l'URL publique du média sur le stockage objet (origine séparée, cahier
+ * médias). Avatar legacy → octets servis depuis Postgres (§Lot 5). Pointé aussi
+ * bien par les navigateurs que par les serveurs Fediverse (Person.icon legacy).
  */
 export async function GET(
   _req: Request,
@@ -15,9 +17,26 @@ export async function GET(
 
   const user = await db.query.users.findFirst({
     where: eq(users.handle, handle),
-    columns: { id: true },
+    columns: { id: true, avatarMediaId: true },
   });
   if (!user) return new Response("Not found", { status: 404 });
+
+  // Avatar sur stockage objet : on redirige vers son URL publique stable.
+  if (user.avatarMediaId) {
+    const row = await db.query.media.findFirst({
+      where: eq(media.id, user.avatarMediaId),
+      columns: { url: true },
+    });
+    if (row) {
+      return new Response(null, {
+        status: 302,
+        headers: {
+          Location: row.url,
+          "Cache-Control": "public, max-age=60, stale-while-revalidate=86400",
+        },
+      });
+    }
+  }
 
   const avatar = await db.query.userAvatars.findFirst({
     where: eq(userAvatars.userId, user.id),

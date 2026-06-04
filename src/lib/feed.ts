@@ -2,6 +2,7 @@ import "server-only";
 import { and, desc, eq, inArray, isNull, isNotNull, or } from "drizzle-orm";
 import { db } from "@/db";
 import {
+  type RemoteAttachment,
   actorBlocks,
   articles,
   feedItems,
@@ -22,7 +23,27 @@ import {
   noteApUri,
 } from "@/lib/config";
 import { getToggleStatsFor } from "@/lib/interactions";
+import {
+  type MediaView,
+  loadMediaForArticles,
+  loadMediaForPosts,
+} from "@/lib/media";
 import { effectiveSummary, htmlToText, readingTimeMinutes } from "@/lib/markdown";
+
+/** Convertit les pièces jointes distantes (jsonb) en projection d'affichage. */
+function remoteToMediaViews(
+  attachments: RemoteAttachment[] | null | undefined,
+): MediaView[] {
+  if (!attachments) return [];
+  return attachments.map((a) => ({
+    kind: a.kind,
+    url: a.url,
+    mimeType: a.mediaType,
+    alt: a.name ?? null,
+    width: a.width ?? null,
+    height: a.height ?? null,
+  }));
+}
 
 export type FeedEntryKind = "note" | "article" | "remote" | "rss";
 
@@ -80,6 +101,8 @@ export interface FeedEntry {
   sharedBy?: string;
   /** Commentaires courts rattachés (§2.2), ordre chronologique croissant. */
   comments: CommentView[];
+  /** Pièces jointes (cahier médias §4.1) : 0 ou 1 en V1, extensible. */
+  media: MediaView[];
 }
 
 const PREVIEW_LEN = 280;
@@ -167,6 +190,7 @@ export async function buildFeed(
       )
       .orderBy(desc(articles.publishedAt))
       .limit(fetchLimit);
+    const articleMedia = await loadMediaForArticles(rows.map((r) => r.id));
     for (const r of rows) {
       const a = localAccounts.get(r.authorId)!;
       entries.push({
@@ -187,6 +211,7 @@ export async function buildFeed(
         shareCount: 0,
         sharedByViewer: false,
         comments: [],
+        media: articleMedia.get(r.id) ?? [],
       });
     }
 
@@ -206,6 +231,7 @@ export async function buildFeed(
       )
       .orderBy(desc(posts.publishedAt))
       .limit(fetchLimit);
+    const noteMedia = await loadMediaForPosts(postRows.map((r) => r.id));
     for (const r of postRows) {
       const a = localAccounts.get(r.authorId)!;
       entries.push({
@@ -226,6 +252,7 @@ export async function buildFeed(
         shareCount: 0,
         sharedByViewer: false,
         comments: [],
+        media: noteMedia.get(r.id) ?? [],
       });
     }
   }
@@ -275,6 +302,7 @@ export async function buildFeed(
         shareCount: 0,
         sharedByViewer: false,
         comments: [],
+        media: remoteToMediaViews(r.attachments),
       });
     }
   }
@@ -322,6 +350,7 @@ export async function buildFeed(
         shareCount: 0,
         sharedByViewer: false,
         comments: [],
+        media: [],
       });
     }
   }
@@ -371,6 +400,7 @@ export async function buildFeed(
     const artRows = wantSlugs.length
       ? await db
           .select({
+            id: articles.id,
             slug: articles.slug,
             title: articles.title,
             summary: articles.summary,
@@ -414,6 +444,7 @@ export async function buildFeed(
             contentHtml: remoteObjects.contentHtml,
             summary: remoteObjects.summary,
             url: remoteObjects.url,
+            attachments: remoteObjects.attachments,
             author: remoteObjects.attributedToUri,
             actorHandle: remoteActors.handle,
             actorName: remoteActors.name,
@@ -427,6 +458,12 @@ export async function buildFeed(
       : [];
     const remByIri = new Map<string, (typeof remRows)[number]>();
     for (const r of remRows) remByIri.set(r.objectUri, r);
+
+    // Médias des objets locaux ré-émis (partages), chargés en lot.
+    const [announcedArticleMedia, announcedNoteMedia] = await Promise.all([
+      loadMediaForArticles(artRows.map((r) => r.id)),
+      loadMediaForPosts(noteRows.map((r) => r.id)),
+    ]);
 
     for (const a of announceRows) {
       const by = sharerLabel.get(a.actorIri);
@@ -452,6 +489,7 @@ export async function buildFeed(
           shareCount: 0,
           sharedByViewer: false,
           comments: [],
+          media: announcedArticleMedia.get(art.id) ?? [],
         });
         continue;
       }
@@ -476,6 +514,7 @@ export async function buildFeed(
           shareCount: 0,
           sharedByViewer: false,
           comments: [],
+          media: announcedNoteMedia.get(note.id) ?? [],
         });
         continue;
       }
@@ -503,6 +542,7 @@ export async function buildFeed(
           shareCount: 0,
           sharedByViewer: false,
           comments: [],
+          media: remoteToMediaViews(rem.attachments),
         });
       }
     }

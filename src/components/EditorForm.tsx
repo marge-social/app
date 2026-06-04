@@ -19,6 +19,10 @@ export interface EditorArticle {
 const fieldClass =
   "w-full rounded border border-black/20 bg-transparent px-3 py-2 dark:border-white/25 focus:outline-none focus:ring-2 focus:ring-foreground/40";
 
+/** Liste blanche des types acceptés à l'upload (cahier médias §3.2). */
+const ACCEPT =
+  "image/jpeg,image/png,image/gif,image/webp,application/pdf,video/mp4,video/webm,audio/mpeg";
+
 function SubmitButtons() {
   const { pending } = useFormStatus();
   return (
@@ -62,6 +66,9 @@ export function EditorForm({
   );
   const [tab, setTab] = useState<"write" | "preview">("write");
   const [content, setContent] = useState(article?.contentMarkdown ?? "");
+  // Pièce jointe : proposée à la création seulement. null = aucun fichier.
+  const [isImage, setIsImage] = useState<boolean | null>(null);
+  const isNew = !article?.id;
 
   // Aperçu client (contenu de l'auteur lui-même ; la sanitisation a lieu côté
   // serveur à l'enregistrement).
@@ -176,6 +183,49 @@ export function EditorForm({
           </>
         )}
       </div>
+
+      {isNew && (
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-1">
+            <label htmlFor="media" className="text-sm font-medium">
+              Pièce jointe{" "}
+              <span className="font-normal text-foreground/60">
+                (optionnel — image, PDF, MP4/WebM, MP3, 5 Mo max)
+              </span>
+            </label>
+            <input
+              id="media"
+              name="media"
+              type="file"
+              accept={ACCEPT}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                setIsImage(f ? f.type.startsWith("image/") : null);
+              }}
+              className="text-sm"
+            />
+          </div>
+          {isImage && (
+            <div className="flex flex-col gap-1">
+              <label htmlFor="alt" className="text-sm font-medium">
+                Texte alternatif{" "}
+                <span className="font-normal text-foreground/60">
+                  (obligatoire — décrit l’image)
+                </span>
+              </label>
+              <input
+                id="alt"
+                name="alt"
+                type="text"
+                required
+                maxLength={1500}
+                placeholder="Décris l’image pour les personnes qui ne la voient pas"
+                className={fieldClass}
+              />
+            </div>
+          )}
+        </div>
+      )}
 
       <SubmitButtons />
     </form>

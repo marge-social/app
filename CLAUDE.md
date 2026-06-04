@@ -232,6 +232,46 @@ réglables ; anti-dark-patterns). **Arbitrages tranchés** : §8 compteurs =
 **MODULE INTERACTIONS COMPLET (§2 les 4 primitives + §4 notifications réglables
 & digest).** Reste : tests d'interop Mastodon réels via tunnel.
 
+### Médias — stockage objet OVH (S3) + pièces jointes ✅ (vérifié en local)
+
+Spécification : `marge-cdc-medias-stockage-s3`. Tous les médias (pièces jointes
+des posts/billets **et** avatars) sur un bucket S3 OVH, servis depuis une
+**origine séparée** `media.<domaine>` (sécurité : isole le contenu des cookies).
+
+- **Stockage** : `src/lib/storage.ts` (client S3 paresseux, `putObject` pose
+  **`ACL: public-read` + `Content-Type`** validé — pas de bucket policy sur GRA ;
+  clés UUID, jamais le nom fourni). URL via `mediaUrl()`/`MEDIA_BASE_URL`
+  (`src/lib/config.ts`).
+- **Validation/traitement** : `src/lib/media.ts` (**pur**, testable sans réseau).
+  Liste **blanche** par *magic bytes* (`file-type`) : jpg/png/gif/webp, pdf,
+  mp4/webm, mp3 ; **5 Mo** max ; rejet si extension annoncée ≠ contenu. Images
+  re-encodées + **EXIF purgé** + dimensions + **miniature** (`sharp`). PDF servis
+  en `Content-Disposition: attachment`. `processUpload` (validation) puis
+  `persistMedia` (S3 + insert), `loadMediaFor{Posts,Articles}` (sans N+1).
+- **Modèle** : table `media` (FK nullable `postId`/`articleId` → **1 média/post**
+  en V1, extensible) ; `users.avatarMediaId` (avatars S3, fallback bytea legacy
+  conservé) ; `remoteObjects.attachments` (jsonb, PJ distantes). Migration
+  `0008`. **FK circulaire** users↔media : thunk `(): AnyPgColumn => media.id`.
+- **Upload** : champ fichier + **texte alternatif sans friction** (apparaît au
+  choix d'une image, obligatoire) dans `Composer`/`EditorForm` ; avatar dans
+  `ProfileEditForm`. Actions `createPostAction`/`saveArticleAction`(création)/
+  `updateProfileAction` : valident AVANT toute écriture, puis S3 (best-effort).
+- **Fédération** : `attachment` (Document/Image, `name`=alt) sur Note/Article
+  (builders + dispatchers + outbox + livraison) ; **`icon`** acteur = URL média
+  S3 ; inbox `.on(Create/Update/Announce)` ingère les PJ distantes
+  (`extractRemoteAttachments`, liste blanche). `/api/avatar/[handle]` redirige
+  (302) vers le média S3 si présent, sinon sert l'octet legacy.
+- **Affichage** : `media: MediaView[]` sur `FeedEntry` (chargé en lot), composant
+  `Attachments` (image inline+alt, lecteurs vidéo/audio, PDF en lien) dans le fil
+  + vues détaillées article/note.
+- **Déploiement** : bloc Caddy `{$MEDIA_DOMAIN}` (reverse-proxy bucket, réécrit
+  `Host`) + `request_body max_size 6MB` ; vars `S3_*`/`MEDIA_*` dans
+  docker-compose + `.env*.example` ; `DEPLOY.md` §2 ter (bucket, ACL, DNS, clés).
+
+Vérifié en local : `tsc`/`lint`/`build` OK + `scripts/smoke-media.ts`
+(zip/js/exe-renommé/>5 Mo rejetés ; EXIF purgé ; miniature ; pdf OK). **Reste :
+round-trip S3 réel** (credentials OVH) + affichage Mastodon via tunnel.
+
 ### Cron digest
 `curl -H "Authorization: Bearer $CRON_SECRET" $APP_URL/api/cron/digest`. À brancher
 sur une tâche cron (quotidien par défaut, §4.3). Regroupe les signaux pauvres
