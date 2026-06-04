@@ -15,6 +15,13 @@
       "when": 1780432035896,
       "tag": "0001_uneven_felicia_hardy",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1780574282268,
+      "tag": "0002_green_blonde_phantom",
+      "breakpoints": true
     }
   ]
 }

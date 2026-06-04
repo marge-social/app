@@ -26,6 +26,7 @@ import {
 import { loadActorKeyPairs } from "@/federation/keys";
 import { APP_URL, INSTANCE_DOMAIN, articleUrl } from "@/lib/config";
 import { effectiveSummary } from "@/lib/markdown";
+import { createFollowNotification } from "@/lib/notifications";
 
 /**
  * Objet Federation Fedify. Cache + file de livraison sortante adossés à
@@ -295,21 +296,45 @@ federation
     const follower = await follow.getActor();
     if (follower?.id == null || follower.inboxId == null) return;
 
+    // Projection d'affichage de l'acteur distant (réutilisée pour le cache ET
+    // la notification). La résolution de l'avatar est best-effort : un échec ne
+    // doit jamais faire échouer le traitement de l'inbox (§2.5).
+    const followerUri = follower.id.href;
+    const followerName = follower.name?.toString() ?? null;
+    const username = follower.preferredUsername?.toString() ?? null;
+    const followerHandle = username
+      ? `@${username}@${follower.id.host}`
+      : `@${follower.id.host}`;
+    let followerIcon: string | null = null;
+    try {
+      const icon = await follower.getIcon();
+      const iconUrl = icon?.url;
+      followerIcon =
+        iconUrl instanceof URL ? iconUrl.href : (iconUrl?.href?.href ?? null);
+    } catch {
+      // Avatar indisponible : dégradation gracieuse.
+    }
+
     // Cache de l'acteur distant.
     await db
       .insert(remoteActors)
       .values({
-        uri: follower.id.href,
-        name: follower.name?.toString() ?? null,
+        uri: followerUri,
+        handle: followerHandle,
+        name: followerName,
         inboxUrl: follower.inboxId.href,
         sharedInboxUrl: follower.endpoints?.sharedInbox?.href ?? null,
         url: follower.url instanceof URL ? follower.url.href : null,
+        iconUrl: followerIcon,
       })
       .onConflictDoUpdate({
         target: remoteActors.uri,
         set: {
+          handle: followerHandle,
+          name: followerName,
           inboxUrl: follower.inboxId.href,
           sharedInboxUrl: follower.endpoints?.sharedInbox?.href ?? null,
+          iconUrl: followerIcon,
           fetchedAt: new Date(),
         },
       });
@@ -318,12 +343,25 @@ federation
     await db
       .insert(follows)
       .values({
-        followerUri: follower.id.href,
+        followerUri,
         followingUri: ctx.getActorUri(localHandle).href,
         followingUserId: local.id,
         status: "accepted",
       })
       .onConflictDoNothing();
+
+    // Notifie le destinataire (§2.5). Best-effort : une erreur ici ne doit pas
+    // empêcher l'émission de l'Accept ni rompre la fédération.
+    try {
+      await createFollowNotification(local.id, {
+        uri: followerUri,
+        handle: followerHandle,
+        name: followerName,
+        iconUrl: followerIcon,
+      });
+    } catch (err) {
+      console.error("Échec de création de la notification de suivi :", err);
+    }
 
     await ctx.sendActivity(
       { identifier: localHandle },

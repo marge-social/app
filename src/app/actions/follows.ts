@@ -6,7 +6,8 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { follows, users } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
-import { actorUri } from "@/lib/config";
+import { actorUri, fediverseHandle } from "@/lib/config";
+import { createFollowNotification } from "@/lib/notifications";
 import {
   followRemoteActor,
   unfollowRemoteActor,
@@ -35,6 +36,13 @@ export async function followLocalAction(formData: FormData): Promise<void> {
       status: "accepted",
     })
     .onConflictDoNothing();
+
+  // Notifie le compte suivi (un autre compte Marge se met à le suivre, §2.1).
+  await createFollowNotification(target.id, {
+    uri: actorUri(viewer.handle),
+    handle: fediverseHandle(viewer.handle),
+    name: viewer.displayName,
+  });
 
   revalidatePath(`/@${target.handle}`);
   revalidatePath("/feed");

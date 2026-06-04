@@ -41,6 +41,21 @@ Une fois en HTTPS sur le domaine définitif : crée un compte, publie un texte,
 puis depuis un compte Mastodon cherche `@<handle>@<DOMAIN>`, suis-le et vérifie
 l'arrivée du texte (résumé + permalien).
 
+## 2 bis. Amorçage du premier administrateur
+
+Aucun compte n'est admin au départ. Pour promouvoir le premier (qui pourra
+ensuite accéder aux vues `/admin/*` en lecture seule), exécute le script CLI
+dédié dans le conteneur `app`, en lui passant le **nom d'utilisateur** (handle) :
+
+```bash
+docker compose exec app node scripts/make-admin.mjs karl
+# ✓ @karl est désormais admin.
+```
+
+Le script bascule `role=admin` sur le compte ciblé. Réversible en base si besoin
+(`UPDATE users SET role='user' WHERE handle='karl';`). C'est l'**unique** voie
+d'amorçage : pas de variable d'environnement, pas d'auto-promotion.
+
 ## 3. Déploiement des commits suivants (auto via GitHub Actions)
 
 À chaque `push` sur `main`, le workflow `.github/workflows/deploy.yml` :

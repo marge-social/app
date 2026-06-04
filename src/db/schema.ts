@@ -39,6 +39,21 @@ export const feedClaimStatus = pgEnum("feed_claim_status", [
 /** Statut d'une relation Follow ActivityPub. */
 export const followStatus = pgEnum("follow_status", ["pending", "accepted"]);
 
+/** Rôle d'un compte local (contrôle d'accès admin, V1). */
+export const userRole = pgEnum("user_role", ["user", "admin"]);
+
+/**
+ * Type de notification. V1 n'émet que `follow` ; les autres valeurs sont
+ * prévues pour brancher likes/réponses/mentions/partages sans refonte (§2.3).
+ */
+export const notificationType = pgEnum("notification_type", [
+  "follow",
+  "like",
+  "reply",
+  "mention",
+  "announce",
+]);
+
 // --- Users / identité fédérée -------------------------------------------
 
 /**
@@ -53,6 +68,8 @@ export const users = pgTable("users", {
   handle: text("handle").notNull().unique(),
   displayName: text("display_name").notNull(),
   bio: text("bio").notNull().default(""),
+  // Rôle de supervision (admin = accès aux vues /admin en lecture seule, §3).
+  role: userRole("role").notNull().default("user"),
   // Paires de clés de l'acteur AP (RSA-PKCS#1-v1.5 + Ed25519).
   // publicKeys : JWK publics en clair. privateKeys : JWK privés chiffrés (AES-GCM).
   publicKeys: jsonb("public_keys"),
@@ -312,6 +329,42 @@ export const actorBlocks = pgTable(
       .defaultNow(),
   },
   (t) => [unique("actor_blocks_unq").on(t.userId, t.actorUri)],
+);
+
+/**
+ * Notifications destinées à un auteur local (§2). Table générique : V1 ne crée
+ * que des notifications `follow`, mais la forme accueille likes/réponses/etc.
+ * sans migration de structure. Les infos d'affichage de l'acteur déclencheur
+ * sont mises en cache pour éviter une requête réseau à chaque rendu de liste.
+ */
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    recipientUserId: uuid("recipient_user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    type: notificationType("type").notNull(),
+    // Acteur déclencheur (URI canonique) + projection d'affichage mise en cache.
+    actorUri: text("actor_uri").notNull(),
+    actorHandle: text("actor_handle").notNull(),
+    actorName: text("actor_name"),
+    actorIconUrl: text("actor_icon_url"),
+    // Objet concerné (billet liké/répondu) ; null pour un `follow`.
+    objectUri: text("object_uri"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    // null = non lue.
+    readAt: timestamp("read_at", { withTimezone: true }),
+  },
+  (t) => [
+    index("notifications_recipient_created_idx").on(
+      t.recipientUserId,
+      t.createdAt.desc(),
+    ),
+    index("notifications_recipient_read_idx").on(t.recipientUserId, t.readAt),
+  ],
 );
 
 // --- Relations (pour les requêtes typées Drizzle) -----------------------
