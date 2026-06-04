@@ -37,6 +37,9 @@ const RESERVED_HANDLES = new Set([
   "outbox",
   "well-known",
   "actor",
+  "preferences",
+  "recherche",
+  "notes",
 ]);
 
 export async function signupAction(
@@ -88,7 +91,7 @@ export async function signupAction(
 
   const token = await createSession(user.id);
   await setSessionCookie(token);
-  redirect("/feed");
+  redirect("/");
 }
 
 export async function loginAction(
@@ -120,7 +123,7 @@ export async function loginAction(
 
   const token = await createSession(user.id);
   await setSessionCookie(token);
-  redirect("/feed");
+  redirect("/");
 }
 
 export async function logoutAction(): Promise<void> {

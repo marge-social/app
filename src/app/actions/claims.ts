@@ -121,7 +121,7 @@ export async function feedOwnershipAction(
         .set({ ownerId: user.id, ownershipStatus: "claimed" })
         .where(eq(feeds.id, feedId));
       revalidatePath(`/feeds/${feedId}`);
-      revalidatePath("/settings");
+      revalidatePath(`/@${user.handle}`);
       return {};
     }
 
@@ -137,8 +137,8 @@ export async function feedOwnershipAction(
     await db.delete(feedSubscriptions).where(eq(feedSubscriptions.feedId, feedId));
     await db.delete(feedItems).where(eq(feedItems.feedId, feedId));
     await db.delete(feeds).where(eq(feeds.id, feedId));
-    revalidatePath("/feeds");
-    redirect("/feeds");
+    revalidatePath("/");
+    redirect("/");
   }
 
   return { error: "Action inconnue." };

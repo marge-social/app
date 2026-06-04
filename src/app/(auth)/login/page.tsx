@@ -4,7 +4,7 @@ import { LoginForm } from "@/components/AuthForms";
 import { getCurrentUser } from "@/lib/auth";
 
 export default async function LoginPage() {
-  if (await getCurrentUser()) redirect("/feed");
+  if (await getCurrentUser()) redirect("/");
 
   return (
     <div className="mx-auto flex max-w-sm flex-col gap-6">

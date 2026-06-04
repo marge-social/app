@@ -6,6 +6,7 @@ import {
   Delete,
   Endpoints,
   Follow,
+  Image,
   Note,
   Person,
   PUBLIC_COLLECTION,
@@ -19,12 +20,19 @@ import { db, sql } from "@/db";
 import {
   articles,
   follows,
+  posts,
   remoteActors,
   remoteObjects,
   users,
 } from "@/db/schema";
 import { loadActorKeyPairs } from "@/federation/keys";
-import { APP_URL, INSTANCE_DOMAIN, articleUrl } from "@/lib/config";
+import {
+  APP_URL,
+  INSTANCE_DOMAIN,
+  articleUrl,
+  avatarUrl,
+  noteUrl,
+} from "@/lib/config";
 import { effectiveSummary } from "@/lib/markdown";
 import { createFollowNotification } from "@/lib/notifications";
 
@@ -99,6 +107,46 @@ export function buildCreateForArticle(
   });
 }
 
+type PostRow = typeof posts.$inferSelect;
+
+/**
+ * Construit l'objet AP `Note` déréférençable pour un message court du composer.
+ * Choix retenu (§Lot 3) : les messages SANS titre sont des `Note` (microblog),
+ * pas des `Article` — cohérent avec l'attendu Mastodon.
+ */
+export function buildNoteObject(
+  ctx: Context<void>,
+  handle: string,
+  post: PostRow,
+): Note {
+  const date = post.publishedAt ?? post.createdAt;
+  return new Note({
+    id: ctx.getObjectUri(Note, { identifier: handle, id: post.id }),
+    attribution: ctx.getActorUri(handle),
+    content: post.contentHtml,
+    url: new URL(noteUrl(handle, post.id)),
+    published: Temporal.Instant.from(date.toISOString()),
+    to: PUBLIC_COLLECTION,
+    cc: ctx.getFollowersUri(handle),
+  });
+}
+
+/** Enveloppe une Note dans un `Create` adressé aux followers. */
+export function buildCreateForNote(
+  ctx: Context<void>,
+  handle: string,
+  post: PostRow,
+): Create {
+  const object = buildNoteObject(ctx, handle, post);
+  return new Create({
+    id: new URL(`${object.id?.href}#create`),
+    actor: ctx.getActorUri(handle),
+    object,
+    to: PUBLIC_COLLECTION,
+    cc: ctx.getFollowersUri(handle),
+  });
+}
+
 // --- Acteur (Person) + clés ---------------------------------------------
 
 federation
@@ -115,6 +163,10 @@ federation
       name: user.displayName,
       summary: user.bio || undefined,
       url: new URL(`${APP_URL}/@${identifier}`),
+      // Avatar fédéré quand il est défini (servi depuis Postgres).
+      icon: user.avatarUpdatedAt
+        ? new Image({ url: new URL(avatarUrl(identifier)) })
+        : undefined,
       inbox: ctx.getInboxUri(identifier),
       outbox: ctx.getOutboxUri(identifier),
       followers: ctx.getFollowersUri(identifier),
@@ -145,6 +197,25 @@ federation.setObjectDispatcher(
     });
     if (!article) return null;
     return buildArticleObject(ctx, values.identifier, article);
+  },
+);
+
+// --- Objet Note (déréférençable) ----------------------------------------
+
+federation.setObjectDispatcher(
+  Note,
+  "/users/{identifier}/notes/{id}",
+  async (ctx, values) => {
+    const user = await db.query.users.findFirst({
+      where: eq(users.handle, values.identifier),
+      columns: { id: true },
+    });
+    if (!user) return null;
+    const post = await db.query.posts.findFirst({
+      where: and(eq(posts.authorId, user.id), eq(posts.id, values.id)),
+    });
+    if (!post) return null;
+    return buildNoteObject(ctx, values.identifier, post);
   },
 );
 
@@ -187,7 +258,7 @@ federation.setFollowersDispatcher(
   },
 );
 
-// --- Outbox (historique des Articles publiés) ---------------------------
+// --- Outbox (historique des publications : Articles + Notes) ------------
 
 federation.setOutboxDispatcher(
   "/users/{identifier}/outbox",
@@ -197,17 +268,39 @@ federation.setOutboxDispatcher(
       columns: { id: true },
     });
     if (!user) return { items: [] };
-    const rows = await db.query.articles.findMany({
-      where: and(
-        eq(articles.authorId, user.id),
-        eq(articles.status, "published"),
-      ),
-      orderBy: [desc(articles.publishedAt)],
-      limit: 20,
-    });
-    return {
-      items: rows.map((a) => buildCreateForArticle(ctx, identifier, a)),
-    };
+
+    const [articleRows, postRows] = await Promise.all([
+      db.query.articles.findMany({
+        where: and(
+          eq(articles.authorId, user.id),
+          eq(articles.status, "published"),
+        ),
+        orderBy: [desc(articles.publishedAt)],
+        limit: 20,
+      }),
+      db.query.posts.findMany({
+        where: eq(posts.authorId, user.id),
+        orderBy: [desc(posts.publishedAt)],
+        limit: 20,
+      }),
+    ]);
+
+    // Fusion chronologique stricte des deux types d'objets.
+    const items = [
+      ...articleRows.map((a) => ({
+        date: (a.publishedAt ?? a.createdAt).getTime(),
+        activity: buildCreateForArticle(ctx, identifier, a),
+      })),
+      ...postRows.map((p) => ({
+        date: (p.publishedAt ?? p.createdAt).getTime(),
+        activity: buildCreateForNote(ctx, identifier, p),
+      })),
+    ]
+      .sort((a, b) => b.date - a.date)
+      .slice(0, 20)
+      .map((e) => e.activity);
+
+    return { items };
   },
 );
 

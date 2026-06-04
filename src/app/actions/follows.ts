@@ -45,7 +45,7 @@ export async function followLocalAction(formData: FormData): Promise<void> {
   });
 
   revalidatePath(`/@${target.handle}`);
-  revalidatePath("/feed");
+  revalidatePath("/");
 }
 
 /** Cesse de suivre un compte local. */
@@ -71,7 +71,7 @@ export async function unfollowLocalAction(formData: FormData): Promise<void> {
     );
 
   revalidatePath(`/@${target.handle}`);
-  revalidatePath("/feed");
+  revalidatePath("/");
 }
 
 export interface RemoteFollowState {
@@ -92,7 +92,7 @@ export async function followRemoteAction(
   const result = await followRemoteActor(viewer.handle, viewer.id, handle);
   if (!result.ok) return { error: result.error ?? "Échec du suivi." };
 
-  revalidatePath("/feed");
+  revalidatePath("/");
   return { success: `Demande de suivi envoyée à ${handle}.` };
 }
 
@@ -103,5 +103,5 @@ export async function unfollowRemoteAction(formData: FormData): Promise<void> {
   const remoteUri = formData.get("remoteUri") as string;
   if (!remoteUri) return;
   await unfollowRemoteActor(viewer.handle, remoteUri);
-  revalidatePath("/feed");
+  revalidatePath("/");
 }

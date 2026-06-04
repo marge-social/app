@@ -5,7 +5,7 @@ import {
   encodeHexLowerCase,
 } from "@oslojs/encoding";
 import { hash, verify } from "@node-rs/argon2";
-import { eq } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { db } from "@/db";
 import { sessions, users } from "@/db/schema";
@@ -92,6 +92,25 @@ export async function invalidateSession(token: string): Promise<void> {
   await db.delete(sessions).where(eq(sessions.id, sessionIdFromToken(token)));
 }
 
+/**
+ * Invalide toutes les sessions de l'utilisateur SAUF la session courante
+ * (après changement de mot de passe). Le token courant est préservé pour ne
+ * pas déconnecter l'utilisateur qui vient d'agir.
+ */
+export async function invalidateOtherSessions(
+  userId: string,
+  currentToken: string,
+): Promise<void> {
+  await db
+    .delete(sessions)
+    .where(
+      and(
+        eq(sessions.userId, userId),
+        ne(sessions.id, sessionIdFromToken(currentToken)),
+      ),
+    );
+}
+
 // --- Intégration cookies Next.js -----------------------------------------
 
 export async function setSessionCookie(token: string): Promise<void> {
@@ -116,6 +135,12 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
   const token = store.get(SESSION_COOKIE)?.value;
   if (!token) return null;
   return validateSessionToken(token);
+}
+
+/** Token de session brut du cookie courant (ou null). */
+export async function getSessionToken(): Promise<string | null> {
+  const store = await cookies();
+  return store.get(SESSION_COOKIE)?.value ?? null;
 }
 
 /** Déconnecte : invalide la session et efface le cookie. */

@@ -2,13 +2,15 @@ import { Article, Delete, Tombstone, Update } from "@fedify/fedify/vocab";
 import {
   buildArticleObject,
   buildCreateForArticle,
+  buildCreateForNote,
   ensureFederationStorage,
   federation,
 } from "@/federation/federation";
-import { articles } from "@/db/schema";
+import { articles, posts } from "@/db/schema";
 import { APP_URL } from "@/lib/config";
 
 type ArticleRow = typeof articles.$inferSelect;
+type PostRow = typeof posts.$inferSelect;
 
 function context() {
   return federation.createContext(new URL(APP_URL), undefined);
@@ -33,6 +35,24 @@ export async function deliverCreate(
     );
   } catch (err) {
     console.error("[federation] deliverCreate failed:", err);
+  }
+}
+
+/** Émet `Create(Note)` vers les followers à la publication d'un message court. */
+export async function deliverCreateNote(
+  handle: string,
+  post: PostRow,
+): Promise<void> {
+  try {
+    await ensureFederationStorage();
+    const ctx = context();
+    await ctx.sendActivity(
+      { identifier: handle },
+      "followers",
+      buildCreateForNote(ctx, handle, post),
+    );
+  } catch (err) {
+    console.error("[federation] deliverCreateNote failed:", err);
   }
 }
 

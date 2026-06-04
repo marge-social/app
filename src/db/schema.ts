@@ -1,6 +1,7 @@
 import { relations } from "drizzle-orm";
 import {
   boolean,
+  customType,
   index,
   jsonb,
   pgEnum,
@@ -10,6 +11,13 @@ import {
   unique,
   uuid,
 } from "drizzle-orm/pg-core";
+
+/** Octets bruts (Postgres `bytea`) — pour stocker les avatars en base (§Lot 5). */
+const bytea = customType<{ data: Buffer; default: false }>({
+  dataType() {
+    return "bytea";
+  },
+});
 
 // --- Enums ---------------------------------------------------------------
 
@@ -70,6 +78,9 @@ export const users = pgTable("users", {
   bio: text("bio").notNull().default(""),
   // Rôle de supervision (admin = accès aux vues /admin en lecture seule, §3).
   role: userRole("role").notNull().default("user"),
+  // Renseigné quand un avatar est défini (octets dans `userAvatars`). Sert de
+  // garde d'affichage ET de jeton de cache-busting (mtime). null = pas d'avatar.
+  avatarUpdatedAt: timestamp("avatar_updated_at", { withTimezone: true }),
   // Paires de clés de l'acteur AP (RSA-PKCS#1-v1.5 + Ed25519).
   // publicKeys : JWK publics en clair. privateKeys : JWK privés chiffrés (AES-GCM).
   publicKeys: jsonb("public_keys"),
@@ -121,6 +132,50 @@ export const articles = pgTable(
     index("articles_published_idx").on(t.publishedAt),
   ],
 );
+
+/**
+ * Messages courts du composer (microblog), SANS titre (§Lot 3). Fédérés comme
+ * objets `Note` ActivityPub — distincts des `Article` (billets titrés). Publiés
+ * immédiatement (pas de brouillon en V1) ; permalien dérivé de l'id.
+ */
+export const posts = pgTable(
+  "posts",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    authorId: uuid("author_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    // Source Markdown + rendu HTML sanitisé (même pipeline que les articles).
+    contentMarkdown: text("content_markdown").notNull(),
+    contentHtml: text("content_html").notNull(),
+    publishedAt: timestamp("published_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("posts_author_idx").on(t.authorId),
+    index("posts_published_idx").on(t.publishedAt),
+  ],
+);
+
+/**
+ * Avatar d'un compte local, stocké en base (§Lot 5, choix Postgres). Table
+ * séparée des `users` pour ne pas charger les octets à chaque lecture de
+ * session/profil. Servi via /api/avatar/[handle].
+ */
+export const userAvatars = pgTable("user_avatars", {
+  userId: uuid("user_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  data: bytea("data").notNull(),
+  contentType: text("content_type").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
 
 // --- Flux RSS (interne) --------------------------------------------------
 
@@ -371,6 +426,7 @@ export const notifications = pgTable(
 
 export const usersRelations = relations(users, ({ many }) => ({
   articles: many(articles),
+  posts: many(posts),
   ownedFeeds: many(feeds),
   feedSubscriptions: many(feedSubscriptions),
 }));
@@ -378,6 +434,13 @@ export const usersRelations = relations(users, ({ many }) => ({
 export const articlesRelations = relations(articles, ({ one }) => ({
   author: one(users, {
     fields: [articles.authorId],
+    references: [users.id],
+  }),
+}));
+
+export const postsRelations = relations(posts, ({ one }) => ({
+  author: one(users, {
+    fields: [posts.authorId],
     references: [users.id],
   }),
 }));

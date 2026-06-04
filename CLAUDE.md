@@ -97,6 +97,42 @@ Postgres via Homebrew (`brew services start postgresql@16`). Base `marge`.
 **MVP COMPLET (S0–S7).** Tous les critères §9 du cahier sont satisfaits en
 local. Reste : tests d'interop Mastodon réels (S2/S3) via tunnel public.
 
+### V1 (post-MVP)
+
+- **Lot 1 — Notifications ✅** : table générique `notifications` (seul `follow`
+  émis en V1), créée sur Follow entrant (inbox Fedify) ET sur follow local, avec
+  déduplication des non-lues ; page `/notifications`, badge de non-lues dans la
+  nav (`src/lib/notifications.ts`).
+- **Lot 2 — Administration ✅** : rôle `users.role` (`user`|`admin`), garde
+  serveur `requireAdmin()` sur `/admin/*` (layout + chaque page),
+  `/admin/accounts` et `/admin/posts` en lecture seule, CLI d'amorçage
+  `scripts/make-admin.mjs` (cf. DEPLOY.md §2 bis).
+- **Lot 3 — Home unifiée ✅** : la home `/` EST le fil unifié + un composer en
+  tête (un seul champ, Markdown). Fil construit par `src/lib/feed.ts` (billets +
+  notes des comptes suivis **et de soi**, objets distants, items RSS), notes
+  affichées en entier, billets/RSS/distant en aperçu. `/feed` et `/feeds`
+  (lecture) redirigent vers `/` ; `/feeds/[id]` (détail/réclamation) conservé.
+- **Lot 4 — Recherche ✅** : `/recherche?q=` (ILIKE) en 3 sections Contenus /
+  Comptes / Flux, public uniquement ; détection `@user@instance` → suivi
+  WebFinger. tsvector/GIN = amélioration V2.
+- **Lot 5 — Compte ✅** : édition de profil (nom, bio, avatar) sur `/@handle` en
+  mode propriétaire — **pas de route `/profil`** ; déclaration de ses flux
+  relocalisée sur le profil. Avatars stockés en base (`user_avatars`, bytea),
+  servis par `/api/avatar/[handle]`, exposés en `Person.icon`. `/preferences`
+  (remplace `/settings`, redirigé) : infos compte, **changement de mot de passe**
+  (vérif. actuel + argon2 + invalidation des autres sessions), abonnements/
+  blocages, exports, suppression de compte.
+
+> **Décision objet AP (Note vs Article).** Les messages du composer (sans titre)
+> sont publiés comme **`Note`** (microblog), distincts des `Article` (billets
+> titrés). Voir `buildNoteObject`/`buildCreateForNote` + dispatcher Note
+> `/users/:handle/notes/:id` dans `src/federation/federation.ts`, table `posts`,
+> permalien humain `/@handle/notes/[id]`. Les `Article` restent inchangés.
+
+**V1 vérifiée en local** (build/lint/tsc + parcours réel : composer→Note fédérée
+& déréférençable, recherche, édition profil+avatar, changement de mot de passe,
+redirections). Reste : interop Mastodon réelle via tunnel.
+
 ### Cron RSS
 `curl -H "Authorization: Bearer $CRON_SECRET" $APP_URL/api/cron/poll`. À brancher
 sur une vraie tâche cron en prod.

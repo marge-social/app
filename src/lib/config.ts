@@ -28,3 +28,13 @@ export function articleUrl(handle: string, slug: string): string {
 export function articleApUri(handle: string, slug: string): string {
   return `${APP_URL}/users/${handle}/articles/${slug}`;
 }
+
+/** Permalien (humain) d'un message court (Note). */
+export function noteUrl(handle: string, id: string): string {
+  return `${APP_URL}/@${handle}/notes/${id}`;
+}
+
+/** URL de l'avatar d'un compte local (servie depuis Postgres). */
+export function avatarUrl(handle: string): string {
+  return `${APP_URL}/api/avatar/${handle}`;
+}

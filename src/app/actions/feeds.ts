@@ -78,8 +78,7 @@ export async function referenceFeedAction(
     .values({ userId: user.id, feedId })
     .onConflictDoNothing();
 
-  revalidatePath("/feeds");
-  revalidatePath("/feed");
+  revalidatePath("/");
   redirect(`/feeds/${feedId}`);
 }
 
@@ -94,7 +93,7 @@ export async function subscribeFeedAction(formData: FormData): Promise<void> {
     .values({ userId: user.id, feedId })
     .onConflictDoNothing();
   revalidatePath(`/feeds/${feedId}`);
-  revalidatePath("/feed");
+  revalidatePath("/");
 }
 
 /** Désabonne l'utilisateur courant d'un flux. */
@@ -112,5 +111,5 @@ export async function unsubscribeFeedAction(formData: FormData): Promise<void> {
       ),
     );
   revalidatePath(`/feeds/${feedId}`);
-  revalidatePath("/feed");
+  revalidatePath("/");
 }

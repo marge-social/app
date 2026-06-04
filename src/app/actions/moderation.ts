@@ -31,7 +31,7 @@ export async function blockActorAction(formData: FormData): Promise<void> {
         eq(follows.followingUri, actorUri),
       ),
     );
-  revalidatePath("/feed");
+  revalidatePath("/");
 }
 
 /** Lève le blocage d'un acteur distant. */
@@ -45,5 +45,5 @@ export async function unblockActorAction(formData: FormData): Promise<void> {
     .where(
       and(eq(actorBlocks.userId, user.id), eq(actorBlocks.actorUri, actorUri)),
     );
-  revalidatePath("/feed");
+  revalidatePath("/");
 }

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, or } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { db } from "@/db";
 import {
@@ -14,6 +14,9 @@ import {
   unfollowLocalAction,
 } from "@/app/actions/follows";
 import { subscribeFeedAction, unsubscribeFeedAction } from "@/app/actions/feeds";
+import { removeOwnFeedAction } from "@/app/actions/profile";
+import { ProfileEditForm } from "@/components/ProfileEditForm";
+import { ReferenceFeedForm } from "@/components/ReferenceFeedForm";
 import { getCurrentUser } from "@/lib/auth";
 import { fediverseHandle } from "@/lib/config";
 import { effectiveSummary } from "@/lib/markdown";
@@ -83,16 +86,72 @@ export default async function ProfilePage({ params }: ProfileParams) {
     },
   });
 
+  // Flux gérables par le propriétaire : réclamés OU simplement référencés par lui.
+  const managedFeeds = isSelf
+    ? await db.query.feeds.findMany({
+        where: or(
+          eq(feeds.ownerId, profile.id),
+          eq(feeds.referencedBy, profile.id),
+        ),
+        orderBy: [desc(feeds.createdAt)],
+        columns: {
+          id: true,
+          title: true,
+          feedUrl: true,
+          ownershipStatus: true,
+        },
+      })
+    : [];
+
+  const avatarSrc = profile.avatarUpdatedAt
+    ? `/api/avatar/${profile.handle}?v=${profile.avatarUpdatedAt.getTime()}`
+    : null;
+
   return (
     <div className="flex flex-col gap-8">
       <header className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight">
-          {profile.displayName}
-        </h1>
-        <p className="font-mono text-sm text-foreground/70">
-          {fediverseHandle(profile.handle)}
-        </p>
+        <div className="flex items-start gap-4">
+          {avatarSrc ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={avatarSrc}
+              alt={`Avatar de ${profile.displayName}`}
+              width={80}
+              height={80}
+              className="h-20 w-20 shrink-0 rounded-full object-cover"
+            />
+          ) : (
+            <span
+              aria-hidden="true"
+              className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-black/10 text-2xl font-medium dark:bg-white/15"
+            >
+              {profile.displayName.charAt(0).toUpperCase()}
+            </span>
+          )}
+          <div className="flex flex-col gap-1">
+            <h1 className="text-3xl font-bold tracking-tight">
+              {profile.displayName}
+            </h1>
+            <p className="font-mono text-sm text-foreground/70">
+              {fediverseHandle(profile.handle)}
+            </p>
+          </div>
+        </div>
         {profile.bio && <p className="text-foreground/90">{profile.bio}</p>}
+
+        {isSelf && (
+          <details className="mt-2 rounded-lg border border-black/10 dark:border-white/15">
+            <summary className="cursor-pointer px-4 py-2 text-sm font-medium">
+              Modifier mon profil
+            </summary>
+            <div className="border-t border-black/10 p-4 dark:border-white/15">
+              <ProfileEditForm
+                displayName={profile.displayName}
+                bio={profile.bio}
+              />
+            </div>
+          </details>
+        )}
 
         {!isSelf && viewer && (
           // Suivi du COMPTE (fédéré). Distinct et jamais couplé au suivi des
@@ -211,6 +270,55 @@ export default async function ProfilePage({ params }: ProfileParams) {
           </ul>
         )}
       </section>
+
+      {isSelf && (
+        <section
+          aria-labelledby="manage-feeds-heading"
+          className="flex flex-col gap-4 rounded-lg border border-black/10 p-4 dark:border-white/15"
+        >
+          <div className="flex flex-col gap-1">
+            <h2 id="manage-feeds-heading" className="text-lg font-semibold">
+              Ajouter mon flux
+            </h2>
+            <p className="text-sm text-foreground/70">
+              Déclarez un flux RSS que vous possédez. Pour en revendiquer la
+              propriété (et activer le texte intégral), passez par la page du
+              flux. Suivre un flux n’est pas suivre un compte.
+            </p>
+          </div>
+          <ReferenceFeedForm />
+
+          {managedFeeds.length > 0 && (
+            <ul className="flex flex-col gap-2">
+              {managedFeeds.map((f) => (
+                <li
+                  key={f.id}
+                  className="flex flex-wrap items-center gap-2 text-sm"
+                >
+                  <Link
+                    href={`/feeds/${f.id}`}
+                    className="font-medium hover:underline"
+                  >
+                    {f.title || f.feedUrl}
+                  </Link>
+                  <span className="rounded bg-black/5 px-1.5 py-0.5 text-xs text-foreground/60 dark:bg-white/10">
+                    {f.ownershipStatus === "claimed" ? "réclamé" : "référencé"}
+                  </span>
+                  <form action={removeOwnFeedAction}>
+                    <input type="hidden" name="feedId" value={f.id} />
+                    <button
+                      type="submit"
+                      className="text-xs text-foreground/55 underline"
+                    >
+                      retirer
+                    </button>
+                  </form>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
     </div>
   );
 }

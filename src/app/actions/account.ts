@@ -17,7 +17,7 @@ import { deliverActorDelete } from "@/federation/delivery";
 export async function deleteAccountAction(formData: FormData): Promise<void> {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
-  if (formData.get("confirm") !== "on") redirect("/settings");
+  if (formData.get("confirm") !== "on") redirect("/preferences");
 
   await deliverActorDelete(user.handle);
   await logout();

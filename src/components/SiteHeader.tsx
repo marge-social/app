@@ -21,11 +21,25 @@ export async function SiteHeader() {
         <div className="flex items-center gap-4 text-sm">
           {user ? (
             <>
-              <Link href="/feed" className="hover:underline">
-                Mon fil
-              </Link>
-              <Link href="/feeds" className="hover:underline">
-                Flux
+              <form
+                action="/recherche"
+                method="get"
+                role="search"
+                className="hidden sm:block"
+              >
+                <label htmlFor="nav-search" className="sr-only">
+                  Rechercher
+                </label>
+                <input
+                  id="nav-search"
+                  type="search"
+                  name="q"
+                  placeholder="Rechercher…"
+                  className="w-40 rounded border border-black/15 bg-transparent px-2 py-1 text-sm focus:ring-2 focus:ring-foreground/40 focus:outline-none dark:border-white/20"
+                />
+              </form>
+              <Link href="/recherche" className="hover:underline sm:hidden">
+                Recherche
               </Link>
               <Link href="/compose" className="hover:underline">
                 Écrire
@@ -52,8 +66,8 @@ export async function SiteHeader() {
               <Link href={`/@${user.handle}`} className="hover:underline">
                 Profil
               </Link>
-              <Link href="/settings" className="hover:underline">
-                Réglages
+              <Link href="/preferences" className="hover:underline">
+                Préférences
               </Link>
               <form action={logoutAction}>
                 <button
