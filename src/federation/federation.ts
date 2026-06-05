@@ -20,7 +20,8 @@ import {
 import { PostgresKvStore, PostgresMessageQueue } from "@fedify/postgres";
 import { Temporal } from "@js-temporal/polyfill";
 import { and, count, desc, eq } from "drizzle-orm";
-import { db, sql } from "@/db";
+import postgres from "postgres";
+import { db } from "@/db";
 import {
   articles,
   follows,
@@ -54,12 +55,29 @@ import {
 } from "@/lib/notifications";
 
 /**
- * Objet Federation Fedify. Cache + file de livraison sortante adossés à
- * PostgreSQL (mêmes tables que l'app, via `sql`). Les flux RSS NE PASSENT
- * JAMAIS par ici : seuls les comptes (acteurs) et leurs Articles fédèrent.
+ * Instance Postgres DÉDIÉE à Fedify (KV + file). On NE réutilise PAS le proxy
+ * `sql` de `@/db` : une fois bundlé par Turbopack, ses traps `apply`/`get`
+ * perturbent l'adaptateur `@fedify/postgres` (la sérialisation `sql.json(...)`
+ * d'un message finit traitée comme un *builder* `VALUES` → l'objet est éclaté
+ * en paramètres → `Token "rfc9421" invalide` / `boolean`/`Object` → file en
+ * échec → Accept jamais finalisé). On passe donc l'instance brute, comme le
+ * documente `@fedify/postgres`. postgres.js ne se connecte qu'à la première
+ * requête (runtime) : créer l'instance au chargement du module est sans risque
+ * au build (où `DATABASE_URL` est absent → URL de repli jamais contactée).
+ * `onnotice` neutralise aussi le spam de NOTICE « already exists » au boot.
  */
-export const kv = new PostgresKvStore(sql);
-export const queue = new PostgresMessageQueue(sql);
+const fedifySql = postgres(
+  process.env.DATABASE_URL || "postgres://localhost:5432/marge",
+  { onnotice: () => {} },
+);
+
+/**
+ * Objet Federation Fedify. Cache + file de livraison sortante adossés à
+ * PostgreSQL (mêmes tables que l'app). Les flux RSS NE PASSENT JAMAIS par ici :
+ * seuls les comptes (acteurs) et leurs Articles fédèrent.
+ */
+export const kv = new PostgresKvStore(fedifySql);
+export const queue = new PostgresMessageQueue(fedifySql);
 
 // Origine canonique EXPLICITE : derrière le reverse proxy (Caddy), Fedify
 // déduirait sinon son origine de la requête interne (`localhost:3000`), ce qui
