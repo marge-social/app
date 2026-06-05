@@ -770,19 +770,48 @@ federation
       .where(eq(remoteObjects.objectUri, objectId.href));
   })
   // Accept de NOTRE Follow sortant → on marque la relation acceptée.
+  // Robuste : certains serveurs renvoient l'`object` du Follow sous forme d'IRI
+  // (et notre id de Follow est une URI à fragment `…#follows/…` non
+  // déréférençable → un re-fetch tombe sur le `Person`, pas le `Follow`). Dans
+  // ce cas on retombe sur le match (following = acteur qui accepte, pending).
   .on(Accept, async (_ctx, accept) => {
-    const object = await accept.getObject();
-    if (!(object instanceof Follow)) return;
-    const localFollowerUri = object.actorId?.href; // notre acteur
-    const remoteUri = accept.actorId?.href; // l'acteur distant suivi
-    if (!localFollowerUri || !remoteUri) return;
-    await db
+    const remoteUri = accept.actorId?.href; // l'acteur distant qui accepte
+    if (!remoteUri) {
+      console.warn("[inbox/Accept] sans actorId — ignoré");
+      return;
+    }
+
+    let localFollowerUri: string | null = null;
+    try {
+      const object = await accept.getObject();
+      if (object instanceof Follow) {
+        localFollowerUri = object.actorId?.href ?? null;
+      } else {
+        console.warn(
+          `[inbox/Accept] objet non-Follow (${object?.constructor?.name ?? "null"}) — fallback`,
+        );
+      }
+    } catch (err) {
+      console.error("[inbox/Accept] getObject a échoué — fallback :", err);
+    }
+
+    const updated = await db
       .update(follows)
       .set({ status: "accepted" })
       .where(
-        and(
-          eq(follows.followerUri, localFollowerUri),
-          eq(follows.followingUri, remoteUri),
-        ),
-      );
+        localFollowerUri
+          ? and(
+              eq(follows.followerUri, localFollowerUri),
+              eq(follows.followingUri, remoteUri),
+            )
+          : and(
+              eq(follows.followingUri, remoteUri),
+              eq(follows.status, "pending"),
+            ),
+      )
+      .returning({ id: follows.id });
+
+    console.log(
+      `[inbox/Accept] de ${remoteUri} (follower=${localFollowerUri ?? "?"}) → ${updated.length} ligne(s) acceptée(s)`,
+    );
   });

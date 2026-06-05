@@ -17,6 +17,10 @@ const nextConfig: NextConfig = {
     "@fedify/fedify",
     "@fedify/postgres",
     "@fedify/next",
+    // Externalisé pour partager l'unique instance LogTape (état module-global :
+    // sinon `configure()` dans instrumentation.ts n'affecterait pas le LogTape
+    // interne de Fedify).
+    "@logtape/logtape",
   ],
 };
 
