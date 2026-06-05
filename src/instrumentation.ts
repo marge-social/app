@@ -11,14 +11,20 @@ export async function register() {
   // externalisé (cf. next.config.ts) pour partager l'unique instance avec le
   // LogTape interne de Fedify — sinon la config n'aurait aucun effet.
   try {
+    const { AsyncLocalStorage } = await import("node:async_hooks");
     const { configure, getConsoleSink } = await import("@logtape/logtape");
     await configure({
+      // Stockage contextuel (corrige le warning « Context-local storage is not
+      // configured » et active le suivi de contexte des logs Fedify).
+      contextLocalStorage: new AsyncLocalStorage(),
       sinks: { console: getConsoleSink() },
       loggers: [
-        { category: "fedify", lowestLevel: "debug", sinks: ["console"] },
+        // `info` : résumés inbox/outbox + warnings/erreurs, sans le bruit `debug`
+        // (kv-cache, docloader). Passer à `debug` ponctuellement pour diagnostiquer.
+        { category: "fedify", lowestLevel: "info", sinks: ["console"] },
         {
           category: ["logtape", "meta"],
-          lowestLevel: "warning",
+          lowestLevel: "error",
           sinks: ["console"],
         },
       ],
