@@ -3,6 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { follows, remoteActors } from "@/db/schema";
 import {
+  backfillRemoteOutbox,
   ensureFederationStorage,
   federation,
 } from "@/federation/federation";
@@ -81,6 +82,15 @@ export async function followRemoteActor(
       object: actor.id,
     }),
   );
+
+  // Backfill immédiat de l'historique récent via l'outbox public : le fil se
+  // remplit sans attendre une future publication poussée. Best-effort — un échec
+  // ne doit pas faire échouer l'abonnement (déjà persisté + Follow émis).
+  try {
+    await backfillRemoteOutbox(ctx, actor);
+  } catch (err) {
+    console.error("Échec du backfill de l'outbox distant :", err);
+  }
 
   return { ok: true };
 }

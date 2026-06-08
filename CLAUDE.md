@@ -272,6 +272,24 @@ Vérifié en local : `tsc`/`lint`/`build` OK + `scripts/smoke-media.ts`
 (zip/js/exe-renommé/>5 Mo rejetés ; EXIF purgé ; miniature ; pdf OK). **Reste :
 round-trip S3 réel** (credentials OVH) + affichage Mastodon via tunnel.
 
+### Ingestion des contenus distants suivis ✅ (build/tsc/lint OK)
+
+Les publications des comptes ActivityPub suivis (Mastodon, **PeerTube**…)
+alimentent le fil. Le chemin « push » (inbox `.on(Create)` → `remoteObjects` →
+`buildFeed`) existait déjà mais laissait le fil **vide après l'abonnement** :
+
+- **Backfill à l'abonnement** (`backfillRemoteOutbox`, `src/federation/federation.ts`) :
+  `followRemoteActor` récupère l'outbox **public** de l'acteur
+  (`actor.getOutbox()` + `ctx.traverseCollection`, `suppressError`) et ingère ses
+  ~20 contenus récents → le fil se remplit sans attendre une publication poussée.
+  Best-effort : un échec ne fait jamais échouer l'abonnement (déjà persisté).
+- **Types élargis** : `upsertRemoteObject` + gardes `Create`/`Update`/`Announce`
+  acceptent désormais `Note | Article | Video | Page` (helper `isIngestableObject`
+  + `remoteObjectType`). Les `Video` (PeerTube) étaient auparavant rejetés. Pas de
+  migration (`remote_objects.type` est du texte libre).
+
+Reste : vérif d'interop réelle (Mastodon/PeerTube) via tunnel — cf. ci-dessous.
+
 ### Cron digest
 `curl -H "Authorization: Bearer $CRON_SECRET" $APP_URL/api/cron/digest`. À brancher
 sur une tâche cron (quotidien par défaut, §4.3). Regroupe les signaux pauvres

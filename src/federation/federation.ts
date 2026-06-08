@@ -12,10 +12,12 @@ import {
   Image,
   Like,
   Note,
+  Page,
   Person,
   PUBLIC_COLLECTION,
   Undo,
   Update,
+  Video,
 } from "@fedify/fedify/vocab";
 import { PostgresKvStore, PostgresMessageQueue } from "@fedify/postgres";
 import { Temporal } from "@js-temporal/polyfill";
@@ -472,10 +474,35 @@ federation.setNodeInfoDispatcher("/nodeinfo/2.1", async () => {
 });
 
 /**
- * Enregistre/MAJ un objet distant (Note/Article) reçu, pour alimenter le feed.
- * Ne stocke que ce qui est nécessaire à un aperçu honnête (extrait + lien).
+ * Objets distants que l'on sait projeter dans le fil (aperçu honnête : titre,
+ * extrait, lien). `Note`/`Article` = microblog/billet ; `Video` = PeerTube &
+ * assimilés ; `Page` = pages longues de certaines instances.
  */
-async function upsertRemoteObject(object: Note | Article): Promise<void> {
+type IngestableObject = Note | Article | Video | Page;
+
+/** Garde de type : l'objet est-il projetable dans le fil ? */
+function isIngestableObject(object: unknown): object is IngestableObject {
+  return (
+    object instanceof Note ||
+    object instanceof Article ||
+    object instanceof Video ||
+    object instanceof Page
+  );
+}
+
+/** Libellé `remote_objects.type` (texte libre) pour un objet ingéré. */
+function remoteObjectType(object: IngestableObject): string {
+  if (object instanceof Article) return "Article";
+  if (object instanceof Video) return "Video";
+  if (object instanceof Page) return "Page";
+  return "Note";
+}
+
+/**
+ * Enregistre/MAJ un objet distant (Note/Article/Video/Page) reçu, pour alimenter
+ * le feed. Ne stocke que ce qui est nécessaire à un aperçu honnête (extrait + lien).
+ */
+async function upsertRemoteObject(object: IngestableObject): Promise<void> {
   if (object.id == null || object.attributionId == null) return;
   const url =
     object.url instanceof URL
@@ -487,7 +514,7 @@ async function upsertRemoteObject(object: Note | Article): Promise<void> {
     .values({
       objectUri: object.id.href,
       attributedToUri: object.attributionId.href,
-      type: object instanceof Article ? "Article" : "Note",
+      type: remoteObjectType(object),
       name: object.name?.toString() ?? null,
       contentHtml: object.content?.toString() ?? null,
       summary: object.summary?.toString() ?? null,
@@ -512,12 +539,61 @@ async function upsertRemoteObject(object: Note | Article): Promise<void> {
 }
 
 /**
+ * Backfill : à l'abonnement à un acteur distant, on récupère son outbox public
+ * et on ingère ses contenus récents dans `remote_objects`. Sans ça, le fil reste
+ * vide jusqu'à la prochaine publication poussée vers notre inbox — l'historique
+ * du compte n'est jamais livré par le serveur distant.
+ *
+ * Best-effort : tout échec (outbox absente, page illisible, objet non
+ * déréférençable) est avalé — on garde ce qu'on a pu ingérer. On s'arrête à
+ * `limit` objets pour ne pas aspirer des timelines entières.
+ */
+export async function backfillRemoteOutbox(
+  ctx: Context<unknown>,
+  actor: Actor,
+  limit = 20,
+): Promise<number> {
+  let collection: Awaited<ReturnType<typeof actor.getOutbox>> = null;
+  try {
+    collection = await actor.getOutbox({ suppressError: true });
+  } catch {
+    return 0;
+  }
+  if (collection == null) return 0;
+
+  let ingested = 0;
+  try {
+    for await (const item of ctx.traverseCollection(collection, {
+      suppressError: true,
+    })) {
+      if (ingested >= limit) break;
+      // L'outbox liste des activités (Create/Update/Announce…) enveloppant
+      // l'objet ; certains serveurs exposent l'objet directement.
+      let object: unknown = item;
+      if (
+        item instanceof Create ||
+        item instanceof Update ||
+        item instanceof Announce
+      ) {
+        object = await item.getObject().catch(() => null);
+      }
+      if (!isIngestableObject(object)) continue;
+      await upsertRemoteObject(object);
+      ingested++;
+    }
+  } catch {
+    // Outbox partiellement illisible : on conserve les objets déjà ingérés.
+  }
+  return ingested;
+}
+
+/**
  * Extrait les pièces jointes d'un objet distant (§4.2) en ne gardant que les
  * `mediaType` de la liste blanche (§3.2). Best-effort : un attachment illisible
  * est ignoré, jamais re-téléchargé (URL distante conservée telle quelle).
  */
 async function extractRemoteAttachments(
-  object: Note | Article,
+  object: IngestableObject,
 ): Promise<RemoteAttachment[]> {
   const out: RemoteAttachment[] = [];
   try {
@@ -735,7 +811,7 @@ federation
     if (!objectId.href.startsWith(`${APP_URL}/users/`)) {
       try {
         const obj = await announce.getObject();
-        if (obj instanceof Note || obj instanceof Article) {
+        if (isIngestableObject(obj)) {
           await upsertRemoteObject(obj);
         }
       } catch {
@@ -748,7 +824,7 @@ federation
   // Contenu distant entrant → alimente le feed (extrait + lien).
   .on(Create, async (_ctx, create) => {
     const object = await create.getObject();
-    if (!(object instanceof Note || object instanceof Article)) return;
+    if (!isIngestableObject(object)) return;
     await upsertRemoteObject(object);
 
     // Réponse entrante ciblant un de NOS objets locaux → notification (§4.1).
@@ -776,7 +852,7 @@ federation
   })
   .on(Update, async (_ctx, update) => {
     const object = await update.getObject();
-    if (object instanceof Note || object instanceof Article) {
+    if (isIngestableObject(object)) {
       await upsertRemoteObject(object);
     }
   })
