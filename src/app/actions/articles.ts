@@ -18,6 +18,7 @@ import {
 } from "@/federation/delivery";
 
 export interface ArticleFormState {
+  /** Clé i18n (dict.errors), traduite au rendu. */
   error?: string;
 }
 
@@ -65,8 +66,8 @@ export async function saveArticleAction(
   // création (sur édition, on conserve le rattachement existant).
   const inReplyTo = ((formData.get("inReplyTo") as string) ?? "").trim();
 
-  if (!title) return { error: "Le titre est requis." };
-  if (!contentMarkdown) return { error: "Le contenu ne peut pas être vide." };
+  if (!title) return { error: "titleRequired" };
+  if (!contentMarkdown) return { error: "contentEmpty" };
 
   // Pièce jointe (à la création uniquement, comme inReplyTo). Validation AVANT
   // toute écriture pour rejeter type/taille immédiatement.
@@ -77,7 +78,7 @@ export async function saveArticleAction(
     const result = await processUpload(file);
     if (!result.ok) return { error: result.error };
     if (result.kind === "image" && !alt) {
-      return { error: "Le texte alternatif est obligatoire pour une image." };
+      return { error: "altRequired" };
     }
     processed = result;
   }
@@ -102,7 +103,7 @@ export async function saveArticleAction(
       where: eq(articles.id, id),
     });
     if (!existing || existing.authorId !== user.id) {
-      return { error: "Article introuvable." };
+      return { error: "articleNotFound" };
     }
     slug = existing.slug;
     const wasPublished = existing.status === "published";

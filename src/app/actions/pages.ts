@@ -10,7 +10,9 @@ import { renderMarkdown } from "@/lib/markdown";
 import { RESERVED_SLUGS, isValidSlug, toSlug } from "@/lib/pages";
 
 export interface PageFormState {
+  /** Clé i18n (dict.errors), traduite au rendu. */
   error?: string;
+  errorParams?: Record<string, string | number>;
   success?: boolean;
 }
 
@@ -29,8 +31,8 @@ export async function savePageAction(
   const isNew = formData.get("isNew") === "1";
   const title = ((formData.get("title") as string) ?? "").trim();
   const contentMarkdown = ((formData.get("content") as string) ?? "").trim();
-  if (!title) return { error: "Le titre est requis." };
-  if (!contentMarkdown) return { error: "Le contenu ne peut pas être vide." };
+  if (!title) return { error: "titleRequired" };
+  if (!contentMarkdown) return { error: "contentEmpty" };
 
   const contentHtml = renderMarkdown(contentMarkdown);
   const now = new Date();
@@ -39,17 +41,17 @@ export async function savePageAction(
     const raw = ((formData.get("slug") as string) ?? "").trim();
     const slug = toSlug(raw || title);
     if (!isValidSlug(slug)) {
-      return { error: "Slug invalide (lettres minuscules, chiffres, tirets)." };
+      return { error: "slugInvalid" };
     }
     if (RESERVED_SLUGS.has(slug)) {
-      return { error: `Le slug « ${slug} » est réservé par une autre page.` };
+      return { error: "slugReserved", errorParams: { slug } };
     }
     const existing = await db.query.sitePages.findFirst({
       where: eq(sitePages.slug, slug),
       columns: { slug: true },
     });
     if (existing) {
-      return { error: `Une page « ${slug} » existe déjà.` };
+      return { error: "pageExists", errorParams: { slug } };
     }
     await db.insert(sitePages).values({
       slug,
@@ -66,7 +68,7 @@ export async function savePageAction(
   // Édition : slug immuable transmis en champ caché. Upsert (la page « par
   // défaut » mentions légales n'a pas encore de ligne au premier enregistrement).
   const slug = ((formData.get("slug") as string) ?? "").trim();
-  if (!slug) return { error: "Slug manquant." };
+  if (!slug) return { error: "slugMissing" };
   await db
     .insert(sitePages)
     .values({ slug, title, contentMarkdown, contentHtml, updatedAt: now })

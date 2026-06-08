@@ -75,8 +75,10 @@ export async function unfollowLocalAction(formData: FormData): Promise<void> {
 }
 
 export interface RemoteFollowState {
+  /** Clés i18n (dict.errors / dict.success), traduites au rendu. */
   error?: string;
   success?: string;
+  successParams?: Record<string, string | number>;
 }
 
 /** Suit un compte distant (Fediverse) par handle. */
@@ -87,13 +89,13 @@ export async function followRemoteAction(
   const viewer = await getCurrentUser();
   if (!viewer) redirect("/login");
   const handle = ((formData.get("handle") as string) ?? "").trim();
-  if (!handle) return { error: "Indique un handle (@compte@instance)." };
+  if (!handle) return { error: "handleRequired" };
 
   const result = await followRemoteActor(viewer.handle, viewer.id, handle);
-  if (!result.ok) return { error: result.error ?? "Échec du suivi." };
+  if (!result.ok) return { error: result.error ?? "followFailed" };
 
   revalidatePath("/");
-  return { success: `Demande de suivi envoyée à ${handle}.` };
+  return { success: "followRequestSent", successParams: { handle } };
 }
 
 /** Cesse de suivre un compte distant. */

@@ -5,15 +5,22 @@ import { db } from "@/db";
 import { notifications } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { humanObjectUrl, INSTANCE_DOMAIN } from "@/lib/config";
-import { relativeTimeFr } from "@/lib/relative-time";
+import { relativeTime } from "@/lib/relative-time";
+import { plural, type Locale } from "@/lib/i18n/config";
+import { type Messages } from "@/lib/i18n/dictionaries";
+import { getServerI18n } from "@/lib/i18n/server";
 import {
   markAllNotificationsReadAction,
   refreshNotificationsAction,
 } from "@/app/actions/notifications";
 
-export const metadata = { title: "Notifications — Marge" };
+export async function generateMetadata() {
+  const { dict } = await getServerI18n();
+  return { title: dict.notifications.metaTitle };
+}
 
 type NotificationRow = typeof notifications.$inferSelect;
+type NotifDict = Messages["notifications"];
 
 /** Profil de l'acteur : route locale `/@handle` si l'acteur est sur l'instance,
  *  sinon son URI ActivityPub (déréférençable vers son profil distant). */
@@ -78,35 +85,23 @@ function ActorLink({ n }: { n: NotificationRow }) {
  *  (notification groupée de digest, « N personnes ont … », §4.4). */
 function notificationText(
   type: NotificationRow["type"],
-  plural: boolean,
+  isPlural: boolean,
+  verbs: NotifDict["verbs"],
 ): string {
-  const v = (s: string, p: string) => (plural ? p : s);
-  switch (type) {
-    case "follow":
-      return v("vous suit", "vous suivent");
-    case "like":
-      return v("a aimé votre publication", "ont aimé votre publication");
-    case "comment":
-      return v(
-        "a commenté votre publication",
-        "ont commenté votre publication",
-      );
-    case "reply":
-      return v(
-        "a répondu à votre publication",
-        "ont répondu à votre publication",
-      );
-    case "announce":
-      return v("a partagé votre publication", "ont partagé votre publication");
-    case "mention":
-      return v("vous a mentionné", "vous ont mentionné");
-    default:
-      return v("a interagi avec vous", "ont interagi avec vous");
-  }
+  const form = (verbs as Record<string, { one: string; other: string }>)[type] ?? verbs.other;
+  return isPlural ? form.other : form.one;
 }
 
 /** Rendu par type — extensible (§4). Lien profond vers le contenu visé (§4.4). */
-function NotificationLine({ n }: { n: NotificationRow }) {
+function NotificationLine({
+  n,
+  t,
+  locale,
+}: {
+  n: NotificationRow;
+  t: NotifDict;
+  locale: Locale;
+}) {
   const unread = n.readAt == null;
   const href = n.objectUri ? humanObjectUrl(n.objectUri) : null;
   return (
@@ -120,18 +115,15 @@ function NotificationLine({ n }: { n: NotificationRow }) {
         <p className="text-sm">
           <ActorLink n={n} />
           {n.groupCount > 1 && (
-            <span>
-              {" "}
-              et {n.groupCount - 1} autre{n.groupCount - 1 > 1 ? "s" : ""}
-            </span>
+            <span> {plural(locale, n.groupCount - 1, t.andOthers)}</span>
           )}{" "}
-          <span>{notificationText(n.type, n.groupCount > 1)}</span>
+          <span>{notificationText(n.type, n.groupCount > 1, t.verbs)}</span>
           {href &&
             (href.startsWith("/") ? (
               <>
                 {" — "}
                 <Link href={href} className="hover:underline">
-                  voir
+                  {t.see}
                 </Link>
               </>
             ) : (
@@ -142,19 +134,19 @@ function NotificationLine({ n }: { n: NotificationRow }) {
                   rel="noopener noreferrer nofollow"
                   className="hover:underline"
                 >
-                  voir
+                  {t.see}
                 </a>
               </>
             ))}
         </p>
         <p className="text-xs text-black/55 dark:text-white/55">
-          {n.actorHandle} · {relativeTimeFr(n.createdAt)}
+          {n.actorHandle} · {relativeTime(n.createdAt, locale)}
         </p>
       </div>
       {unread && (
         <span
           className="mt-1 h-2 w-2 shrink-0 rounded-full bg-foreground"
-          aria-label="Non lue"
+          aria-label={t.unreadDot}
           role="img"
         />
       )}
@@ -173,15 +165,17 @@ export default async function NotificationsPage() {
   });
 
   const unreadCount = items.filter((n) => n.readAt == null).length;
+  const { locale, dict } = await getServerI18n();
+  const t = dict.notifications;
 
   return (
     <section className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold tracking-tight">
-          Notifications
+          {t.title}
           {unreadCount > 0 && (
             <span className="ml-2 text-base font-normal text-black/55 dark:text-white/55">
-              {unreadCount} non&nbsp;lue{unreadCount > 1 ? "s" : ""}
+              {plural(locale, unreadCount, t.unreadBadge)}
             </span>
           )}
         </h1>
@@ -191,7 +185,7 @@ export default async function NotificationsPage() {
               type="submit"
               className="rounded border border-black/15 px-3 py-1 text-sm hover:bg-black/5 dark:border-white/20 dark:hover:bg-white/10"
             >
-              Rafraîchir
+              {t.refresh}
             </button>
           </form>
           <form action={markAllNotificationsReadAction}>
@@ -200,21 +194,18 @@ export default async function NotificationsPage() {
               disabled={unreadCount === 0}
               className="rounded border border-black/15 px-3 py-1 text-sm hover:bg-black/5 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/20 dark:hover:bg-white/10"
             >
-              Tout marquer comme lu
+              {t.markAllRead}
             </button>
           </form>
         </div>
       </div>
 
       {items.length === 0 ? (
-        <p className="text-sm text-black/55 dark:text-white/55">
-          Aucune notification pour le moment. Vous serez prévenu·e quand un
-          compte se mettra à vous suivre.
-        </p>
+        <p className="text-sm text-black/55 dark:text-white/55">{t.empty}</p>
       ) : (
         <ul className="divide-y divide-black/10 overflow-hidden rounded-lg border border-black/10 dark:divide-white/10 dark:border-white/15">
           {items.map((n) => (
-            <NotificationLine key={n.id} n={n} />
+            <NotificationLine key={n.id} n={n} t={t} locale={locale} />
           ))}
         </ul>
       )}

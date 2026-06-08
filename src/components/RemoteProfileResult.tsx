@@ -7,16 +7,18 @@ import {
   followRemoteAction,
 } from "@/app/actions/follows";
 import type { RemoteActorPreview } from "@/federation/follow";
+import { useActionMessage, useT } from "@/components/I18nProvider";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
+  const { t } = useT();
   return (
     <button
       type="submit"
       disabled={pending}
       className="shrink-0 rounded bg-foreground px-3 py-2 text-sm font-medium text-background hover:opacity-90 disabled:opacity-50"
     >
-      {pending ? "…" : "Suivre"}
+      {pending ? "…" : t.search.followShort}
     </button>
   );
 }
@@ -30,6 +32,7 @@ export function RemoteProfileResult({ actor }: { actor: RemoteActorPreview }) {
     followRemoteAction,
     {},
   );
+  const msg = useActionMessage();
   return (
     <div className="flex flex-col gap-2 rounded-lg border border-black/10 p-4 dark:border-white/15">
       <div className="flex items-start gap-3">
@@ -66,12 +69,12 @@ export function RemoteProfileResult({ actor }: { actor: RemoteActorPreview }) {
       </div>
       {state.error && (
         <p role="alert" className="text-sm text-red-700 dark:text-red-300">
-          {state.error}
+          {msg(state.error)}
         </p>
       )}
       {state.success && (
         <p className="text-sm text-green-700 dark:text-green-400">
-          {state.success}
+          {msg(state.success, state.successParams)}
         </p>
       )}
     </div>

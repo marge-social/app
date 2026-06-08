@@ -1,13 +1,11 @@
 import type { SitePageView as SitePage } from "@/lib/pages";
-
-const dateFormat = new Intl.DateTimeFormat("fr-FR", {
-  day: "numeric",
-  month: "long",
-  year: "numeric",
-});
+import { interpolate } from "@/lib/i18n/config";
+import { getServerI18n } from "@/lib/i18n/server";
+import { formatLongDate } from "@/lib/relative-time";
 
 /** Rendu public d'une page de contenu (Markdown sanitisé + date de MAJ). */
-export function SitePageView({ page }: { page: SitePage }) {
+export async function SitePageView({ page }: { page: SitePage }) {
+  const { locale, dict } = await getServerI18n();
   return (
     <article className="flex flex-col gap-6">
       <h1 className="text-2xl font-semibold tracking-tight">{page.title}</h1>
@@ -17,7 +15,9 @@ export function SitePageView({ page }: { page: SitePage }) {
       />
       {page.updatedAt && (
         <p className="text-sm text-black/55 dark:text-white/55">
-          Dernière mise à jour le {dateFormat.format(page.updatedAt)}.
+          {interpolate(dict.common.lastUpdated, {
+            date: formatLongDate(page.updatedAt, locale),
+          })}
         </p>
       )}
     </article>

@@ -56,3 +56,23 @@ export function useT() {
       pluralForm(locale, count, forms, vars),
   };
 }
+
+/**
+ * Traduit une **clé** renvoyée par une server action (`dict.errors`/`dict.success`)
+ * vers le texte localisé, en interpolant d'éventuels paramètres. Renvoie
+ * `undefined` si la clé est absente (pas de message). Si la clé est inconnue des
+ * deux tables, on renvoie la clé telle quelle (repli visible — aide au debug).
+ */
+export function useActionMessage() {
+  const { dict } = useI18n();
+  const errors = dict.errors as Record<string, string>;
+  const success = dict.success as Record<string, string>;
+  return (
+    key?: string,
+    params?: Record<string, string | number>,
+  ): string | undefined => {
+    if (!key) return undefined;
+    const template = errors[key] ?? success[key] ?? key;
+    return interpolate(template, params);
+  };
+}

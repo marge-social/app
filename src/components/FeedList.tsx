@@ -6,22 +6,29 @@ import {
   toggleAnnounceAction,
   toggleLikeAction,
 } from "@/app/actions/interactions";
-import { relativeTimeFr } from "@/lib/relative-time";
+import { formatLongDate, relativeTime } from "@/lib/relative-time";
+import { interpolate, type Locale } from "@/lib/i18n/config";
+import { type Messages } from "@/lib/i18n/dictionaries";
+import { getServerI18n } from "@/lib/i18n/server";
 
-function EntryMeta({ e }: { e: FeedEntry }) {
+type FeedDict = Messages["feed"];
+
+function EntryMeta({
+  e,
+  t,
+  locale,
+}: {
+  e: FeedEntry;
+  t: FeedDict;
+  locale: Locale;
+}) {
   return (
     <div className="flex flex-wrap items-center gap-2 text-xs text-foreground/60">
       <span>{e.authorLabel}</span>
       <span aria-hidden>·</span>
-      <time dateTime={e.date.toISOString()}>
-        {e.date.toLocaleDateString("fr-FR", {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        })}
-      </time>
+      <time dateTime={e.date.toISOString()}>{formatLongDate(e.date, locale)}</time>
       <span aria-hidden>·</span>
-      <span>{e.source}</span>
+      <span>{t.sources[e.source]}</span>
       {e.readingMinutes && (
         <>
           <span aria-hidden>·</span>
@@ -38,7 +45,7 @@ function EntryMeta({ e }: { e: FeedEntry }) {
  * Le compteur n'apparaît qu'à partir de 1 — visible de tous (décision §8 opt.
  * c), jamais utilisé pour trier, et sans « 0 » anxiogène en course.
  */
-function LikeButton({ e }: { e: FeedEntry }) {
+function LikeButton({ e, t }: { e: FeedEntry; t: FeedDict }) {
   if (!e.objectUri) return null;
   return (
     <form action={toggleLikeAction} className="flex">
@@ -47,7 +54,7 @@ function LikeButton({ e }: { e: FeedEntry }) {
       <button
         type="submit"
         aria-pressed={e.likedByViewer}
-        aria-label={e.likedByViewer ? "Retirer le like" : "Aimer"}
+        aria-label={e.likedByViewer ? t.unlike : t.like}
         className={`flex items-center gap-1.5 rounded px-1.5 py-0.5 text-xs transition-colors hover:bg-black/5 dark:hover:bg-white/10 ${
           e.likedByViewer ? "text-rose-600 dark:text-rose-400" : "text-foreground/55"
         }`}
@@ -68,7 +75,7 @@ function LikeButton({ e }: { e: FeedEntry }) {
  * Compteur visible de tous (§8 opt. c) mais jamais utilisé pour trier (§6) ;
  * masqué à 0. Le champ `shared` porte l'état voulu (inverse de l'état courant).
  */
-function ShareButton({ e }: { e: FeedEntry }) {
+function ShareButton({ e, t }: { e: FeedEntry; t: FeedDict }) {
   if (!e.objectUri) return null;
   return (
     <form action={toggleAnnounceAction} className="flex">
@@ -81,7 +88,7 @@ function ShareButton({ e }: { e: FeedEntry }) {
       <button
         type="submit"
         aria-pressed={e.sharedByViewer}
-        aria-label={e.sharedByViewer ? "Ne plus partager" : "Partager"}
+        aria-label={e.sharedByViewer ? t.unshare : t.share}
         className={`flex items-center gap-1.5 rounded px-1.5 py-0.5 text-xs transition-colors hover:bg-black/5 dark:hover:bg-white/10 ${
           e.sharedByViewer
             ? "text-emerald-600 dark:text-emerald-400"
@@ -103,7 +110,15 @@ function ShareButton({ e }: { e: FeedEntry }) {
  * Une réponse dans le fil threadé : commentaire court en entier (§2.2), ou
  * réponse-billet en référence titrée vers la publication autonome (§2.3).
  */
-function CommentItem({ c }: { c: CommentView }) {
+function CommentItem({
+  c,
+  t,
+  locale,
+}: {
+  c: CommentView;
+  t: FeedDict;
+  locale: Locale;
+}) {
   return (
     <li className="flex flex-col gap-1">
       <div className="flex flex-wrap items-center gap-2 text-xs text-foreground/55">
@@ -115,11 +130,11 @@ function CommentItem({ c }: { c: CommentView }) {
           <span>{c.authorLabel}</span>
         )}
         <span aria-hidden>·</span>
-        <time dateTime={c.date.toISOString()}>{relativeTimeFr(c.date)}</time>
+        <time dateTime={c.date.toISOString()}>{relativeTime(c.date, locale)}</time>
       </div>
       {c.title ? (
         <p className="text-sm">
-          <span className="text-foreground/55">↳ Réponse-billet : </span>
+          <span className="text-foreground/55">↳ {t.articleReplyPrefix} </span>
           {c.internal ? (
             <Link href={c.href} className="font-medium hover:underline">
               {c.title}
@@ -149,21 +164,29 @@ function CommentItem({ c }: { c: CommentView }) {
  * (§2.2, logique threadée). Le champ est limité à 500 caractères pour le
  * distinguer de la réponse-billet. Réponse en un envoi (action serveur).
  */
-function CommentThread({ e }: { e: FeedEntry }) {
+function CommentThread({
+  e,
+  t,
+  locale,
+}: {
+  e: FeedEntry;
+  t: FeedDict;
+  locale: Locale;
+}) {
   if (!e.objectUri) return null;
   return (
     <div className="mt-1 flex flex-col gap-3 border-l-2 border-black/5 pl-3 dark:border-white/10">
       {e.comments.length > 0 && (
         <ul className="flex flex-col gap-3">
           {e.comments.map((c) => (
-            <CommentItem key={c.key} c={c} />
+            <CommentItem key={c.key} c={c} t={t} locale={locale} />
           ))}
         </ul>
       )}
       <form action={createCommentAction} className="flex flex-col gap-1.5">
         <input type="hidden" name="objectIri" value={e.objectUri} />
         <label htmlFor={`comment-${e.key}`} className="sr-only">
-          Commenter
+          {t.comment}
         </label>
         <textarea
           id={`comment-${e.key}`}
@@ -171,7 +194,7 @@ function CommentThread({ e }: { e: FeedEntry }) {
           rows={1}
           maxLength={500}
           required
-          placeholder="Commenter…"
+          placeholder={t.commentPlaceholder}
           className="w-full resize-y rounded border border-black/10 bg-transparent px-2.5 py-1.5 text-sm focus:ring-2 focus:ring-foreground/30 focus:outline-none dark:border-white/15"
         />
         <div className="flex justify-end">
@@ -179,7 +202,7 @@ function CommentThread({ e }: { e: FeedEntry }) {
             type="submit"
             className="rounded px-2.5 py-1 text-xs text-foreground/70 hover:bg-black/5 dark:hover:bg-white/10"
           >
-            Commenter
+            {t.comment}
           </button>
         </div>
       </form>
@@ -192,7 +215,9 @@ function CommentThread({ e }: { e: FeedEntry }) {
  * les billets, contenus distants et items RSS en **aperçu + lien**. Aucun
  * compteur d'engagement classant n'est rendu ; seul un like discret (§2.1).
  */
-export function FeedList({ entries }: { entries: FeedEntry[] }) {
+export async function FeedList({ entries }: { entries: FeedEntry[] }) {
+  const { locale, dict } = await getServerI18n();
+  const t = dict.feed;
   return (
     <ul className="flex flex-col gap-6">
       {entries.map((e) => (
@@ -203,10 +228,10 @@ export function FeedList({ entries }: { entries: FeedEntry[] }) {
           {e.sharedBy && (
             <p className="flex items-center gap-1.5 text-xs text-foreground/55">
               <span aria-hidden>↻</span>
-              <span>partagé par {e.sharedBy}</span>
+              <span>{interpolate(t.sharedBy, { who: e.sharedBy })}</span>
             </p>
           )}
-          <EntryMeta e={e} />
+          <EntryMeta e={e} t={t} locale={locale} />
           {e.kind === "note" ? (
             <>
               <div
@@ -217,7 +242,7 @@ export function FeedList({ entries }: { entries: FeedEntry[] }) {
                 href={e.href}
                 className="text-xs text-foreground/55 hover:underline"
               >
-                Permalien
+                {t.permalink}
               </Link>
             </>
           ) : (
@@ -225,7 +250,7 @@ export function FeedList({ entries }: { entries: FeedEntry[] }) {
               <h3 className="text-lg font-semibold">
                 {e.internal ? (
                   <Link href={e.href} className="hover:underline">
-                    {e.title || "(sans titre)"}
+                    {e.title || t.untitled}
                   </Link>
                 ) : (
                   <a
@@ -233,7 +258,7 @@ export function FeedList({ entries }: { entries: FeedEntry[] }) {
                     className="hover:underline"
                     rel="noopener noreferrer nofollow"
                   >
-                    {e.title || "(sans titre)"}
+                    {e.title || t.untitled}
                   </a>
                 )}
               </h3>
@@ -246,16 +271,16 @@ export function FeedList({ entries }: { entries: FeedEntry[] }) {
           {e.objectUri && (
             <>
               <div className="mt-1 flex items-center gap-3">
-                <LikeButton e={e} />
-                <ShareButton e={e} />
+                <LikeButton e={e} t={t} />
+                <ShareButton e={e} t={t} />
                 <Link
                   href={`/compose?replyTo=${encodeURIComponent(e.objectUri)}`}
                   className="rounded px-1.5 py-0.5 text-xs text-foreground/55 hover:bg-black/5 dark:hover:bg-white/10"
                 >
-                  Répondre par un billet
+                  {t.replyWithArticle}
                 </Link>
               </div>
-              <CommentThread e={e} />
+              <CommentThread e={e} t={t} locale={locale} />
             </>
           )}
         </li>

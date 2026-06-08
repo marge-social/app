@@ -1,33 +1,25 @@
 import { z } from "zod";
 
-/**
- * Handle : minuscules, chiffres, tirets/underscores. 2–32 caractères.
- * Sert de partie locale du handle fédéré et de segment d'URL d'acteur.
- */
+// Les messages Zod portent une **clé** i18n (cf. dict.errors), pas du texte :
+// l'action renvoie `issues[0].message` tel quel, le formulaire le traduit.
 export const handleSchema = z
   .string()
   .trim()
   .toLowerCase()
-  .min(2, "Le handle doit faire au moins 2 caractères.")
-  .max(32, "Le handle ne peut dépasser 32 caractères.")
-  .regex(
-    /^[a-z0-9_-]+$/,
-    "Le handle ne peut contenir que des lettres minuscules, chiffres, tirets et underscores.",
-  );
+  .min(2, "handleTooShort")
+  .max(32, "handleTooLong")
+  .regex(/^[a-z0-9_-]+$/, "handleChars");
 
 export const signupSchema = z.object({
-  email: z.string().trim().toLowerCase().email("Adresse email invalide."),
-  password: z
-    .string()
-    .min(8, "Le mot de passe doit faire au moins 8 caractères.")
-    .max(256),
+  email: z.string().trim().toLowerCase().email("emailInvalid"),
+  password: z.string().min(8, "passwordTooShort8").max(256),
   handle: handleSchema,
-  displayName: z.string().trim().min(1, "Le nom affiché est requis.").max(80),
+  displayName: z.string().trim().min(1, "displayNameRequired").max(80),
 });
 
 export const loginSchema = z.object({
-  email: z.string().trim().toLowerCase().email("Adresse email invalide."),
-  password: z.string().min(1, "Mot de passe requis."),
+  email: z.string().trim().toLowerCase().email("emailInvalid"),
+  password: z.string().min(1, "passwordRequired"),
 });
 
 export type SignupInput = z.infer<typeof signupSchema>;

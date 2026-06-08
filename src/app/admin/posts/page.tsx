@@ -4,12 +4,20 @@ import { db } from "@/db";
 import { articles } from "@/db/schema";
 import { requireAdmin } from "@/lib/admin";
 import { effectiveSummary } from "@/lib/markdown";
+import { plural } from "@/lib/i18n/config";
+import { getServerI18n } from "@/lib/i18n/server";
+import { formatLongDate } from "@/lib/relative-time";
 
-export const metadata = { title: "Billets — Administration" };
+export async function generateMetadata() {
+  const { dict } = await getServerI18n();
+  return { title: dict.admin.postsMetaTitle };
+}
 
 /** §3.3.B — Billets publics (Article publiés) des comptes locaux (lecture seule). */
 export default async function AdminPostsPage() {
   await requireAdmin();
+  const { locale, dict } = await getServerI18n();
+  const t = dict.admin;
 
   const posts = await db.query.articles.findMany({
     where: eq(articles.status, "published"),
@@ -28,24 +36,16 @@ export default async function AdminPostsPage() {
     limit: 200,
   });
 
-  const dateFmt = (d: Date | null) =>
-    d
-      ? d.toLocaleDateString("fr-FR", {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        })
-      : "—";
+  const dateFmt = (d: Date | null) => (d ? formatLongDate(d, locale) : "—");
 
   return (
     <div className="flex flex-col gap-3">
       <p className="text-sm text-black/55 dark:text-white/55">
-        {posts.length} billet{posts.length > 1 ? "s" : ""} public
-        {posts.length > 1 ? "s" : ""}.
+        {plural(locale, posts.length, t.postsCount)}
       </p>
       {posts.length === 0 ? (
         <p className="text-sm text-black/55 dark:text-white/55">
-          Aucun billet public publié sur l’instance pour le moment.
+          {t.postsEmpty}
         </p>
       ) : (
         <ul className="divide-y divide-black/10 overflow-hidden rounded-lg border border-black/10 dark:divide-white/10 dark:border-white/15">
@@ -63,7 +63,7 @@ export default async function AdminPostsPage() {
                 </span>
               </div>
               <p className="text-xs text-black/55 dark:text-white/55">
-                par{" "}
+                {t.by}{" "}
                 <Link
                   href={`/@${p.author.handle}`}
                   className="hover:underline"

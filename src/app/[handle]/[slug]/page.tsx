@@ -9,6 +9,9 @@ import { getCurrentUser } from "@/lib/auth";
 import { fediverseHandle } from "@/lib/config";
 import { loadMediaForArticles } from "@/lib/media";
 import { readingTimeMinutes } from "@/lib/markdown";
+import { interpolate } from "@/lib/i18n/config";
+import { getServerI18n } from "@/lib/i18n/server";
+import { formatLongDate } from "@/lib/relative-time";
 
 interface ArticleParams {
   params: Promise<{ handle: string; slug: string }>;
@@ -36,7 +39,7 @@ export async function generateMetadata({
 }: ArticleParams): Promise<Metadata> {
   const { handle, slug } = await params;
   const data = await loadArticle(handle, slug);
-  if (!data) return { title: "Introuvable — Marge" };
+  if (!data) return { title: (await getServerI18n()).dict.common.metaNotFound };
   return {
     title: `${data.article.title} — ${data.author.displayName}`,
     description: data.article.summary || undefined,
@@ -57,13 +60,15 @@ export default async function ArticlePage({ params }: ArticleParams) {
 
   const date = article.publishedAt ?? article.createdAt;
   const media = (await loadMediaForArticles([article.id])).get(article.id) ?? [];
+  const { locale, dict } = await getServerI18n();
+  const t = dict.article;
 
   return (
     <article className="flex flex-col gap-6">
       <header className="flex flex-col gap-2">
         {article.status !== "published" && (
           <p className="text-sm font-medium text-amber-700 dark:text-amber-400">
-            Brouillon — visible par toi seul·e.
+            {t.draftNotice}
           </p>
         )}
         <h1 className="text-3xl font-bold tracking-tight">{article.title}</h1>
@@ -74,21 +79,19 @@ export default async function ArticlePage({ params }: ArticleParams) {
           <span className="font-mono">{fediverseHandle(author.handle)}</span>
           {" · "}
           <time dateTime={date.toISOString()}>
-            {date.toLocaleDateString("fr-FR", {
-              day: "numeric",
-              month: "long",
-              year: "numeric",
-            })}
+            {formatLongDate(date, locale)}
           </time>
           {" · "}
-          {readingTimeMinutes(article.contentMarkdown)} min de lecture
+          {interpolate(t.readingTime, {
+            n: readingTimeMinutes(article.contentMarkdown),
+          })}
         </p>
         {isAuthor && (
           <Link
             href={`/compose/${article.id}`}
             className="w-fit text-sm underline"
           >
-            Modifier
+            {t.edit}
           </Link>
         )}
       </header>

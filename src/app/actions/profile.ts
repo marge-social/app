@@ -10,7 +10,9 @@ import { persistMedia, processUpload } from "@/lib/media";
 import { deleteObject } from "@/lib/storage";
 
 export interface ProfileFormState {
+  /** Clés i18n (dict.errors / dict.success), traduites au rendu. */
   error?: string;
+  errorParams?: Record<string, string | number>;
   success?: string;
 }
 
@@ -28,12 +30,12 @@ export async function updateProfileAction(
   const displayName = ((formData.get("displayName") as string) ?? "").trim();
   const bio = ((formData.get("bio") as string) ?? "").trim();
 
-  if (!displayName) return { error: "Le nom affiché est requis." };
+  if (!displayName) return { error: "displayNameRequired" };
   if (displayName.length > NAME_MAX) {
-    return { error: `Nom trop long (max ${NAME_MAX} caractères).` };
+    return { error: "nameTooLong", errorParams: { n: NAME_MAX } };
   }
   if (bio.length > BIO_MAX) {
-    return { error: `Bio trop longue (max ${BIO_MAX} caractères).` };
+    return { error: "bioTooLong", errorParams: { n: BIO_MAX } };
   }
 
   // Avatar (optionnel) : validé + re-encodé + EXIF purgé, stocké sur le bucket
@@ -44,7 +46,7 @@ export async function updateProfileAction(
     const result = await processUpload(file);
     if (!result.ok) return { error: result.error };
     if (result.kind !== "image") {
-      return { error: "L’avatar doit être une image (JPEG, PNG, WebP, GIF)." };
+      return { error: "avatarMustBeImage" };
     }
     const row = await persistMedia({ ownerUserId: user.id, processed: result });
     newAvatarMediaId = row.id;
@@ -78,7 +80,7 @@ export async function updateProfileAction(
 
   revalidatePath(`/@${user.handle}`);
   revalidatePath("/");
-  return { success: "Profil mis à jour." };
+  return { success: "profileUpdated" };
 }
 
 /**

@@ -4,12 +4,20 @@ import { db } from "@/db";
 import { articles, follows, users } from "@/db/schema";
 import { requireAdmin } from "@/lib/admin";
 import { fediverseHandle } from "@/lib/config";
+import { plural } from "@/lib/i18n/config";
+import { getServerI18n } from "@/lib/i18n/server";
+import { formatLongDate } from "@/lib/relative-time";
 
-export const metadata = { title: "Comptes — Administration" };
+export async function generateMetadata() {
+  const { dict } = await getServerI18n();
+  return { title: dict.admin.accountsMetaTitle };
+}
 
 /** §3.3.A — Liste des comptes LOCAUX de l'instance (lecture seule). */
 export default async function AdminAccountsPage() {
   await requireAdmin();
+  const { locale, dict } = await getServerI18n();
+  const t = dict.admin;
 
   const accounts = await db.query.users.findMany({
     columns: {
@@ -49,29 +57,27 @@ export default async function AdminAccountsPage() {
   const followers = new Map(followerCounts.map((r) => [r.uid, r.n]));
   const following = new Map(followingCounts.map((r) => [r.uid, r.n]));
 
-  const dateFmt = (d: Date) =>
-    d.toLocaleDateString("fr-FR", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    });
+  const dateFmt = (d: Date) => formatLongDate(d, locale);
 
   return (
     <div className="flex flex-col gap-3">
       <p className="text-sm text-black/55 dark:text-white/55">
-        {accounts.length} compte{accounts.length > 1 ? "s" : ""} local
-        {accounts.length > 1 ? "aux" : ""}.
+        {plural(locale, accounts.length, t.accountsCount)}
       </p>
       <div className="overflow-x-auto rounded-lg border border-black/10 dark:border-white/15">
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr className="border-b border-black/10 text-left dark:border-white/15">
-              <th className="px-3 py-2 font-medium">Compte</th>
-              <th className="px-3 py-2 font-medium">Inscription</th>
-              <th className="px-3 py-2 text-right font-medium">Billets</th>
-              <th className="px-3 py-2 text-right font-medium">Abonnés</th>
-              <th className="px-3 py-2 text-right font-medium">Abonnements</th>
-              <th className="px-3 py-2 font-medium">Statut</th>
+              <th className="px-3 py-2 font-medium">{t.colAccount}</th>
+              <th className="px-3 py-2 font-medium">{t.colSignup}</th>
+              <th className="px-3 py-2 text-right font-medium">{t.colPosts}</th>
+              <th className="px-3 py-2 text-right font-medium">
+                {t.colFollowers}
+              </th>
+              <th className="px-3 py-2 text-right font-medium">
+                {t.colFollowing}
+              </th>
+              <th className="px-3 py-2 font-medium">{t.colStatus}</th>
             </tr>
           </thead>
           <tbody>
@@ -105,7 +111,7 @@ export default async function AdminAccountsPage() {
                 <td className="px-3 py-2 text-right tabular-nums">
                   {following.get(a.id) ?? 0}
                 </td>
-                <td className="px-3 py-2">Actif</td>
+                <td className="px-3 py-2">{t.statusActive}</td>
               </tr>
             ))}
           </tbody>

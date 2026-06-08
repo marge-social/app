@@ -7,7 +7,7 @@ import {
   loginAction,
   signupAction,
 } from "@/app/actions/auth";
-import { useT } from "@/components/I18nProvider";
+import { useActionMessage, useT } from "@/components/I18nProvider";
 
 const fieldClass =
   "w-full rounded border border-black/20 bg-transparent px-3 py-2 dark:border-white/25 focus:outline-none focus:ring-2 focus:ring-foreground/40";
@@ -41,10 +41,11 @@ function ErrorBanner({ message }: { message?: string }) {
 export function SignupForm() {
   const [state, action] = useActionState<AuthState, FormData>(signupAction, {});
   const { t } = useT();
+  const msg = useActionMessage();
   const a = t.auth;
   return (
     <form action={action} className="flex flex-col gap-4">
-      <ErrorBanner message={state.error} />
+      <ErrorBanner message={msg(state.error)} />
       <div className="flex flex-col gap-1">
         <label htmlFor="displayName" className="text-sm font-medium">
           {a.displayName}
@@ -99,10 +100,11 @@ export function SignupForm() {
 export function LoginForm() {
   const [state, action] = useActionState<AuthState, FormData>(loginAction, {});
   const { t } = useT();
+  const msg = useActionMessage();
   const a = t.auth;
   return (
     <form action={action} className="flex flex-col gap-4">
-      <ErrorBanner message={state.error} />
+      <ErrorBanner message={msg(state.error)} />
       <div className="flex flex-col gap-1">
         <label htmlFor="email" className="text-sm font-medium">
           {a.email}

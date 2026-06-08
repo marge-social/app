@@ -58,7 +58,8 @@ export async function discoverFeedUrl(input: string): Promise<string> {
 
   const discovered = extractFeedLink(text, res.url || url);
   if (!discovered) {
-    throw new Error("Aucun flux RSS/Atom trouvé à cette adresse.");
+    // Message = clé i18n (cf. dict.errors) : l'action référence la traduit.
+    throw new Error("noFeedFound");
   }
   return discovered;
 }

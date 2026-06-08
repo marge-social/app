@@ -53,12 +53,13 @@ export async function signupAction(
     displayName: formData.get("displayName"),
   });
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Données invalides." };
+    // Les messages Zod portent des clés i18n (cf. validation.ts).
+    return { error: parsed.error.issues[0]?.message ?? "invalidData" };
   }
   const { email, password, handle, displayName } = parsed.data;
 
   if (RESERVED_HANDLES.has(handle)) {
-    return { error: "Ce handle est réservé. Choisis-en un autre." };
+    return { error: "handleReserved" };
   }
 
   const existing = await db.query.users.findFirst({
@@ -66,10 +67,7 @@ export async function signupAction(
   });
   if (existing) {
     return {
-      error:
-        existing.email === email
-          ? "Un compte existe déjà avec cet email."
-          : "Ce handle est déjà pris.",
+      error: existing.email === email ? "emailExists" : "handleTaken",
     };
   }
 
@@ -103,7 +101,7 @@ export async function loginAction(
     password: formData.get("password"),
   });
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Données invalides." };
+    return { error: parsed.error.issues[0]?.message ?? "invalidData" };
   }
   const { email, password } = parsed.data;
 
@@ -111,7 +109,7 @@ export async function loginAction(
     where: eq(users.email, email),
   });
   // Message générique pour ne pas révéler l'existence d'un compte.
-  const invalid = { error: "Email ou mot de passe incorrect." };
+  const invalid = { error: "invalidCredentials" };
   if (!user) {
     // Coût constant : on hache quand même pour limiter l'oracle de timing.
     await hashPassword(password);

@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { type PostFormState, createPostAction } from "@/app/actions/posts";
+import { useActionMessage, useT } from "@/components/I18nProvider";
 
 /** Liste blanche des types acceptés à l'upload (cahier médias §3.2). */
 const ACCEPT =
@@ -10,13 +11,14 @@ const ACCEPT =
 
 function SubmitButton() {
   const { pending } = useFormStatus();
+  const { t } = useT();
   return (
     <button
       type="submit"
       disabled={pending}
       className="rounded bg-foreground px-4 py-2 text-sm font-medium text-background hover:opacity-90 disabled:opacity-50"
     >
-      {pending ? "Publication…" : "Publier"}
+      {pending ? t.composer.publishing : t.composer.publish}
     </button>
   );
 }
@@ -33,6 +35,9 @@ export function Composer() {
     {},
   );
   const formRef = useRef<HTMLFormElement>(null);
+  const { t } = useT();
+  const msg = useActionMessage();
+  const c = t.composer;
   // null = aucun fichier ; true/false = image ou non (pilote l'affichage du alt).
   const [isImage, setIsImage] = useState<boolean | null>(null);
 
@@ -53,26 +58,24 @@ export function Composer() {
     <form
       ref={formRef}
       action={action}
-      aria-label="Écrire un message"
+      aria-label={c.ariaLabel}
       className="flex flex-col gap-2 rounded-lg border border-black/10 p-4 dark:border-white/15"
     >
       <label htmlFor="composer-body" className="sr-only">
-        Votre message (Markdown accepté)
+        {c.bodyLabel}
       </label>
       <textarea
         id="composer-body"
         name="body"
         rows={3}
-        placeholder="Quoi de neuf ? (Markdown accepté)"
+        placeholder={c.placeholder}
         className="w-full resize-y rounded border border-black/15 bg-transparent px-3 py-2 text-sm focus:ring-2 focus:ring-foreground/40 focus:outline-none dark:border-white/20"
       />
 
       <div className="flex flex-col gap-1">
         <label htmlFor="composer-media" className="text-xs text-foreground/70">
-          Joindre un média{" "}
-          <span className="text-foreground/55">
-            (image, PDF, MP4/WebM, MP3 — 5 Mo max)
-          </span>
+          {c.attachMedia}{" "}
+          <span className="text-foreground/55">{c.attachMediaHint}</span>
         </label>
         <input
           id="composer-media"
@@ -90,10 +93,8 @@ export function Composer() {
       {isImage && (
         <div className="flex flex-col gap-1">
           <label htmlFor="composer-alt" className="text-xs text-foreground/70">
-            Texte alternatif{" "}
-            <span className="text-foreground/55">
-              (obligatoire — décrit l’image)
-            </span>
+            {c.altLabel}{" "}
+            <span className="text-foreground/55">{c.altHint}</span>
           </label>
           <input
             id="composer-alt"
@@ -101,7 +102,7 @@ export function Composer() {
             type="text"
             required
             maxLength={1500}
-            placeholder="Décris l’image pour les personnes qui ne la voient pas"
+            placeholder={c.altPlaceholder}
             className="w-full rounded border border-black/15 bg-transparent px-3 py-2 text-sm focus:ring-2 focus:ring-foreground/40 focus:outline-none dark:border-white/20"
           />
         </div>
@@ -114,13 +115,13 @@ export function Composer() {
           rel="noopener noreferrer"
           className="text-xs text-foreground/55 underline"
         >
-          Aide Markdown
+          {c.markdownHelp}
         </a>
         <SubmitButton />
       </div>
       {state.error && (
         <p role="alert" className="text-sm text-red-700 dark:text-red-300">
-          {state.error}
+          {msg(state.error, state.errorParams)}
         </p>
       )}
     </form>

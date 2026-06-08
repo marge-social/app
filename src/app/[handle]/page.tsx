@@ -23,6 +23,9 @@ import { getCurrentUser } from "@/lib/auth";
 import { fediverseHandle } from "@/lib/config";
 import { effectiveSummary } from "@/lib/markdown";
 import { getPage } from "@/lib/pages";
+import { interpolate } from "@/lib/i18n/config";
+import { getServerI18n } from "@/lib/i18n/server";
+import { formatLongDate } from "@/lib/relative-time";
 
 interface ProfileParams {
   params: Promise<{ handle: string }>;
@@ -68,6 +71,8 @@ export default async function ProfilePage({ params }: ProfileParams) {
 
   const viewer = await getCurrentUser();
   const isSelf = viewer?.id === profile.id;
+  const { locale, dict } = await getServerI18n();
+  const t = dict.profile;
 
   const isFollowing = viewer
     ? !!(await db.query.follows.findFirst({
@@ -140,7 +145,7 @@ export default async function ProfilePage({ params }: ProfileParams) {
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={avatarSrc}
-              alt={`Avatar de ${profile.displayName}`}
+              alt={interpolate(t.avatarAlt, { name: profile.displayName })}
               width={80}
               height={80}
               className="h-20 w-20 shrink-0 rounded-full object-cover"
@@ -167,7 +172,7 @@ export default async function ProfilePage({ params }: ProfileParams) {
         {isSelf && (
           <details className="mt-2 rounded-lg border border-black/10 dark:border-white/15">
             <summary className="cursor-pointer px-4 py-2 text-sm font-medium">
-              Modifier mon profil
+              {t.editProfile}
             </summary>
             <div className="border-t border-black/10 p-4 dark:border-white/15">
               <ProfileEditForm
@@ -194,7 +199,7 @@ export default async function ProfilePage({ params }: ProfileParams) {
                     : "rounded bg-foreground px-3 py-1 text-sm font-medium text-background hover:opacity-90"
                 }
               >
-                {isFollowing ? "Ne plus suivre le compte" : "Suivre le compte"}
+                {isFollowing ? t.unfollowAccount : t.followAccount}
               </button>
             </form>
           </div>
@@ -202,21 +207,19 @@ export default async function ProfilePage({ params }: ProfileParams) {
         {!isSelf && !viewer && (
           <p className="mt-2 text-sm text-foreground/60">
             <Link href="/login" className="underline">
-              Connecte-toi
+              {t.loginToFollowLink}
             </Link>{" "}
-            pour suivre ce compte.
+            {t.loginToFollowSuffix}
           </p>
         )}
       </header>
 
       <section aria-labelledby="articles-heading" className="flex flex-col gap-4">
         <h2 id="articles-heading" className="text-lg font-semibold">
-          Textes publiés
+          {t.publishedTexts}
         </h2>
         {published.length === 0 ? (
-          <p className="text-sm text-foreground/60">
-            Aucun texte publié pour l’instant.
-          </p>
+          <p className="text-sm text-foreground/60">{t.noPublished}</p>
         ) : (
           <ul className="flex flex-col gap-5">
             {published.map((a) => (
@@ -234,11 +237,7 @@ export default async function ProfilePage({ params }: ProfileParams) {
                     dateTime={a.publishedAt.toISOString()}
                     className="text-xs text-foreground/60"
                   >
-                    {a.publishedAt.toLocaleDateString("fr-FR", {
-                      day: "numeric",
-                      month: "long",
-                      year: "numeric",
-                    })}
+                    {formatLongDate(a.publishedAt, locale)}
                   </time>
                 )}
                 <p className="text-sm text-foreground/80">
@@ -252,12 +251,10 @@ export default async function ProfilePage({ params }: ProfileParams) {
 
       <section aria-labelledby="feeds-heading" className="flex flex-col gap-3">
         <h2 id="feeds-heading" className="text-lg font-semibold">
-          Flux RSS déclarés
+          {t.declaredFeeds}
         </h2>
         {declaredFeeds.length === 0 ? (
-          <p className="text-sm text-foreground/60">
-            Aucun flux déclaré pour l’instant.
-          </p>
+          <p className="text-sm text-foreground/60">{t.noDeclaredFeeds}</p>
         ) : (
           <ul className="flex flex-col gap-3">
             {declaredFeeds.map((f) => {
@@ -285,7 +282,7 @@ export default async function ProfilePage({ params }: ProfileParams) {
                         type="submit"
                         className="w-fit rounded border border-black/20 px-2 py-1 text-xs hover:bg-black/5 dark:border-white/25 dark:hover:bg-white/10"
                       >
-                        {subscribed ? "Ne plus suivre ce flux" : "Suivre ce flux"}
+                        {subscribed ? t.unfollowFeed : t.followFeed}
                       </button>
                     </form>
                   )}
@@ -303,13 +300,9 @@ export default async function ProfilePage({ params }: ProfileParams) {
         >
           <div className="flex flex-col gap-1">
             <h2 id="manage-feeds-heading" className="text-lg font-semibold">
-              Ajouter mon flux
+              {t.addMyFeed}
             </h2>
-            <p className="text-sm text-foreground/70">
-              Déclarez un flux RSS que vous possédez. Pour en revendiquer la
-              propriété (et activer le texte intégral), passez par la page du
-              flux. Suivre un flux n’est pas suivre un compte.
-            </p>
+            <p className="text-sm text-foreground/70">{t.addMyFeedHelp}</p>
           </div>
           <ReferenceFeedForm />
 
@@ -327,7 +320,9 @@ export default async function ProfilePage({ params }: ProfileParams) {
                     {f.title || f.feedUrl}
                   </Link>
                   <span className="rounded bg-black/5 px-1.5 py-0.5 text-xs text-foreground/60 dark:bg-white/10">
-                    {f.ownershipStatus === "claimed" ? "réclamé" : "référencé"}
+                    {f.ownershipStatus === "claimed"
+                      ? t.feedClaimed
+                      : t.feedReferenced}
                   </span>
                   <form action={removeOwnFeedAction}>
                     <input type="hidden" name="feedId" value={f.id} />
@@ -335,7 +330,7 @@ export default async function ProfilePage({ params }: ProfileParams) {
                       type="submit"
                       className="text-xs text-foreground/55 underline"
                     >
-                      retirer
+                      {t.removeFeed}
                     </button>
                   </form>
                 </li>

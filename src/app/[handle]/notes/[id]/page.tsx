@@ -8,6 +8,8 @@ import { Attachments } from "@/components/Attachments";
 import { fediverseHandle } from "@/lib/config";
 import { loadMediaForPosts } from "@/lib/media";
 import { htmlToText } from "@/lib/markdown";
+import { getServerI18n } from "@/lib/i18n/server";
+import { formatLongDate } from "@/lib/relative-time";
 
 interface NoteParams {
   params: Promise<{ handle: string; id: string }>;
@@ -35,7 +37,7 @@ export async function generateMetadata({
 }: NoteParams): Promise<Metadata> {
   const { handle, id } = await params;
   const data = await loadNote(handle, id);
-  if (!data) return { title: "Introuvable — Marge" };
+  if (!data) return { title: (await getServerI18n()).dict.common.metaNotFound };
   const excerpt = htmlToText(data.post.contentHtml).slice(0, 80);
   return {
     title: `${data.author.displayName} — ${excerpt}…`,
@@ -49,6 +51,7 @@ export default async function NotePage({ params }: NoteParams) {
   const { author, post } = data;
   const date = post.publishedAt ?? post.createdAt;
   const media = (await loadMediaForPosts([post.id])).get(post.id) ?? [];
+  const { locale } = await getServerI18n();
 
   return (
     <article className="flex flex-col gap-6">
@@ -60,11 +63,7 @@ export default async function NotePage({ params }: NoteParams) {
           <span className="font-mono">{fediverseHandle(author.handle)}</span>
           {" · "}
           <time dateTime={date.toISOString()}>
-            {date.toLocaleDateString("fr-FR", {
-              day: "numeric",
-              month: "long",
-              year: "numeric",
-            })}
+            {formatLongDate(date, locale)}
           </time>
         </p>
       </header>

@@ -76,9 +76,9 @@ function declaredExt(name: string): string | null {
  * dimensions extraites + **miniature** générée (§3.3.3).
  */
 export async function processUpload(file: File): Promise<ProcessResult> {
-  if (file.size === 0) return { ok: false, error: "Fichier vide." };
+  if (file.size === 0) return { ok: false, error: "fileEmpty" };
   if (file.size > MAX_BYTES) {
-    return { ok: false, error: "Fichier trop lourd (max 5 Mo)." };
+    return { ok: false, error: "fileTooBig" };
   }
 
   const buffer = Buffer.from(await file.arrayBuffer());
@@ -88,7 +88,7 @@ export async function processUpload(file: File): Promise<ProcessResult> {
   if (!detected || !allowed) {
     return {
       ok: false,
-      error: "Format non autorisé (images, PDF, MP4/WebM, MP3 uniquement).",
+      error: "formatNotAllowed",
     };
   }
 
@@ -97,7 +97,7 @@ export async function processUpload(file: File): Promise<ProcessResult> {
   if (claimed && claimed !== allowed.ext) {
     return {
       ok: false,
-      error: "L’extension du fichier ne correspond pas à son contenu réel.",
+      error: "extensionMismatch",
     };
   }
 
@@ -136,7 +136,7 @@ export async function processUpload(file: File): Promise<ProcessResult> {
       height: info.height,
     };
   } catch {
-    return { ok: false, error: "Image illisible ou corrompue." };
+    return { ok: false, error: "imageCorrupt" };
   }
 }
 

@@ -82,7 +82,8 @@ export interface FeedEntry {
   href: string;
   /** Lien interne (Next <Link>) vs externe (<a>). */
   internal: boolean;
-  source: "compte Marge" | "Fediverse" | "flux RSS";
+  /** Clé de source (le libellé affiché est traduit au rendu — cf. dict.feed.sources). */
+  source: "local" | "fediverse" | "rss";
   readingMinutes?: number;
   /**
    * IRI ActivityPub de l'objet, présent quand l'entrée est likeable (billets,
@@ -205,7 +206,7 @@ export async function buildFeed(
         summary: effectiveSummary(r.content, r.summary),
         href: `/@${a.handle}/${r.slug}`,
         internal: true,
-        source: "compte Marge",
+        source: "local",
         readingMinutes: readingTimeMinutes(r.content),
         objectUri: articleApUri(a.handle, r.slug),
         likeCount: 0,
@@ -247,7 +248,7 @@ export async function buildFeed(
         contentHtml: r.contentHtml,
         href: `/@${a.handle}/notes/${r.id}`,
         internal: true,
-        source: "compte Marge",
+        source: "local",
         objectUri: noteApUri(a.handle, r.id),
         likeCount: 0,
         likedByViewer: false,
@@ -297,7 +298,7 @@ export async function buildFeed(
           (text.length > PREVIEW_LEN ? `${text.slice(0, PREVIEW_LEN)}…` : text),
         href: r.url ?? r.objectUri,
         internal: false,
-        source: "Fediverse",
+        source: "fediverse",
         objectUri: r.objectUri,
         likeCount: 0,
         likedByViewer: false,
@@ -346,7 +347,7 @@ export async function buildFeed(
         summary: r.excerpt,
         href: r.link,
         internal: false,
-        source: "flux RSS",
+        source: "rss",
         likeCount: 0,
         likedByViewer: false,
         shareCount: 0,
@@ -482,7 +483,7 @@ export async function buildFeed(
           summary: effectiveSummary(art.content, art.summary),
           href: `/@${art.handle}/${art.slug}`,
           internal: true,
-          source: "compte Marge",
+          source: "local",
           readingMinutes: readingTimeMinutes(art.content),
           objectUri: a.objectIri,
           sharedBy: by,
@@ -508,7 +509,7 @@ export async function buildFeed(
           contentHtml: note.contentHtml,
           href: `/@${note.handle}/notes/${note.id}`,
           internal: true,
-          source: "compte Marge",
+          source: "local",
           objectUri: a.objectIri,
           sharedBy: by,
           likeCount: 0,
@@ -536,7 +537,7 @@ export async function buildFeed(
               : text),
           href: rem.url ?? rem.objectUri,
           internal: false,
-          source: "Fediverse",
+          source: "fediverse",
           objectUri: rem.objectUri,
           sharedBy: by,
           likeCount: 0,

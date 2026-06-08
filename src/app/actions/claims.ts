@@ -41,18 +41,18 @@ export async function feedOwnershipAction(
 
   const intent = formData.get("intent");
   const feedId = formData.get("feedId") as string;
-  if (!feedId) return { error: "Flux inconnu." };
+  if (!feedId) return { error: "feedUnknown" };
 
   const feed = await db.query.feeds.findFirst({ where: eq(feeds.id, feedId) });
   if (!feed || feed.ownershipStatus === "opt_out") {
-    return { error: "Flux introuvable." };
+    return { error: "feedNotFound" };
   }
 
   // --- Étape 1 : demande (génère un jeton) ---
   if (intent === "claim-request" || intent === "optout-request") {
     const type = intent === "claim-request" ? "claim" : "opt_out";
     if (type === "claim" && feed.ownershipStatus === "claimed") {
-      return { error: "Ce flux a déjà un propriétaire." };
+      return { error: "feedHasOwner" };
     }
     const token = newToken();
     const [claim] = await db
@@ -79,7 +79,7 @@ export async function feedOwnershipAction(
         eq(feedClaims.claimantId, user.id),
       ),
     });
-    if (!claim) return { error: "Demande introuvable." };
+    if (!claim) return { error: "requestNotFound" };
 
     // Récupère le flux à la source et cherche le jeton.
     let found = false;
@@ -92,7 +92,7 @@ export async function feedOwnershipAction(
       found = text.includes(claim.token);
     } catch {
       return {
-        error: "Impossible de récupérer le flux pour vérifier le jeton.",
+        error: "cannotFetchFeed",
         token: claim.token,
         claimId: claim.id,
         type: claim.type,
@@ -101,8 +101,7 @@ export async function feedOwnershipAction(
 
     if (!found) {
       return {
-        error:
-          "Jeton non trouvé dans le flux. Ajoute-le puis réessaie (le cache de ton blog peut tarder).",
+        error: "tokenNotFound",
         token: claim.token,
         claimId: claim.id,
         type: claim.type,
@@ -141,7 +140,7 @@ export async function feedOwnershipAction(
     redirect("/");
   }
 
-  return { error: "Action inconnue." };
+  return { error: "unknownAction" };
 }
 
 /** Le propriétaire (flux réclamé) active/désactive le texte intégral. */

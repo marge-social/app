@@ -7,6 +7,7 @@ import { EditorForm } from "@/components/EditorForm";
 import { deleteArticleAction } from "@/app/actions/articles";
 import { getCurrentUser } from "@/lib/auth";
 import { articleUrl } from "@/lib/config";
+import { getServerI18n } from "@/lib/i18n/server";
 
 interface EditParams {
   params: Promise<{ id: string }>;
@@ -23,19 +24,21 @@ export default async function EditArticlePage({ params }: EditParams) {
   if (!article || article.authorId !== user.id) notFound();
 
   const published = article.status === "published";
+  const { dict } = await getServerI18n();
+  const t = dict.compose;
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-bold tracking-tight">
-          {published ? "Modifier le texte" : "Modifier le brouillon"}
+          {published ? t.editText : t.editDraft}
         </h1>
         {published && (
           <Link
             href={articleUrl(user.handle, article.slug)}
             className="text-sm underline"
           >
-            Voir la page publique
+            {t.viewPublicPage}
           </Link>
         )}
       </div>
@@ -59,7 +62,7 @@ export default async function EditArticlePage({ params }: EditParams) {
           type="submit"
           className="rounded border border-red-500/40 px-3 py-1.5 text-sm text-red-700 hover:bg-red-500/10 dark:text-red-300"
         >
-          Supprimer ce texte
+          {t.deleteText}
         </button>
       </form>
     </div>

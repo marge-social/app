@@ -6,16 +6,18 @@ import {
   type FeedFormState,
   referenceFeedAction,
 } from "@/app/actions/feeds";
+import { useActionMessage, useT } from "@/components/I18nProvider";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
+  const { t } = useT();
   return (
     <button
       type="submit"
       disabled={pending}
       className="rounded bg-foreground px-3 py-2 text-sm font-medium text-background hover:opacity-90 disabled:opacity-50"
     >
-      {pending ? "Lecture…" : "Référencer"}
+      {pending ? t.forms.feedReading : t.forms.feedReference}
     </button>
   );
 }
@@ -25,6 +27,9 @@ export function ReferenceFeedForm() {
     referenceFeedAction,
     {},
   );
+  const { t } = useT();
+  const msg = useActionMessage();
+  const f = t.forms;
   return (
     <form action={action} className="flex flex-col gap-2">
       <div className="flex gap-2">
@@ -32,8 +37,8 @@ export function ReferenceFeedForm() {
           name="url"
           type="url"
           required
-          placeholder="https://un-blog.example/ ou .../feed.xml"
-          aria-label="URL d’un blog ou d’un flux RSS"
+          placeholder={f.feedPlaceholder}
+          aria-label={f.feedAriaLabel}
           autoCapitalize="none"
           className="flex-1 rounded border border-black/20 bg-transparent px-3 py-2 text-sm dark:border-white/25 focus:outline-none focus:ring-2 focus:ring-foreground/40"
         />
@@ -41,13 +46,10 @@ export function ReferenceFeedForm() {
       </div>
       {state.error && (
         <p role="alert" className="text-sm text-red-700 dark:text-red-300">
-          {state.error}
+          {msg(state.error)}
         </p>
       )}
-      <p className="text-xs text-foreground/60">
-        Colle l’adresse d’un blog (le flux est auto-découvert) ou directement
-        celle d’un flux RSS/Atom. Le flux devient suivable par tout le monde.
-      </p>
+      <p className="text-xs text-foreground/60">{f.feedHelp}</p>
     </form>
   );
 }

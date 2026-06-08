@@ -7,6 +7,9 @@ import { EditorForm } from "@/components/EditorForm";
 import { getCurrentUser } from "@/lib/auth";
 import { humanObjectUrl } from "@/lib/config";
 import { resolveInteractionTarget } from "@/lib/interactions";
+import { interpolate } from "@/lib/i18n/config";
+import { getServerI18n } from "@/lib/i18n/server";
+import { formatShortDate } from "@/lib/relative-time";
 
 export default async function ComposePage({
   searchParams,
@@ -29,13 +32,14 @@ export default async function ComposePage({
     columns: { id: true, title: true, updatedAt: true },
   });
 
+  const { locale, dict } = await getServerI18n();
+  const t = dict.compose;
+
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-bold tracking-tight">Écrire un texte</h1>
-        <p className="text-sm text-foreground/70">
-          Markdown, prévisualisation, brouillon ou publication.
-        </p>
+        <h1 className="text-2xl font-bold tracking-tight">{t.writeTitle}</h1>
+        <p className="text-sm text-foreground/70">{t.writeIntro}</p>
       </div>
 
       <EditorForm
@@ -47,18 +51,17 @@ export default async function ComposePage({
 
       {drafts.length > 0 && (
         <section className="flex flex-col gap-2 border-t border-black/10 pt-6 dark:border-white/15">
-          <h2 className="text-lg font-semibold">Brouillons</h2>
+          <h2 className="text-lg font-semibold">{t.drafts}</h2>
           <ul className="flex flex-col gap-1 text-sm">
             {drafts.map((d) => (
               <li key={d.id}>
                 <Link href={`/compose/${d.id}`} className="underline">
-                  {d.title || "(sans titre)"}
+                  {d.title || dict.feed.untitled}
                 </Link>{" "}
                 <span className="text-foreground/50">
-                  — modifié le{" "}
-                  {d.updatedAt.toLocaleDateString("fr-FR", {
-                    day: "numeric",
-                    month: "long",
+                  {"— "}
+                  {interpolate(t.modifiedOn, {
+                    date: formatShortDate(d.updatedAt, locale),
                   })}
                 </span>
               </li>

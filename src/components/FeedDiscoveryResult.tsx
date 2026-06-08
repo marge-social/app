@@ -6,6 +6,7 @@ import {
   type FeedFormState,
   referenceFeedAction,
 } from "@/app/actions/feeds";
+import { useActionMessage, useT } from "@/components/I18nProvider";
 
 export interface FeedDiscoveryPreview {
   feedUrl: string;
@@ -16,13 +17,14 @@ export interface FeedDiscoveryPreview {
 
 function SubmitButton() {
   const { pending } = useFormStatus();
+  const { t } = useT();
   return (
     <button
       type="submit"
       disabled={pending}
       className="shrink-0 rounded bg-foreground px-3 py-2 text-sm font-medium text-background hover:opacity-90 disabled:opacity-50"
     >
-      {pending ? "…" : "Ajouter ce flux"}
+      {pending ? "…" : t.search.addThisFeed}
     </button>
   );
 }
@@ -41,6 +43,7 @@ export function FeedDiscoveryResult({
     referenceFeedAction,
     {},
   );
+  const msg = useActionMessage();
   return (
     <div className="flex flex-col gap-2 rounded-lg border border-black/10 p-4 dark:border-white/15">
       <div className="flex items-start gap-3">
@@ -58,7 +61,7 @@ export function FeedDiscoveryResult({
       </div>
       {state.error && (
         <p role="alert" className="text-sm text-red-700 dark:text-red-300">
-          {state.error}
+          {msg(state.error)}
         </p>
       )}
     </div>

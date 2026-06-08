@@ -21,8 +21,13 @@ import { effectiveSummary, htmlToText } from "@/lib/markdown";
 import { type RemoteActorPreview, previewRemoteActor } from "@/federation/follow";
 import { isBlocked } from "@/lib/blocklist";
 import { previewFeed } from "@/lib/rss";
+import { interpolate } from "@/lib/i18n/config";
+import { getServerI18n } from "@/lib/i18n/server";
 
-export const metadata: Metadata = { title: "Recherche — Marge" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { dict } = await getServerI18n();
+  return { title: dict.search.metaTitle };
+}
 
 const LIMIT = 25;
 
@@ -90,6 +95,9 @@ export default async function SearchPage({
   const q = (rawQ ?? "").trim();
   const pattern = likePattern(q);
   const hasQuery = q.length >= 2;
+  const { dict } = await getServerI18n();
+  const t = dict.search;
+  const untitled = dict.feed.untitled;
 
   let contents: ContentResult[] = [];
   let accounts: {
@@ -185,32 +193,32 @@ export default async function SearchPage({
     contents = [
       ...articleRows.map((r) => ({
         key: `a:${r.id}`,
-        title: r.title || "(sans titre)",
+        title: r.title || untitled,
         snippet: effectiveSummary(r.content, r.summary),
         href: `/@${r.handle}/${r.slug}`,
         internal: true,
-        meta: `Billet · ${fediverseHandle(r.handle)}`,
+        meta: `${t.metaArticle} · ${fediverseHandle(r.handle)}`,
         date: r.publishedAt ?? new Date(0),
       })),
       ...postRows.map((r) => {
         const text = htmlToText(r.contentHtml);
         return {
           key: `p:${r.id}`,
-          title: text.slice(0, 60) || "Message",
+          title: text.slice(0, 60) || t.metaMessage,
           snippet: text.length > 280 ? `${text.slice(0, 280)}…` : text,
           href: `/@${r.handle}/notes/${r.id}`,
           internal: true,
-          meta: `Message · ${fediverseHandle(r.handle)}`,
+          meta: `${t.metaMessage} · ${fediverseHandle(r.handle)}`,
           date: r.publishedAt,
         };
       }),
       ...itemRows.map((r) => ({
         key: `f:${r.id}`,
-        title: r.title || "(sans titre)",
+        title: r.title || untitled,
         snippet: r.excerpt,
         href: r.link,
         internal: false,
-        meta: `Flux RSS · ${r.feedTitle || r.feedUrl}`,
+        meta: `${t.metaRssFeed} · ${r.feedTitle || r.feedUrl}`,
         date: r.publishedAt ?? r.fetchedAt,
       })),
     ].sort((a, b) => b.date.getTime() - a.date.getTime());
@@ -278,10 +286,10 @@ export default async function SearchPage({
   return (
     <div className="flex flex-col gap-8">
       <header className="flex flex-col gap-3">
-        <h1 className="text-2xl font-bold tracking-tight">Recherche</h1>
+        <h1 className="text-2xl font-bold tracking-tight">{t.title}</h1>
         <form action="/recherche" method="get" role="search" className="flex gap-2">
           <label htmlFor="q" className="sr-only">
-            Rechercher des contenus, comptes ou flux
+            {t.inputLabel}
           </label>
           <input
             id="q"
@@ -289,7 +297,7 @@ export default async function SearchPage({
             name="q"
             defaultValue={q}
             autoFocus
-            placeholder="Mots-clés, @compte@instance, titre de flux…"
+            placeholder={t.placeholder}
             autoCapitalize="none"
             autoCorrect="off"
             className="flex-1 rounded border border-black/20 bg-transparent px-3 py-2 text-sm focus:ring-2 focus:ring-foreground/40 focus:outline-none dark:border-white/25"
@@ -298,28 +306,25 @@ export default async function SearchPage({
             type="submit"
             className="rounded bg-foreground px-4 py-2 text-sm font-medium text-background hover:opacity-90"
           >
-            Rechercher
+            {t.submit}
           </button>
         </form>
       </header>
 
       {!hasQuery ? (
-        <p className="text-foreground/60">
-          Saisissez au moins deux caractères pour rechercher des contenus, des
-          comptes et des flux sur l’instance.
-        </p>
+        <p className="text-foreground/60">{t.promptMinChars}</p>
       ) : totalResults === 0 ? (
         <p className="text-foreground/60">
-          Aucun résultat pour « {q} ».
+          {interpolate(t.noResults, { q })}
         </p>
       ) : (
         <>
           <section aria-labelledby="sec-contenus" className="flex flex-col gap-3">
             <h2 id="sec-contenus" className="text-sm font-semibold">
-              Contenus ({contents.length})
+              {t.sectionContents} ({contents.length})
             </h2>
             {contents.length === 0 ? (
-              <p className="text-sm text-foreground/55">Aucun contenu.</p>
+              <p className="text-sm text-foreground/55">{t.noContent}</p>
             ) : (
               <ul className="flex flex-col gap-4">
                 {contents.map((c) => (
@@ -351,17 +356,16 @@ export default async function SearchPage({
 
           <section aria-labelledby="sec-comptes" className="flex flex-col gap-3">
             <h2 id="sec-comptes" className="text-sm font-semibold">
-              Comptes ({accounts.length + (remoteProfile ? 1 : 0)})
+              {t.sectionAccounts} ({accounts.length + (remoteProfile ? 1 : 0)})
             </h2>
             {remoteProfile && <RemoteProfileResult actor={remoteProfile} />}
             {!remoteProfile && looksLikeRemoteHandle(q) && (
               <p className="text-sm text-foreground/55">
-                « {q} » ressemble à un compte du Fediverse, mais il reste
-                introuvable.
+                {interpolate(t.remoteNotFound, { q })}
               </p>
             )}
             {accounts.length === 0 && !remoteProfile ? (
-              <p className="text-sm text-foreground/55">Aucun compte.</p>
+              <p className="text-sm text-foreground/55">{t.noAccount}</p>
             ) : (
               <ul className="flex flex-col gap-3">
                 {accounts.map((a) => (
@@ -383,14 +387,11 @@ export default async function SearchPage({
 
           <section aria-labelledby="sec-flux" className="flex flex-col gap-3">
             <h2 id="sec-flux" className="text-sm font-semibold">
-              Flux ({fluxResults.length + (feedDiscovery ? 1 : 0)})
+              {t.sectionFeeds} ({fluxResults.length + (feedDiscovery ? 1 : 0)})
             </h2>
             {feedDiscovery &&
               (feedDiscovery.blocked ? (
-                <p className="text-sm text-foreground/55">
-                  Ce flux a fait l’objet d’un retrait (opt-out) et ne peut pas
-                  être référencé.
-                </p>
+                <p className="text-sm text-foreground/55">{t.feedOptOut}</p>
               ) : feedDiscovery.existingId ? (
                 <Link
                   href={`/feeds/${feedDiscovery.existingId}`}
@@ -400,19 +401,17 @@ export default async function SearchPage({
                     {feedDiscovery.preview.title || feedDiscovery.preview.feedUrl}
                   </span>{" "}
                   <span className="text-xs text-foreground/60">
-                    — déjà référencé, voir le flux
+                    {t.feedAlreadyReferenced}
                   </span>
                 </Link>
               ) : (
                 <FeedDiscoveryResult feed={feedDiscovery.preview} />
               ))}
             {!feedDiscovery && looksLikeUrl(q) && (
-              <p className="text-sm text-foreground/55">
-                Aucun flux RSS/Atom n’a pu être lu à cette adresse.
-              </p>
+              <p className="text-sm text-foreground/55">{t.feedNotReadable}</p>
             )}
             {fluxResults.length === 0 && !feedDiscovery ? (
-              <p className="text-sm text-foreground/55">Aucun flux.</p>
+              <p className="text-sm text-foreground/55">{t.noFeed}</p>
             ) : (
               <ul className="flex flex-col gap-3">
                 {fluxResults.map((f) => (
@@ -423,8 +422,10 @@ export default async function SearchPage({
                     <p className="text-xs text-foreground/60">
                       {f.feedUrl}
                       {f.ownerHandle
-                        ? ` · réclamé par ${fediverseHandle(f.ownerHandle)}`
-                        : " · orphelin"}
+                        ? ` · ${interpolate(t.feedClaimedBy, {
+                            who: fediverseHandle(f.ownerHandle),
+                          })}`
+                        : ` · ${t.feedOrphan}`}
                     </p>
                   </li>
                 ))}

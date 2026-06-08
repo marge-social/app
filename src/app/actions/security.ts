@@ -13,7 +13,9 @@ import {
 } from "@/lib/auth";
 
 export interface PasswordFormState {
+  /** Clés i18n (dict.errors / dict.success), traduites au rendu. */
   error?: string;
+  errorParams?: Record<string, string | number>;
   success?: string;
 }
 
@@ -37,21 +39,19 @@ export async function changePasswordAction(
   const confirm = (formData.get("confirm") as string) ?? "";
 
   if (!current || !next || !confirm) {
-    return { error: "Tous les champs sont requis." };
+    return { error: "allFieldsRequired" };
   }
   if (next.length < MIN_LEN) {
-    return {
-      error: `Le nouveau mot de passe doit faire au moins ${MIN_LEN} caractères.`,
-    };
+    return { error: "passwordTooShortN", errorParams: { n: MIN_LEN } };
   }
   if (next !== confirm) {
-    return { error: "La confirmation ne correspond pas au nouveau mot de passe." };
+    return { error: "confirmMismatch" };
   }
 
   const ok = await verifyPassword(user.passwordHash, current);
-  if (!ok) return { error: "Le mot de passe actuel est incorrect." };
+  if (!ok) return { error: "currentPasswordWrong" };
   if (next === current) {
-    return { error: "Le nouveau mot de passe doit différer de l’actuel." };
+    return { error: "newMustDiffer" };
   }
 
   const passwordHash = await hashPassword(next);
@@ -60,7 +60,5 @@ export async function changePasswordAction(
   const token = await getSessionToken();
   if (token) await invalidateOtherSessions(user.id, token);
 
-  return {
-    success: "Mot de passe modifié. Vos autres sessions ont été déconnectées.",
-  };
+  return { success: "passwordChanged" };
 }

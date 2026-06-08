@@ -6,16 +6,18 @@ import {
   type ProfileFormState,
   updateProfileAction,
 } from "@/app/actions/profile";
+import { useActionMessage, useT } from "@/components/I18nProvider";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
+  const { t } = useT();
   return (
     <button
       type="submit"
       disabled={pending}
       className="self-start rounded bg-foreground px-4 py-2 text-sm font-medium text-background hover:opacity-90 disabled:opacity-50"
     >
-      {pending ? "Enregistrement…" : "Enregistrer"}
+      {pending ? t.forms.saving : t.forms.save}
     </button>
   );
 }
@@ -31,12 +33,15 @@ export function ProfileEditForm({
     updateProfileAction,
     {},
   );
+  const { t } = useT();
+  const msg = useActionMessage();
+  const f = t.forms;
 
   return (
     <form action={action} className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
         <label htmlFor="displayName" className="text-sm font-medium">
-          Nom affiché
+          {f.profileDisplayName}
         </label>
         <input
           id="displayName"
@@ -50,7 +55,7 @@ export function ProfileEditForm({
 
       <div className="flex flex-col gap-1">
         <label htmlFor="bio" className="text-sm font-medium">
-          Bio
+          {f.profileBio}
         </label>
         <textarea
           id="bio"
@@ -64,7 +69,7 @@ export function ProfileEditForm({
 
       <div className="flex flex-col gap-1">
         <label htmlFor="avatar" className="text-sm font-medium">
-          Avatar
+          {f.profileAvatar}
         </label>
         <input
           id="avatar"
@@ -73,21 +78,19 @@ export function ProfileEditForm({
           accept="image/png,image/jpeg,image/webp,image/gif"
           className="text-sm"
         />
-        <p className="text-xs text-foreground/55">
-          PNG, JPEG, WebP ou GIF, 5 Mo maximum.
-        </p>
+        <p className="text-xs text-foreground/55">{f.profileAvatarHint}</p>
       </div>
 
       <SubmitButton />
 
       {state.error && (
         <p role="alert" className="text-sm text-red-700 dark:text-red-300">
-          {state.error}
+          {msg(state.error, state.errorParams)}
         </p>
       )}
       {state.success && (
         <p role="status" className="text-sm text-green-700 dark:text-green-400">
-          {state.success}
+          {msg(state.success)}
         </p>
       )}
     </form>

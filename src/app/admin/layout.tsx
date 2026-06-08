@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/admin";
+import { getServerI18n } from "@/lib/i18n/server";
 
-export const metadata = { title: "Administration — Marge" };
+export async function generateMetadata() {
+  const { dict } = await getServerI18n();
+  return { title: dict.admin.metaTitle };
+}
 
 /** Protège toutes les routes `/admin/*` côté serveur (§3.2). */
 export default async function AdminLayout({
@@ -10,27 +14,23 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   await requireAdmin();
+  const { dict } = await getServerI18n();
+  const t = dict.admin;
 
   return (
     <section className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-semibold tracking-tight">Administration</h1>
-        <p className="text-sm text-black/55 dark:text-white/55">
-          Supervision de l’instance (comptes et billets en lecture seule) et
-          édition des pages de contenu. Aucune action de modération ici.
-        </p>
-        <nav
-          aria-label="Navigation administration"
-          className="flex gap-4 text-sm"
-        >
+        <h1 className="text-2xl font-semibold tracking-tight">{t.title}</h1>
+        <p className="text-sm text-black/55 dark:text-white/55">{t.intro}</p>
+        <nav aria-label={t.navLabel} className="flex gap-4 text-sm">
           <Link href="/admin/accounts" className="hover:underline">
-            Comptes
+            {t.accounts}
           </Link>
           <Link href="/admin/posts" className="hover:underline">
-            Billets
+            {t.posts}
           </Link>
           <Link href="/admin/pages" className="hover:underline">
-            Pages
+            {t.pages}
           </Link>
         </nav>
       </div>

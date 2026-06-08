@@ -10,7 +10,9 @@ import { persistMedia, processUpload } from "@/lib/media";
 import { deliverCreateNote } from "@/federation/delivery";
 
 export interface PostFormState {
+  /** Clé i18n (dict.errors) — traduite au rendu via useActionMessage(). */
   error?: string;
+  errorParams?: Record<string, string | number>;
 }
 
 const MAX_LEN = 5000;
@@ -33,10 +35,10 @@ export async function createPostAction(
 
   // Un message peut être vide s'il porte un média (image seule).
   if (!contentMarkdown && !hasMedia) {
-    return { error: "Le message ne peut pas être vide." };
+    return { error: "messageEmpty" };
   }
   if (contentMarkdown.length > MAX_LEN) {
-    return { error: `Message trop long (max ${MAX_LEN} caractères).` };
+    return { error: "messageTooLong", errorParams: { n: MAX_LEN } };
   }
 
   // Validation du média AVANT toute écriture (rejets type/taille immédiats).
@@ -46,7 +48,7 @@ export async function createPostAction(
     const result = await processUpload(file);
     if (!result.ok) return { error: result.error };
     if (result.kind === "image" && !alt) {
-      return { error: "Le texte alternatif est obligatoire pour une image." };
+      return { error: "altRequired" };
     }
     processed = result;
   }

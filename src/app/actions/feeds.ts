@@ -27,25 +27,20 @@ export async function referenceFeedAction(
   if (!user) redirect("/login");
 
   const input = ((formData.get("url") as string) ?? "").trim();
-  if (!input) return { error: "Indique l’URL d’un blog ou d’un flux." };
+  if (!input) return { error: "feedUrlRequired" };
 
   let feedUrl: string;
   try {
     feedUrl = await discoverFeedUrl(input);
   } catch (err) {
+    // err.message porte une clé i18n (ex. "noFeedFound") ; sinon repli générique.
     return {
-      error:
-        err instanceof Error
-          ? err.message
-          : "Impossible de lire cette adresse.",
+      error: err instanceof Error ? err.message : "feedUnreadable",
     };
   }
 
   if (await isBlocked(feedUrl)) {
-    return {
-      error:
-        "Ce flux a fait l’objet d’un retrait (opt-out) et ne peut pas être référencé.",
-    };
+    return { error: "feedOptOutBlocked" };
   }
 
   let feedId: string;
@@ -55,7 +50,7 @@ export async function referenceFeedAction(
 
   if (existing) {
     if (existing.ownershipStatus === "opt_out") {
-      return { error: "Ce flux a été retiré par son auteur." };
+      return { error: "feedRemovedByAuthor" };
     }
     feedId = existing.id;
   } else {

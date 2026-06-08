@@ -90,10 +90,11 @@ export async function followRemoteActor(
   try {
     actor = await ctx.lookupObject(handle);
   } catch {
-    return { ok: false, error: "Compte introuvable sur le Fediverse." };
+    // error = clé i18n (dict.errors), traduite au rendu par l'action.
+    return { ok: false, error: "remoteAccountNotFound" };
   }
   if (!isActor(actor) || actor.id == null || actor.inboxId == null) {
-    return { ok: false, error: "Ce handle ne correspond pas à un compte." };
+    return { ok: false, error: "notAnAccount" };
   }
 
   await db

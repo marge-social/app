@@ -4,6 +4,7 @@ import { marked } from "marked";
 import { useActionState, useMemo, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { type PageFormState, savePageAction } from "@/app/actions/pages";
+import { useActionMessage, useT } from "@/components/I18nProvider";
 
 const fieldClass =
   "w-full rounded border border-black/20 bg-transparent px-3 py-2 dark:border-white/25 focus:outline-none focus:ring-2 focus:ring-foreground/40";
@@ -27,13 +28,18 @@ function clientSlug(input: string): string {
 
 function SaveButton({ isNew }: { isNew: boolean }) {
   const { pending } = useFormStatus();
+  const { t } = useT();
   return (
     <button
       type="submit"
       disabled={pending}
       className="self-start rounded bg-foreground px-4 py-2 font-medium text-background hover:opacity-90 disabled:opacity-50"
     >
-      {pending ? "Enregistrement…" : isNew ? "Créer la page" : "Enregistrer"}
+      {pending
+        ? t.forms.saving
+        : isNew
+          ? t.pageEditor.create
+          : t.forms.save}
     </button>
   );
 }
@@ -56,6 +62,9 @@ export function PageEditorForm({
     savePageAction,
     {},
   );
+  const { t } = useT();
+  const msg = useActionMessage();
+  const pe = t.pageEditor;
   const [tab, setTab] = useState<"write" | "preview">("write");
   const [title, setTitle] = useState(page?.title ?? "");
   const [content, setContent] = useState(page?.contentMarkdown ?? "");
@@ -76,7 +85,7 @@ export function PageEditorForm({
           role="alert"
           className="rounded border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-300"
         >
-          {state.error}
+          {msg(state.error, state.errorParams)}
         </p>
       )}
       {state.success && (
@@ -84,7 +93,7 @@ export function PageEditorForm({
           role="status"
           className="rounded border border-green-600/40 bg-green-600/10 px-3 py-2 text-sm text-green-700 dark:text-green-300"
         >
-          Page enregistrée.
+          {pe.saved}
         </p>
       )}
 
@@ -92,7 +101,7 @@ export function PageEditorForm({
 
       <div className="flex flex-col gap-1">
         <label htmlFor="title" className="text-sm font-medium">
-          Titre
+          {t.editor.title}
         </label>
         <input
           id="title"
@@ -107,7 +116,7 @@ export function PageEditorForm({
       {isNew ? (
         <div className="flex flex-col gap-1">
           <label htmlFor="slug" className="text-sm font-medium">
-            Slug (URL)
+            {pe.slugLabel}
           </label>
           <input
             id="slug"
@@ -120,15 +129,16 @@ export function PageEditorForm({
             className={`${fieldClass} font-mono text-sm`}
           />
           <p className="text-xs text-black/55 dark:text-white/55">
-            URL publique : <span className="font-mono">/{effectiveSlug || "…"}</span>{" "}
-            — fixé à la création, non modifiable ensuite.
+            {pe.publicUrl}{" "}
+            <span className="font-mono">/{effectiveSlug || "…"}</span> —{" "}
+            {pe.slugHint}
           </p>
         </div>
       ) : (
         <>
           <input type="hidden" name="slug" value={page?.slug ?? ""} />
           <p className="text-xs text-black/55 dark:text-white/55">
-            URL publique :{" "}
+            {pe.publicUrl}{" "}
             <a href={`/${page?.slug}`} className="font-mono underline">
               /{page?.slug}
             </a>
@@ -142,14 +152,14 @@ export function PageEditorForm({
           onClick={() => setTab("write")}
           className={tabClass(tab === "write")}
         >
-          Rédiger
+          {pe.write}
         </button>
         <button
           type="button"
           onClick={() => setTab("preview")}
           className={tabClass(tab === "preview")}
         >
-          Aperçu
+          {pe.preview}
         </button>
       </div>
 
@@ -161,7 +171,7 @@ export function PageEditorForm({
         rows={20}
         value={content}
         onChange={(e) => setContent(e.target.value)}
-        placeholder="Rédige le contenu en Markdown…"
+        placeholder={pe.contentPlaceholder}
         className={`${fieldClass} font-mono text-sm ${tab === "preview" ? "hidden" : ""}`}
       />
       {tab === "preview" && (

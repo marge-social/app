@@ -1,6 +1,8 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useT } from "@/components/I18nProvider";
+import { interpolate } from "@/lib/i18n/config";
 
 /**
  * Lecteur vidéo pour le fil. Lit directement dans Marge :
@@ -31,6 +33,7 @@ export function VideoPlayer({
   const videoRef = useRef<HTMLVideoElement>(null);
   const [active, setActive] = useState(false);
   const [failed, setFailed] = useState(false);
+  const { t } = useT();
 
   async function play() {
     setActive(true);
@@ -90,7 +93,9 @@ export function VideoPlayer({
         <button
           type="button"
           onClick={play}
-          aria-label={alt ? `Lire la vidéo : ${alt}` : "Lire la vidéo"}
+          aria-label={
+            alt ? interpolate(t.media.playVideoNamed, { alt }) : t.media.playVideo
+          }
           className="absolute inset-0 flex items-center justify-center bg-black/20 transition hover:bg-black/35"
         >
           <span className="flex h-16 w-16 items-center justify-center rounded-full bg-black/60 text-white">

@@ -10,16 +10,12 @@ import {
 import { toggleFullTextAction } from "@/app/actions/claims";
 import { ClaimPanel } from "@/components/ClaimPanel";
 import { getCurrentUser } from "@/lib/auth";
+import { getServerI18n } from "@/lib/i18n/server";
+import { formatLongDate } from "@/lib/relative-time";
 
 interface FeedParams {
   params: Promise<{ id: string }>;
 }
-
-const STATUS_LABEL: Record<string, string> = {
-  orphan: "orphelin (sans propriétaire)",
-  claimed: "réclamé",
-  opt_out: "retiré",
-};
 
 export default async function FeedDetailPage({ params }: FeedParams) {
   const { id } = await params;
@@ -27,6 +23,13 @@ export default async function FeedDetailPage({ params }: FeedParams) {
   if (!feed || feed.ownershipStatus === "opt_out") notFound();
 
   const viewer = await getCurrentUser();
+  const { locale, dict } = await getServerI18n();
+  const t = dict.feedDetail;
+  const statusLabel: Record<string, string> = {
+    orphan: t.statusOrphan,
+    claimed: t.statusClaimed,
+    opt_out: t.statusOptOut,
+  };
   const owner = feed.ownerId
     ? await db.query.users.findFirst({
         where: eq(users.id, feed.ownerId),
@@ -66,11 +69,11 @@ export default async function FeedDetailPage({ params }: FeedParams) {
           </a>
         </p>
         <p className="text-xs text-foreground/60">
-          Statut : {STATUS_LABEL[feed.ownershipStatus]}
+          {t.statusPrefix} {statusLabel[feed.ownershipStatus]}
           {owner && (
             <>
               {" "}
-              · propriété de{" "}
+              · {t.ownedBy}{" "}
               <Link href={`/@${owner.handle}`} className="underline">
                 {owner.displayName}
               </Link>
@@ -95,15 +98,17 @@ export default async function FeedDetailPage({ params }: FeedParams) {
                   : "rounded bg-foreground px-3 py-1 text-sm font-medium text-background hover:opacity-90"
               }
             >
-              {subscribed ? "Ne plus suivre ce flux" : "Suivre ce flux"}
+              {subscribed
+                ? dict.profile.unfollowFeed
+                : dict.profile.followFeed}
             </button>
           </form>
         ) : (
           <p className="text-sm text-foreground/60">
             <Link href="/login" className="underline">
-              Connecte-toi
+              {dict.profile.loginToFollowLink}
             </Link>{" "}
-            pour suivre ce flux.
+            {t.loginToFollowSuffix}
           </p>
         )}
       </header>
@@ -112,20 +117,18 @@ export default async function FeedDetailPage({ params }: FeedParams) {
           opt-out (preuve de contrôle par jeton) et contrôles propriétaire. */}
       {viewer && feed.ownerId === viewer.id ? (
         <section className="flex flex-col gap-3 rounded border border-black/15 p-4 dark:border-white/20">
-          <h3 className="font-semibold">Vous êtes propriétaire de ce flux</h3>
+          <h3 className="font-semibold">{t.ownerTitle}</h3>
           <form action={toggleFullTextAction} className="flex items-center gap-3">
             <input type="hidden" name="feedId" value={feed.id} />
             <button
               type="submit"
               className="rounded border border-black/20 px-3 py-1.5 text-sm hover:bg-black/5 dark:border-white/25 dark:hover:bg-white/10"
             >
-              {feed.fullTextAllowed
-                ? "Désactiver le texte intégral"
-                : "Activer le texte intégral"}
+              {feed.fullTextAllowed ? t.disableFullText : t.enableFullText}
             </button>
             <span className="text-sm text-foreground/70">
-              Texte intégral réhébergé :{" "}
-              {feed.fullTextAllowed ? "activé" : "désactivé (extrait + lien)"}
+              {t.fullTextLabel}{" "}
+              {feed.fullTextAllowed ? t.fullTextOn : t.fullTextOff}
             </span>
           </form>
         </section>
@@ -136,18 +139,18 @@ export default async function FeedDetailPage({ params }: FeedParams) {
         />
       ) : (
         <aside className="rounded border border-black/10 bg-black/[0.03] p-4 text-sm text-foreground/75 dark:border-white/15 dark:bg-white/[0.03]">
-          C’est votre blog ?{" "}
+          {t.yourBlogBefore}{" "}
           <Link href="/login" className="underline">
-            Connectez-vous
+            {t.yourBlogLink}
           </Link>{" "}
-          pour réclamer ce flux ou en demander le retrait (opt-out).
+          {t.yourBlogAfter}
         </aside>
       )}
 
       <section className="flex flex-col gap-5">
-        <h2 className="text-lg font-semibold">Derniers items</h2>
+        <h2 className="text-lg font-semibold">{t.latestItems}</h2>
         {items.length === 0 ? (
-          <p className="text-foreground/60">Aucun item récupéré.</p>
+          <p className="text-foreground/60">{t.noItems}</p>
         ) : (
           <ul className="flex flex-col gap-5">
             {items.map((it) => (
@@ -168,11 +171,7 @@ export default async function FeedDetailPage({ params }: FeedParams) {
                   {it.author && <span>{it.author} · </span>}
                   {it.publishedAt && (
                     <time dateTime={it.publishedAt.toISOString()}>
-                      {it.publishedAt.toLocaleDateString("fr-FR", {
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric",
-                      })}
+                      {formatLongDate(it.publishedAt, locale)}
                     </time>
                   )}
                 </div>
@@ -186,7 +185,7 @@ export default async function FeedDetailPage({ params }: FeedParams) {
                   className="text-sm underline"
                   rel="noopener noreferrer nofollow"
                 >
-                  Lire sur la source →
+                  {t.readOnSource}
                 </a>
               </li>
             ))}
