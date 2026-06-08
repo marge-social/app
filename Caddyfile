@@ -24,9 +24,17 @@
 # réécrivant l'en-tête Host. Sort le VPS du chemin des fichiers et isole tout
 # contenu des cookies/session de l'app. MEDIA_BUCKET_HOST = hôte S3 du bucket
 # (ex. marge-media.s3.gra.io.cloud.ovh.net).
-{$MEDIA_DOMAIN} {
+#
+# IMPORTANT : valeurs de repli en `.localhost` si MEDIA_DOMAIN/MEDIA_BUCKET_HOST
+# ne sont pas définis. Sans ça, un `{$MEDIA_DOMAIN}` vide produit un bloc SANS
+# adresse → Caddy le prend pour un bloc d'options globales mal placé → toute la
+# config est rejetée → Caddy en crash-loop → site principal HORS LIGNE. Le repli
+# `.localhost` (certificat interne, jamais joignable publiquement, aucun ACME)
+# garde la config valide ; renseigner les deux variables active réellement
+# l'origine média (cf. DEPLOY.md §2 ter).
+{$MEDIA_DOMAIN:media.localhost} {
 	encode zstd gzip
-	reverse_proxy https://{$MEDIA_BUCKET_HOST} {
-		header_up Host {$MEDIA_BUCKET_HOST}
+	reverse_proxy https://{$MEDIA_BUCKET_HOST:localhost} {
+		header_up Host {$MEDIA_BUCKET_HOST:localhost}
 	}
 }
