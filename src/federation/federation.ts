@@ -635,29 +635,37 @@ async function extractRemoteAttachments(
  * Choisit la meilleure source mp4/webm parmi les variantes de résolution d'une
  * vidéo distante : la plus haute définition ≤ 720p (bon compromis pour une
  * lecture en flux), sinon la plus basse disponible.
+ *
+ * ⚠️ PeerTube intervertit `width`/`height` (un fichier 1080p est annoncé
+ * `width=1080, height=1920`) et expose une piste `0×0` (repli). La « qualité »
+ * fiable est donc la **plus petite dimension** (`min(width, height)`), les pistes
+ * `0` étant ignorées.
  */
-function pickBestVideoFile(
-  files: {
-    href: string;
-    mediaType: string;
-    width: number | null;
-    height: number | null;
-  }[],
-): {
+type VideoFile = {
   href: string;
   mediaType: string;
   width: number | null;
   height: number | null;
-} | null {
-  if (files.length === 0) return null;
-  const withHeight = files.filter((f) => f.height != null);
-  const upTo720 = withHeight
-    .filter((f) => (f.height as number) <= 720)
-    .sort((a, b) => (b.height as number) - (a.height as number));
-  if (upTo720.length > 0) return upTo720[0];
-  if (withHeight.length > 0) {
-    return withHeight.sort((a, b) => (a.height as number) - (b.height as number))[0];
+};
+
+function videoResolution(f: VideoFile): number | null {
+  if (f.width == null || f.height == null || f.width <= 0 || f.height <= 0) {
+    return null;
   }
+  return Math.min(f.width, f.height);
+}
+
+function pickBestVideoFile(files: VideoFile[]): VideoFile | null {
+  if (files.length === 0) return null;
+  const rated = files
+    .map((f) => ({ f, r: videoResolution(f) }))
+    .filter((x): x is { f: VideoFile; r: number } => x.r != null);
+  const upTo720 = rated
+    .filter((x) => x.r <= 720)
+    .sort((a, b) => b.r - a.r);
+  if (upTo720.length > 0) return upTo720[0].f;
+  if (rated.length > 0) return rated.sort((a, b) => a.r - b.r)[0].f;
+  // Aucune dimension exploitable : on prend la première piste non vide.
   return files[0];
 }
 
@@ -699,7 +707,7 @@ async function extractVideoMedia(
   let htmlUrl: string | null = null;
   for (const u of object.urls) {
     if (u instanceof URL) {
-      // url simple, sans mediaType : lien page web par défaut.
+      // url simple, sans mediaType : lien page web par défaut (premier gagne).
       if (!htmlUrl) htmlUrl = u.href;
       continue;
     }
@@ -716,8 +724,10 @@ async function extractVideoMedia(
       });
     } else if (mt === "application/x-mpegURL" || mt === "application/vnd.apple.mpegurl") {
       if (!hls) hls = href;
-    } else if (mt === "text/html" || mt == null) {
-      htmlUrl = href;
+    } else if (mt === "text/html") {
+      // Page web de la vidéo (premier lien `text/html` gagnant). Ne PAS
+      // retomber ici sur les `Link` sans mediaType (PeerTube : tracker/wss…).
+      if (!htmlUrl) htmlUrl = href;
     }
   }
 
