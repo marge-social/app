@@ -117,6 +117,19 @@ function absoluteHttpUrl(raw: string, baseUrl: string): string | null {
 
 const IMAGE_EXT_RE = /\.(jpe?g|png|gif|webp|avif)(\?|#|$)/i;
 
+/**
+ * Extrait la première image d'un fragment HTML (ex. contenu stocké d'un item),
+ * résolue en URL absolue http(s). Réutilisé par la détection et le backfill.
+ */
+export function firstImageInHtml(
+  html: string | null | undefined,
+  baseUrl: string,
+): string | null {
+  if (!html) return null;
+  const match = /<img\b[^>]*?\bsrc=["']([^"']+)["']/i.exec(html);
+  return match ? absoluteHttpUrl(match[1], baseUrl) : null;
+}
+
 /** Aplatit une valeur rss-parser (objet, tableau, ou rien) en tableau. */
 function asArray<T>(v: T | T[] | undefined | null): T[] {
   if (v == null) return [];
@@ -197,13 +210,7 @@ function detectInlineImage(
     (it["content:encoded"] as string | undefined) ??
     (it.content as string | undefined) ??
     "";
-  const match = /<img\b[^>]*?\bsrc=["']([^"']+)["']/i.exec(html);
-  if (match) {
-    const abs = absoluteHttpUrl(match[1], baseUrl);
-    if (abs) return abs;
-  }
-
-  return null;
+  return firstImageInHtml(html, baseUrl);
 }
 
 /** Cherche une image og:image / twitter:image dans le <head> d'une page HTML. */
