@@ -99,7 +99,154 @@ export interface ParsedFeedItem {
   author: string | null;
   excerpt: string;
   contentHtml: string | null;
+  /** Image d'aperçu détectée dans le flux (null si rien ; og:image en repli). */
+  imageUrl: string | null;
   publishedAt: Date | null;
+}
+
+/** Résout une URL (possiblement relative) en absolue http(s), sinon null. */
+function absoluteHttpUrl(raw: string, baseUrl: string): string | null {
+  if (!raw || raw.startsWith("data:")) return null;
+  try {
+    const abs = new URL(raw, baseUrl || undefined).href;
+    return /^https?:\/\//i.test(abs) ? abs : null;
+  } catch {
+    return null;
+  }
+}
+
+const IMAGE_EXT_RE = /\.(jpe?g|png|gif|webp|avif)(\?|#|$)/i;
+
+/** Aplatit une valeur rss-parser (objet, tableau, ou rien) en tableau. */
+function asArray<T>(v: T | T[] | undefined | null): T[] {
+  if (v == null) return [];
+  return Array.isArray(v) ? v : [v];
+}
+
+/** Lit l'attribut `url` d'un nœud Media RSS (xml2js le pose sous `$`). */
+function mediaNodeUrl(node: unknown): {
+  url?: string;
+  type?: string;
+  medium?: string;
+} {
+  if (!node || typeof node !== "object") return {};
+  const attrs = ("$" in node ? (node as { $: unknown }).$ : node) as
+    | Record<string, string>
+    | undefined;
+  return attrs ?? {};
+}
+
+/**
+ * Détecte l'image d'aperçu la plus pertinente d'un item de flux, sans réseau, par
+ * ordre de fiabilité décroissant : Media RSS (`media:content`/`media:thumbnail`,
+ * y compris dans un `media:group`), `enclosure` image, image iTunes, puis le
+ * premier `<img>` du contenu HTML. URL résolue en absolue (jamais réhébergée).
+ */
+function detectInlineImage(
+  it: Record<string, unknown>,
+  baseUrl: string,
+): string | null {
+  // 1. Media RSS : media:content (+ ceux d'un éventuel media:group).
+  const candidates: unknown[] = [...asArray(it.mediaContent)];
+  const group = it.mediaGroup as Record<string, unknown> | undefined;
+  if (group) candidates.push(...asArray(group["media:content"]));
+  for (const cand of candidates) {
+    const { url, type, medium } = mediaNodeUrl(cand);
+    if (!url) continue;
+    const isImage =
+      medium === "image" ||
+      (type ? type.startsWith("image/") : IMAGE_EXT_RE.test(url));
+    if (isImage) {
+      const abs = absoluteHttpUrl(url, baseUrl);
+      if (abs) return abs;
+    }
+  }
+
+  // 2. media:thumbnail.
+  for (const thumb of asArray(it.mediaThumbnail)) {
+    const { url } = mediaNodeUrl(thumb);
+    if (url) {
+      const abs = absoluteHttpUrl(url, baseUrl);
+      if (abs) return abs;
+    }
+  }
+
+  // 3. enclosure (rss-parser : { url, type, length }).
+  const enclosure = it.enclosure as
+    | { url?: string; type?: string }
+    | undefined;
+  if (enclosure?.url) {
+    const isImage = enclosure.type
+      ? enclosure.type.startsWith("image/")
+      : IMAGE_EXT_RE.test(enclosure.url);
+    if (isImage) {
+      const abs = absoluteHttpUrl(enclosure.url, baseUrl);
+      if (abs) return abs;
+    }
+  }
+
+  // 4. Image iTunes (podcasts & certains blogs).
+  const itunes = it.itunes as { image?: string } | undefined;
+  if (itunes?.image) {
+    const abs = absoluteHttpUrl(itunes.image, baseUrl);
+    if (abs) return abs;
+  }
+
+  // 5. Premier <img> du contenu HTML.
+  const html =
+    (it["content:encoded"] as string | undefined) ??
+    (it.content as string | undefined) ??
+    "";
+  const match = /<img\b[^>]*?\bsrc=["']([^"']+)["']/i.exec(html);
+  if (match) {
+    const abs = absoluteHttpUrl(match[1], baseUrl);
+    if (abs) return abs;
+  }
+
+  return null;
+}
+
+/** Cherche une image og:image / twitter:image dans le <head> d'une page HTML. */
+function extractMetaImage(html: string): string | null {
+  let twitter: string | null = null;
+  for (const tag of html.match(/<meta\b[^>]*>/gi) ?? []) {
+    const prop = tag
+      .match(/(?:property|name)=["']([^"']+)["']/i)?.[1]
+      ?.toLowerCase();
+    if (!prop) continue;
+    const content = tag.match(/content=["']([^"']*)["']/i)?.[1];
+    if (!content) continue;
+    if (prop === "og:image" || prop === "og:image:url") return content;
+    if (prop === "twitter:image" || prop === "twitter:image:src")
+      twitter ??= content;
+  }
+  return twitter;
+}
+
+/**
+ * Repli réseau : récupère l'image de partage (og:image, sinon twitter:image)
+ * déclarée par la page de l'article. C'est « l'image la plus pertinente probable »
+ * choisie par l'éditeur. Best-effort, borné en temps ; null en cas d'échec.
+ */
+export async function fetchOgImage(pageUrl: string): Promise<string | null> {
+  try {
+    const res = await fetch(pageUrl, {
+      headers: {
+        "User-Agent": crawlerUserAgent(),
+        Accept: "text/html,application/xhtml+xml,*/*",
+      },
+      redirect: "follow",
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) return null;
+    if (!/html/i.test(res.headers.get("content-type") ?? "")) return null;
+    // Le <head> suffit : on ne lit qu'un préfixe raisonnable.
+    const html = (await res.text()).slice(0, 100_000);
+    const found = extractMetaImage(html);
+    return found ? absoluteHttpUrl(found, res.url || pageUrl) : null;
+  } catch {
+    return null;
+  }
 }
 
 /** Extrait honnête : snippet fourni, sinon texte du contenu, tronqué. */
@@ -123,9 +270,20 @@ export async function parseFeed(
   const parser = new Parser({
     headers: { "User-Agent": crawlerUserAgent(feedId) },
     timeout: 15000,
+    // Champs Media RSS (namespace media:) pour la détection d'image d'aperçu.
+    customFields: {
+      item: [
+        ["media:content", "mediaContent", { keepArray: true }],
+        ["media:thumbnail", "mediaThumbnail", { keepArray: true }],
+        ["media:group", "mediaGroup"],
+      ],
+    },
   });
   const feed = await parser.parseURL(feedUrl);
   const items: ParsedFeedItem[] = (feed.items ?? []).map((it) => {
+    // `customFields` restreint le type d'Item ; on relit en sac dynamique pour
+    // les champs hors-schéma (author, content:encoded, media:*).
+    const raw = it as unknown as Record<string, unknown>;
     const link = it.link ?? "";
     const dateStr = it.isoDate ?? it.pubDate;
     return {
@@ -133,9 +291,12 @@ export async function parseFeed(
       guid: it.guid ?? link ?? it.title ?? "",
       title: it.title ?? "(sans titre)",
       link,
-      author: it.creator ?? it.author ?? null,
+      author:
+        it.creator ?? (raw.author as string | undefined) ?? null,
       excerpt: buildExcerpt(it.contentSnippet, it.content),
-      contentHtml: it["content:encoded"] ?? it.content ?? null,
+      contentHtml:
+        (raw["content:encoded"] as string | undefined) ?? it.content ?? null,
+      imageUrl: detectInlineImage(raw, link || feedUrl),
       publishedAt: dateStr ? new Date(dateStr) : null,
     };
   });

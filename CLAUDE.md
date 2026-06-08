@@ -369,6 +369,31 @@ sont **une** de ces pages (page « par défaut » fournie par le code).
 - Lien `/mentions-legales` dans `SiteFooter`. Supprimer une page « par défaut »
   la ramène à son contenu par défaut. Extensible sans migration.
 
+### Image d'aperçu des items RSS dans le fil ✅ (vérifié en local)
+
+Pour qu'un visuel s'affiche dans le **maximum de cas**, chaque item RSS porte
+désormais une image d'aperçu détectée comme « la plus pertinente probable ».
+
+- **Détection sans réseau** (`detectInlineImage`, `src/lib/rss.ts`) par ordre de
+  fiabilité : Media RSS (`media:content`/`media:thumbnail`, y compris dans un
+  `media:group`) → `enclosure` typée image → image iTunes → premier `<img>` du
+  contenu HTML. URL résolue en absolue http(s) (relatives gérées, `data:` exclu),
+  **jamais réhébergée** (cf. F3). `customFields` du `Parser` exposent le namespace
+  `media:`.
+- **Repli réseau** (`fetchOgImage`) : si aucune image inline, on lit l'`og:image`
+  (sinon `twitter:image`) de la page de l'article — la vignette choisie par
+  l'éditeur. Best-effort, timeout 8 s, **borné à `OG_FETCH_BUDGET=25`** récup. par
+  flux et par passe (`src/lib/poll.ts`), et **uniquement pour un item nouveau**
+  (vérif d'existence avant l'insert) → pas de coût réseau sur les items déjà connus.
+- **Stockage** : colonne `feed_items.image_url` (migration `0011`). Les items déjà
+  en base ne sont pas rétro-remplis (insert `onConflictDoNothing` inchangé) ; les
+  nouveaux le sont.
+- **Rendu** : `buildFeed` projette `image_url` → `MediaView` image
+  (`rssImageMediaViews`, mime deviné par extension) → composant `Attachments`
+  existant (aucune modif UI). Vérifié : `scripts/smoke-rss-image.ts` couvre les 4
+  sources (fixtures `public/test-feed.xml` enrichi + `og:image` sur
+  `public/test-blog.html`).
+
 ### Recherche unifiée — profil fédéré & flux RSS résolus en direct ✅ (tsc/lint OK, route compile)
 
 `/recherche?q=` reste **une seule barre, une seule requête**, mais résout

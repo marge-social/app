@@ -78,6 +78,13 @@
       "when": 1780927115068,
       "tag": "0010_next_iceman",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1780946184438,
+      "tag": "0011_third_vermin",
+      "breakpoints": true
     }
   ]
 }

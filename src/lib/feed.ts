@@ -30,6 +30,43 @@ import {
 } from "@/lib/media";
 import { effectiveSummary, htmlToText, readingTimeMinutes } from "@/lib/markdown";
 
+/** Devine un type MIME image à partir de l'extension de l'URL (défaut jpeg). */
+function guessImageMime(url: string): string {
+  const ext = /\.([a-z0-9]+)(?:\?|#|$)/i.exec(url)?.[1]?.toLowerCase();
+  switch (ext) {
+    case "png":
+      return "image/png";
+    case "gif":
+      return "image/gif";
+    case "webp":
+      return "image/webp";
+    case "avif":
+      return "image/avif";
+    default:
+      return "image/jpeg";
+  }
+}
+
+/** Projette l'image d'aperçu d'un item RSS (URL distante) en MediaView image. */
+function rssImageMediaViews(
+  imageUrl: string | null,
+  title: string,
+): MediaView[] {
+  if (!imageUrl) return [];
+  return [
+    {
+      kind: "image",
+      url: imageUrl,
+      mimeType: guessImageMime(imageUrl),
+      alt: title || null,
+      width: null,
+      height: null,
+      thumbnailUrl: null,
+      hlsUrl: null,
+    },
+  ];
+}
+
 /** Convertit les pièces jointes distantes (jsonb) en projection d'affichage. */
 function remoteToMediaViews(
   attachments: RemoteAttachment[] | null | undefined,
@@ -353,7 +390,7 @@ export async function buildFeed(
         shareCount: 0,
         sharedByViewer: false,
         comments: [],
-        media: [],
+        media: rssImageMediaViews(r.imageUrl, r.title),
       });
     }
   }

@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0">
+<rss version="2.0"
+     xmlns:media="http://search.yahoo.com/mrss/"
+     xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
     <title>Le blog de test</title>
     <link>http://localhost:3000/test-blog.html</link>
@@ -11,6 +13,8 @@
       <author>Blogueur Test</author>
       <pubDate>Mon, 02 Jun 2026 09:00:00 GMT</pubDate>
       <description>Ceci est l'extrait du premier billet. Il décrit brièvement le contenu et invite à lire la suite sur le site source.</description>
+      <!-- Source d'image n°1 : Media RSS (media:content). -->
+      <media:content url="https://picsum.photos/seed/marge1/800/450" type="image/jpeg" medium="image" width="800" height="450" />
     </item>
     <item>
       <title>Deuxième billet de test</title>
@@ -19,6 +23,18 @@
       <author>Blogueur Test</author>
       <pubDate>Tue, 03 Jun 2026 09:00:00 GMT</pubDate>
       <description>Extrait du deuxième billet, publié un jour plus tard pour vérifier l'ordre chronologique du fil.</description>
+      <!-- Source d'image n°2 : enclosure typée image. -->
+      <enclosure url="https://picsum.photos/seed/marge2/800/450" type="image/jpeg" length="123456" />
+    </item>
+    <item>
+      <title>Troisième billet de test</title>
+      <link>http://localhost:3000/test-blog.html#3</link>
+      <guid>test-blog-item-3</guid>
+      <author>Blogueur Test</author>
+      <pubDate>Wed, 04 Jun 2026 09:00:00 GMT</pubDate>
+      <description>Extrait du troisième billet, sans image dédiée : l'image est détectée dans le corps HTML.</description>
+      <!-- Source d'image n°3 : premier <img> du contenu HTML encodé. -->
+      <content:encoded><![CDATA[<p>Un paragraphe d'introduction.</p><img src="https://picsum.photos/seed/marge3/800/450" alt="Illustration du billet" /><p>La suite du billet.</p>]]></content:encoded>
     </item>
   </channel>
 </rss>

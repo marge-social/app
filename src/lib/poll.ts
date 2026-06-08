@@ -1,7 +1,14 @@
-import { eq, ne } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import { db } from "@/db";
 import { feedItems, feeds } from "@/db/schema";
-import { parseFeed } from "@/lib/rss";
+import { fetchOgImage, parseFeed } from "@/lib/rss";
+
+/**
+ * Plafond de récupérations og:image par flux et par passe : borne le coût réseau
+ * du repli quand un flux fraîchement référencé insère des dizaines d'items d'un
+ * coup. Les items au-delà restent sans image (couverts à la prochaine passe).
+ */
+const OG_FETCH_BUDGET = 25;
 
 export interface PollResult {
   feedId: string;
@@ -22,7 +29,24 @@ export async function pollFeed(feed: FeedRow): Promise<PollResult> {
     const parsed = await parseFeed(feed.feedUrl, feed.id);
 
     let inserted = 0;
+    let ogBudget = OG_FETCH_BUDGET;
     for (const item of parsed.items) {
+      // Repli og:image : seulement pour un item qu'on s'apprête à insérer (donc
+      // nouveau, après le premier passage) et sans image détectée dans le flux.
+      let imageUrl = item.imageUrl;
+      if (!imageUrl && item.link && ogBudget > 0) {
+        const existing = await db.query.feedItems.findFirst({
+          where: and(
+            eq(feedItems.feedId, feed.id),
+            eq(feedItems.guid, item.guid),
+          ),
+          columns: { id: true },
+        });
+        if (!existing) {
+          ogBudget -= 1;
+          imageUrl = await fetchOgImage(item.link);
+        }
+      }
       const res = await db
         .insert(feedItems)
         .values({
@@ -34,6 +58,7 @@ export async function pollFeed(feed: FeedRow): Promise<PollResult> {
           excerpt: item.excerpt,
           // Texte intégral uniquement si le propriétaire l'a explicitement activé.
           contentHtml: feed.fullTextAllowed ? item.contentHtml : null,
+          imageUrl,
           publishedAt: item.publishedAt,
         })
         .onConflictDoNothing({

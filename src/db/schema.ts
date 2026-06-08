@@ -362,6 +362,9 @@ export const feedItems = pgTable(
     // Extrait toujours stocké ; contenu intégral seulement si fullTextAllowed.
     excerpt: text("excerpt").notNull().default(""),
     contentHtml: text("content_html"),
+    // Image d'aperçu la plus pertinente (Media RSS, enclosure, 1er <img> ou
+    // og:image de la page). URL distante, jamais réhébergée (cf. F3).
+    imageUrl: text("image_url"),
     publishedAt: timestamp("published_at", { withTimezone: true }),
     fetchedAt: timestamp("fetched_at", { withTimezone: true })
       .notNull()
