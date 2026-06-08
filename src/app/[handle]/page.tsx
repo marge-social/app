@@ -10,12 +10,13 @@ import {
   follows,
   users,
 } from "@/db/schema";
+import { followLocalAction, unfollowLocalAction } from "@/app/actions/follows";
 import {
-  followLocalAction,
-  unfollowLocalAction,
-} from "@/app/actions/follows";
-import { subscribeFeedAction, unsubscribeFeedAction } from "@/app/actions/feeds";
+  subscribeFeedAction,
+  unsubscribeFeedAction,
+} from "@/app/actions/feeds";
 import { removeOwnFeedAction } from "@/app/actions/profile";
+import { Container } from "@/components/Container";
 import { ProfileEditForm } from "@/components/ProfileEditForm";
 import { ReferenceFeedForm } from "@/components/ReferenceFeedForm";
 import { SitePageView } from "@/components/SitePageView";
@@ -60,7 +61,11 @@ export default async function ProfilePage({ params }: ProfileParams) {
   if (!decoded.startsWith("@")) {
     const page = await getPage(decoded.toLowerCase());
     if (!page) notFound();
-    return <SitePageView page={page} />;
+    return (
+      <Container>
+        <SitePageView page={page} />
+      </Container>
+    );
   }
   const handle = decoded.slice(1).toLowerCase();
 
@@ -138,207 +143,219 @@ export default async function ProfilePage({ params }: ProfileParams) {
     : null;
 
   return (
-    <div className="flex flex-col gap-8">
-      <header className="flex flex-col gap-2">
-        <div className="flex items-start gap-4">
-          {avatarSrc ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={avatarSrc}
-              alt={interpolate(t.avatarAlt, { name: profile.displayName })}
-              width={80}
-              height={80}
-              className="h-20 w-20 shrink-0 rounded-full object-cover"
-            />
-          ) : (
-            <span
-              aria-hidden="true"
-              className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-black/10 text-2xl font-medium dark:bg-white/15"
-            >
-              {profile.displayName.charAt(0).toUpperCase()}
-            </span>
-          )}
-          <div className="flex flex-col gap-1">
-            <h1 className="text-3xl font-bold tracking-tight">
-              {profile.displayName}
-            </h1>
-            <p className="font-mono text-sm text-foreground/70">
-              {fediverseHandle(profile.handle)}
-            </p>
-          </div>
-        </div>
-        {profile.bio && <p className="text-foreground/90">{profile.bio}</p>}
-
-        {isSelf && (
-          <details className="mt-2 rounded-lg border border-black/10 dark:border-white/15">
-            <summary className="cursor-pointer px-4 py-2 text-sm font-medium">
-              {t.editProfile}
-            </summary>
-            <div className="border-t border-black/10 p-4 dark:border-white/15">
-              <ProfileEditForm
-                displayName={profile.displayName}
-                bio={profile.bio}
+    <Container>
+      <div className="flex flex-col gap-8">
+        <header className="flex flex-col gap-2">
+          <div className="flex items-start gap-4">
+            {avatarSrc ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={avatarSrc}
+                alt={interpolate(t.avatarAlt, { name: profile.displayName })}
+                width={80}
+                height={80}
+                className="h-20 w-20 shrink-0 rounded-full object-cover"
               />
-            </div>
-          </details>
-        )}
-
-        {!isSelf && viewer && (
-          // Suivi du COMPTE (fédéré). Distinct et jamais couplé au suivi des
-          // flux RSS de l'auteur (cf. §2).
-          <div className="mt-2 flex gap-3">
-            <form
-              action={isFollowing ? unfollowLocalAction : followLocalAction}
-            >
-              <input type="hidden" name="targetUserId" value={profile.id} />
-              <button
-                type="submit"
-                className={
-                  isFollowing
-                    ? "rounded border border-black/20 px-3 py-1 text-sm hover:bg-black/5 dark:border-white/25 dark:hover:bg-white/10"
-                    : "rounded bg-foreground px-3 py-1 text-sm font-medium text-background hover:opacity-90"
-                }
+            ) : (
+              <span
+                aria-hidden="true"
+                className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-black/10 text-2xl font-medium dark:bg-white/15"
               >
-                {isFollowing ? t.unfollowAccount : t.followAccount}
-              </button>
-            </form>
+                {profile.displayName.charAt(0).toUpperCase()}
+              </span>
+            )}
+            <div className="flex flex-col gap-1">
+              <h1 className="text-3xl font-bold tracking-tight">
+                {profile.displayName}
+              </h1>
+              <p className="font-mono text-sm text-foreground/70">
+                {fediverseHandle(profile.handle)}
+              </p>
+            </div>
           </div>
-        )}
-        {!isSelf && !viewer && (
-          <p className="mt-2 text-sm text-foreground/60">
-            <Link href="/login" className="underline">
-              {t.loginToFollowLink}
-            </Link>{" "}
-            {t.loginToFollowSuffix}
-          </p>
-        )}
-      </header>
+          {profile.bio && <p className="text-foreground/90">{profile.bio}</p>}
 
-      <section aria-labelledby="articles-heading" className="flex flex-col gap-4">
-        <h2 id="articles-heading" className="text-lg font-semibold">
-          {t.publishedTexts}
-        </h2>
-        {published.length === 0 ? (
-          <p className="text-sm text-foreground/60">{t.noPublished}</p>
-        ) : (
-          <ul className="flex flex-col gap-5">
-            {published.map((a) => (
-              <li key={a.id} className="flex flex-col gap-1">
-                <h3 className="text-xl font-semibold">
-                  <Link
-                    href={`/@${profile.handle}/${a.slug}`}
-                    className="hover:underline"
-                  >
-                    {a.title}
-                  </Link>
-                </h3>
-                {a.publishedAt && (
-                  <time
-                    dateTime={a.publishedAt.toISOString()}
-                    className="text-xs text-foreground/60"
-                  >
-                    {formatLongDate(a.publishedAt, locale)}
-                  </time>
-                )}
-                <p className="text-sm text-foreground/80">
-                  {effectiveSummary(a.contentMarkdown, a.summary)}
-                </p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+          {isSelf && (
+            <details className="mt-2 rounded-lg border border-black/10 dark:border-white/15">
+              <summary className="cursor-pointer px-4 py-2 text-sm font-medium">
+                {t.editProfile}
+              </summary>
+              <div className="border-t border-black/10 p-4 dark:border-white/15">
+                <ProfileEditForm
+                  displayName={profile.displayName}
+                  bio={profile.bio}
+                />
+              </div>
+            </details>
+          )}
 
-      <section aria-labelledby="feeds-heading" className="flex flex-col gap-3">
-        <h2 id="feeds-heading" className="text-lg font-semibold">
-          {t.declaredFeeds}
-        </h2>
-        {declaredFeeds.length === 0 ? (
-          <p className="text-sm text-foreground/60">{t.noDeclaredFeeds}</p>
-        ) : (
-          <ul className="flex flex-col gap-3">
-            {declaredFeeds.map((f) => {
-              const subscribed = mySubs.has(f.id);
-              return (
-                <li key={f.id} className="flex flex-col gap-1">
-                  <Link
-                    href={`/feeds/${f.id}`}
-                    className="font-medium hover:underline"
-                  >
-                    {f.title || f.feedUrl}
-                  </Link>
-                  {f.description && (
-                    <p className="text-sm text-foreground/70">{f.description}</p>
-                  )}
-                  {viewer && (
-                    // Suivi du FLUX, distinct du suivi du compte (§2).
-                    <form
-                      action={
-                        subscribed ? unsubscribeFeedAction : subscribeFeedAction
-                      }
-                    >
-                      <input type="hidden" name="feedId" value={f.id} />
-                      <button
-                        type="submit"
-                        className="w-fit rounded border border-black/20 px-2 py-1 text-xs hover:bg-black/5 dark:border-white/25 dark:hover:bg-white/10"
-                      >
-                        {subscribed ? t.unfollowFeed : t.followFeed}
-                      </button>
-                    </form>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </section>
-
-      {isSelf && (
-        <section
-          aria-labelledby="manage-feeds-heading"
-          className="flex flex-col gap-4 rounded-lg border border-black/10 p-4 dark:border-white/15"
-        >
-          <div className="flex flex-col gap-1">
-            <h2 id="manage-feeds-heading" className="text-lg font-semibold">
-              {t.addMyFeed}
-            </h2>
-            <p className="text-sm text-foreground/70">{t.addMyFeedHelp}</p>
-          </div>
-          <ReferenceFeedForm />
-
-          {managedFeeds.length > 0 && (
-            <ul className="flex flex-col gap-2">
-              {managedFeeds.map((f) => (
-                <li
-                  key={f.id}
-                  className="flex flex-wrap items-center gap-2 text-sm"
+          {!isSelf && viewer && (
+            // Suivi du COMPTE (fédéré). Distinct et jamais couplé au suivi des
+            // flux RSS de l'auteur (cf. §2).
+            <div className="mt-2 flex gap-3">
+              <form
+                action={isFollowing ? unfollowLocalAction : followLocalAction}
+              >
+                <input type="hidden" name="targetUserId" value={profile.id} />
+                <button
+                  type="submit"
+                  className={
+                    isFollowing
+                      ? "rounded border border-black/20 px-3 py-1 text-sm hover:bg-black/5 dark:border-white/25 dark:hover:bg-white/10"
+                      : "rounded bg-foreground px-3 py-1 text-sm font-medium text-background hover:opacity-90"
+                  }
                 >
-                  <Link
-                    href={`/feeds/${f.id}`}
-                    className="font-medium hover:underline"
-                  >
-                    {f.title || f.feedUrl}
-                  </Link>
-                  <span className="rounded bg-black/5 px-1.5 py-0.5 text-xs text-foreground/60 dark:bg-white/10">
-                    {f.ownershipStatus === "claimed"
-                      ? t.feedClaimed
-                      : t.feedReferenced}
-                  </span>
-                  <form action={removeOwnFeedAction}>
-                    <input type="hidden" name="feedId" value={f.id} />
-                    <button
-                      type="submit"
-                      className="text-xs text-foreground/55 underline"
+                  {isFollowing ? t.unfollowAccount : t.followAccount}
+                </button>
+              </form>
+            </div>
+          )}
+          {!isSelf && !viewer && (
+            <p className="mt-2 text-sm text-foreground/60">
+              <Link href="/login" className="underline">
+                {t.loginToFollowLink}
+              </Link>{" "}
+              {t.loginToFollowSuffix}
+            </p>
+          )}
+        </header>
+
+        <section
+          aria-labelledby="articles-heading"
+          className="flex flex-col gap-4"
+        >
+          <h2 id="articles-heading" className="text-lg font-semibold">
+            {t.publishedTexts}
+          </h2>
+          {published.length === 0 ? (
+            <p className="text-sm text-foreground/60">{t.noPublished}</p>
+          ) : (
+            <ul className="flex flex-col gap-5">
+              {published.map((a) => (
+                <li key={a.id} className="flex flex-col gap-1">
+                  <h3 className="text-xl font-semibold">
+                    <Link
+                      href={`/@${profile.handle}/${a.slug}`}
+                      className="hover:underline"
                     >
-                      {t.removeFeed}
-                    </button>
-                  </form>
+                      {a.title}
+                    </Link>
+                  </h3>
+                  {a.publishedAt && (
+                    <time
+                      dateTime={a.publishedAt.toISOString()}
+                      className="text-xs text-foreground/60"
+                    >
+                      {formatLongDate(a.publishedAt, locale)}
+                    </time>
+                  )}
+                  <p className="text-sm text-foreground/80">
+                    {effectiveSummary(a.contentMarkdown, a.summary)}
+                  </p>
                 </li>
               ))}
             </ul>
           )}
         </section>
-      )}
-    </div>
+
+        <section
+          aria-labelledby="feeds-heading"
+          className="flex flex-col gap-3"
+        >
+          <h2 id="feeds-heading" className="text-lg font-semibold">
+            {t.declaredFeeds}
+          </h2>
+          {declaredFeeds.length === 0 ? (
+            <p className="text-sm text-foreground/60">{t.noDeclaredFeeds}</p>
+          ) : (
+            <ul className="flex flex-col gap-3">
+              {declaredFeeds.map((f) => {
+                const subscribed = mySubs.has(f.id);
+                return (
+                  <li key={f.id} className="flex flex-col gap-1">
+                    <Link
+                      href={`/feeds/${f.id}`}
+                      className="font-medium hover:underline"
+                    >
+                      {f.title || f.feedUrl}
+                    </Link>
+                    {f.description && (
+                      <p className="text-sm text-foreground/70">
+                        {f.description}
+                      </p>
+                    )}
+                    {viewer && (
+                      // Suivi du FLUX, distinct du suivi du compte (§2).
+                      <form
+                        action={
+                          subscribed
+                            ? unsubscribeFeedAction
+                            : subscribeFeedAction
+                        }
+                      >
+                        <input type="hidden" name="feedId" value={f.id} />
+                        <button
+                          type="submit"
+                          className="w-fit rounded border border-black/20 px-2 py-1 text-xs hover:bg-black/5 dark:border-white/25 dark:hover:bg-white/10"
+                        >
+                          {subscribed ? t.unfollowFeed : t.followFeed}
+                        </button>
+                      </form>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
+
+        {isSelf && (
+          <section
+            aria-labelledby="manage-feeds-heading"
+            className="flex flex-col gap-4 rounded-lg border border-black/10 p-4 dark:border-white/15"
+          >
+            <div className="flex flex-col gap-1">
+              <h2 id="manage-feeds-heading" className="text-lg font-semibold">
+                {t.addMyFeed}
+              </h2>
+              <p className="text-sm text-foreground/70">{t.addMyFeedHelp}</p>
+            </div>
+            <ReferenceFeedForm />
+
+            {managedFeeds.length > 0 && (
+              <ul className="flex flex-col gap-2">
+                {managedFeeds.map((f) => (
+                  <li
+                    key={f.id}
+                    className="flex flex-wrap items-center gap-2 text-sm"
+                  >
+                    <Link
+                      href={`/feeds/${f.id}`}
+                      className="font-medium hover:underline"
+                    >
+                      {f.title || f.feedUrl}
+                    </Link>
+                    <span className="rounded bg-black/5 px-1.5 py-0.5 text-xs text-foreground/60 dark:bg-white/10">
+                      {f.ownershipStatus === "claimed"
+                        ? t.feedClaimed
+                        : t.feedReferenced}
+                    </span>
+                    <form action={removeOwnFeedAction}>
+                      <input type="hidden" name="feedId" value={f.id} />
+                      <button
+                        type="submit"
+                        className="text-xs text-foreground/55 underline"
+                      >
+                        {t.removeFeed}
+                      </button>
+                    </form>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        )}
+      </div>
+    </Container>
   );
 }

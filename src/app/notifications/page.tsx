@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { desc, eq } from "drizzle-orm";
+import { Container } from "@/components/Container";
 import { db } from "@/db";
 import { notifications } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
@@ -88,7 +89,9 @@ function notificationText(
   isPlural: boolean,
   verbs: NotifDict["verbs"],
 ): string {
-  const form = (verbs as Record<string, { one: string; other: string }>)[type] ?? verbs.other;
+  const form =
+    (verbs as Record<string, { one: string; other: string }>)[type] ??
+    verbs.other;
   return isPlural ? form.other : form.one;
 }
 
@@ -169,46 +172,48 @@ export default async function NotificationsPage() {
   const t = dict.notifications;
 
   return (
-    <section className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold tracking-tight">
-          {t.title}
-          {unreadCount > 0 && (
-            <span className="ml-2 text-base font-normal text-black/55 dark:text-white/55">
-              {plural(locale, unreadCount, t.unreadBadge)}
-            </span>
-          )}
-        </h1>
-        <div className="flex items-center gap-2">
-          <form action={refreshNotificationsAction}>
-            <button
-              type="submit"
-              className="rounded border border-black/15 px-3 py-1 text-sm hover:bg-black/5 dark:border-white/20 dark:hover:bg-white/10"
-            >
-              {t.refresh}
-            </button>
-          </form>
-          <form action={markAllNotificationsReadAction}>
-            <button
-              type="submit"
-              disabled={unreadCount === 0}
-              className="rounded border border-black/15 px-3 py-1 text-sm hover:bg-black/5 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/20 dark:hover:bg-white/10"
-            >
-              {t.markAllRead}
-            </button>
-          </form>
+    <Container>
+      <section className="flex flex-col gap-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h1 className="text-2xl font-semibold tracking-tight">
+            {t.title}
+            {unreadCount > 0 && (
+              <span className="ml-2 text-base font-normal text-black/55 dark:text-white/55">
+                {plural(locale, unreadCount, t.unreadBadge)}
+              </span>
+            )}
+          </h1>
+          <div className="flex items-center gap-2">
+            <form action={refreshNotificationsAction}>
+              <button
+                type="submit"
+                className="rounded border border-black/15 px-3 py-1 text-sm hover:bg-black/5 dark:border-white/20 dark:hover:bg-white/10"
+              >
+                {t.refresh}
+              </button>
+            </form>
+            <form action={markAllNotificationsReadAction}>
+              <button
+                type="submit"
+                disabled={unreadCount === 0}
+                className="rounded border border-black/15 px-3 py-1 text-sm hover:bg-black/5 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/20 dark:hover:bg-white/10"
+              >
+                {t.markAllRead}
+              </button>
+            </form>
+          </div>
         </div>
-      </div>
 
-      {items.length === 0 ? (
-        <p className="text-sm text-black/55 dark:text-white/55">{t.empty}</p>
-      ) : (
-        <ul className="divide-y divide-black/10 overflow-hidden rounded-lg border border-black/10 dark:divide-white/10 dark:border-white/15">
-          {items.map((n) => (
-            <NotificationLine key={n.id} n={n} t={t} locale={locale} />
-          ))}
-        </ul>
-      )}
-    </section>
+        {items.length === 0 ? (
+          <p className="text-sm text-black/55 dark:text-white/55">{t.empty}</p>
+        ) : (
+          <ul className="divide-y divide-black/10 overflow-hidden rounded-lg border border-black/10 dark:divide-white/10 dark:border-white/15">
+            {items.map((n) => (
+              <NotificationLine key={n.id} n={n} t={t} locale={locale} />
+            ))}
+          </ul>
+        )}
+      </section>
+    </Container>
   );
 }

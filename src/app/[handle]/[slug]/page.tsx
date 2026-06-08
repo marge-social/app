@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { db } from "@/db";
 import { articles, users } from "@/db/schema";
 import { Attachments } from "@/components/Attachments";
+import { Container } from "@/components/Container";
 import { getCurrentUser } from "@/lib/auth";
 import { fediverseHandle } from "@/lib/config";
 import { loadMediaForArticles } from "@/lib/media";
@@ -59,49 +60,52 @@ export default async function ArticlePage({ params }: ArticleParams) {
   if (article.status !== "published" && !isAuthor) notFound();
 
   const date = article.publishedAt ?? article.createdAt;
-  const media = (await loadMediaForArticles([article.id])).get(article.id) ?? [];
+  const media =
+    (await loadMediaForArticles([article.id])).get(article.id) ?? [];
   const { locale, dict } = await getServerI18n();
   const t = dict.article;
 
   return (
-    <article className="flex flex-col gap-6">
-      <header className="flex flex-col gap-2">
-        {article.status !== "published" && (
-          <p className="text-sm font-medium text-amber-700 dark:text-amber-400">
-            {t.draftNotice}
+    <Container>
+      <article className="flex flex-col gap-6">
+        <header className="flex flex-col gap-2">
+          {article.status !== "published" && (
+            <p className="text-sm font-medium text-amber-700 dark:text-amber-400">
+              {t.draftNotice}
+            </p>
+          )}
+          <h1 className="text-3xl font-bold tracking-tight">{article.title}</h1>
+          <p className="text-sm text-foreground/70">
+            <Link href={`/@${author.handle}`} className="hover:underline">
+              {author.displayName}
+            </Link>{" "}
+            <span className="font-mono">{fediverseHandle(author.handle)}</span>
+            {" · "}
+            <time dateTime={date.toISOString()}>
+              {formatLongDate(date, locale)}
+            </time>
+            {" · "}
+            {interpolate(t.readingTime, {
+              n: readingTimeMinutes(article.contentMarkdown),
+            })}
           </p>
-        )}
-        <h1 className="text-3xl font-bold tracking-tight">{article.title}</h1>
-        <p className="text-sm text-foreground/70">
-          <Link href={`/@${author.handle}`} className="hover:underline">
-            {author.displayName}
-          </Link>{" "}
-          <span className="font-mono">{fediverseHandle(author.handle)}</span>
-          {" · "}
-          <time dateTime={date.toISOString()}>
-            {formatLongDate(date, locale)}
-          </time>
-          {" · "}
-          {interpolate(t.readingTime, {
-            n: readingTimeMinutes(article.contentMarkdown),
-          })}
-        </p>
-        {isAuthor && (
-          <Link
-            href={`/compose/${article.id}`}
-            className="w-fit text-sm underline"
-          >
-            {t.edit}
-          </Link>
-        )}
-      </header>
+          {isAuthor && (
+            <Link
+              href={`/compose/${article.id}`}
+              className="w-fit text-sm underline"
+            >
+              {t.edit}
+            </Link>
+          )}
+        </header>
 
-      <Attachments media={media} />
+        <Attachments media={media} />
 
-      <div
-        className="prose-marge"
-        dangerouslySetInnerHTML={{ __html: article.contentHtml }}
-      />
-    </article>
+        <div
+          className="prose-marge"
+          dangerouslySetInnerHTML={{ __html: article.contentHtml }}
+        />
+      </article>
+    </Container>
   );
 }
