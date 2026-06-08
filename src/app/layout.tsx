@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { MatomoAnalytics } from "@/components/MatomoAnalytics";
 import { SiteHeader } from "@/components/SiteHeader";
 
 const geistSans = Geist({
@@ -24,12 +25,20 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Mesure d'audience Matomo : activée uniquement si l'instance est configurée
+  // (env runtime, lue côté serveur). Absente en dev = aucun suivi.
+  const matomoUrl = process.env.MATOMO_URL;
+  const matomoSiteId = process.env.MATOMO_SITE_ID;
+
   return (
     <html
       lang="fr"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        {matomoUrl && matomoSiteId && (
+          <MatomoAnalytics url={matomoUrl} siteId={matomoSiteId} />
+        )}
         <a href="#main-content" className="skip-link">
           Aller au contenu
         </a>

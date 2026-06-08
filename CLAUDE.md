@@ -290,6 +290,26 @@ alimentent le fil. Le chemin « push » (inbox `.on(Create)` → `remoteObjects`
 
 Reste : vérif d'interop réelle (Mastodon/PeerTube) via tunnel — cf. ci-dessous.
 
+### Mesure d'audience — Matomo (RGPD sans bandeau) ✅ (vérifié en local)
+
+`src/components/MatomoAnalytics.tsx` (client) monté par le layout racine
+(`src/app/layout.tsx`) **uniquement si** `MATOMO_URL` + `MATOMO_SITE_ID` sont
+définis (env **runtime**, lue côté serveur et passée en props — **pas** de
+`NEXT_PUBLIC_*` : elles seraient inlinées au `next build`, étape Docker sans les
+variables runtime). Conçu pour être conforme **sans bandeau de consentement**
+(mesure d'audience exemptée, lignes directrices CNIL → pas de dark pattern) :
+- **sans cookie** (`disableCookies`) ; **respecte Do Not Track / GPC** (aucune
+  collecte si le signal est actif) ; n'envoie que le **chemin** (`origin +
+  pathname`), jamais la query string (ni terme de recherche, ni jeton).
+- Suit les **navigations SPA** de l'App Router via `usePathname` (re-`trackPageView`
+  avec référent = URL précédente).
+- ⚠️ À activer **aussi côté serveur Matomo** (requis pour l'exemption) :
+  anonymisation d'IP ≥ 2 octets + respect DNT. Et mentionner la mesure dans une
+  page « vie privée / mentions légales » (à créer).
+
+Vars dans `docker-compose.yml` (service `app`) + `.env*.example`. Prod :
+`MATOMO_URL=https://analytics.kilometre-0.fr`, `MATOMO_SITE_ID=10`.
+
 ### Cron digest
 `curl -H "Authorization: Bearer $CRON_SECRET" $APP_URL/api/cron/digest`. À brancher
 sur une tâche cron (quotidien par défaut, §4.3). Regroupe les signaux pauvres
