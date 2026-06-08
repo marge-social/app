@@ -1,20 +1,34 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter_Tight, JetBrains_Mono, Newsreader } from "next/font/google";
 import "./globals.css";
+import { AppHeader } from "@/components/AppHeader";
 import { I18nProvider } from "@/components/I18nProvider";
 import { MatomoAnalytics } from "@/components/MatomoAnalytics";
 import { SiteFooter } from "@/components/SiteFooter";
-import { SiteHeader } from "@/components/SiteHeader";
 import { getServerI18n } from "@/lib/i18n/server";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Typographie du design : Newsreader (sérif éditoriale — titres, chapôs, notes),
+// Inter Tight (sans — UI), JetBrains Mono (mono — légendes techniques).
+const newsreader = Newsreader({
+  variable: "--font-newsreader",
   subsets: ["latin"],
+  style: ["normal", "italic"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const interTight = Inter_Tight({
+  variable: "--font-inter-tight",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-jetbrains-mono",
+  subsets: ["latin"],
+  weight: ["400", "500"],
+  display: "swap",
 });
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -40,7 +54,7 @@ export default async function RootLayout({
   return (
     <html
       lang={locale}
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${newsreader.variable} ${interTight.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <I18nProvider locale={locale} dict={dict}>
@@ -50,12 +64,11 @@ export default async function RootLayout({
           <a href="#main-content" className="skip-link">
             {dict.common.skipToContent}
           </a>
-          <SiteHeader />
-          <main
-            id="main-content"
-            tabIndex={-1}
-            className="mx-auto w-full max-w-3xl flex-1 px-4 py-8"
-          >
+          <AppHeader />
+          {/* Conteneur pleine largeur : chaque page maîtrise sa propre grille.
+              La home rend le shell « Découvrir » 3 colonnes ; les autres pages
+              fournissent leur conteneur. */}
+          <main id="main-content" tabIndex={-1} className="w-full flex-1">
             {children}
           </main>
           <SiteFooter />
