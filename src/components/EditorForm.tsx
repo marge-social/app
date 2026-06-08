@@ -19,6 +19,10 @@ export interface EditorArticle {
 const fieldClass =
   "w-full rounded border border-black/20 bg-transparent px-3 py-2 dark:border-white/25 focus:outline-none focus:ring-2 focus:ring-foreground/40";
 
+/** Liste blanche des types acceptés à l'upload (cahier médias §3.2). */
+const ACCEPT =
+  "image/jpeg,image/png,image/gif,image/webp,application/pdf,video/mp4,video/webm,audio/mpeg";
+
 function SubmitButtons() {
   const { pending } = useFormStatus();
   return (
@@ -45,13 +49,26 @@ function SubmitButtons() {
   );
 }
 
-export function EditorForm({ article }: { article?: EditorArticle }) {
+export function EditorForm({
+  article,
+  inReplyTo,
+  replyToHref,
+}: {
+  article?: EditorArticle;
+  /** IRI du contenu d'origine pour une réponse-billet (§2.3). */
+  inReplyTo?: string;
+  /** Lien humain vers ce contenu, pour le bandeau de contexte. */
+  replyToHref?: string;
+}) {
   const [state, action] = useActionState<ArticleFormState, FormData>(
     saveArticleAction,
     {},
   );
   const [tab, setTab] = useState<"write" | "preview">("write");
   const [content, setContent] = useState(article?.contentMarkdown ?? "");
+  // Pièce jointe : proposée à la création seulement. null = aucun fichier.
+  const [isImage, setIsImage] = useState<boolean | null>(null);
+  const isNew = !article?.id;
 
   // Aperçu client (contenu de l'auteur lui-même ; la sanitisation a lieu côté
   // serveur à l'enregistrement).
@@ -63,6 +80,21 @@ export function EditorForm({ article }: { article?: EditorArticle }) {
   return (
     <form action={action} className="flex flex-col gap-4">
       {article?.id && <input type="hidden" name="id" value={article.id} />}
+      {inReplyTo && <input type="hidden" name="inReplyTo" value={inReplyTo} />}
+
+      {inReplyTo && (
+        <p className="rounded border border-black/10 bg-black/[0.03] px-3 py-2 text-sm text-foreground/70 dark:border-white/15 dark:bg-white/[0.05]">
+          En réponse à{" "}
+          {replyToHref ? (
+            <a href={replyToHref} className="underline">
+              un contenu publié
+            </a>
+          ) : (
+            "un contenu publié"
+          )}
+          . Votre billet apparaîtra dans le fil et sera rattaché à ce contenu.
+        </p>
+      )}
 
       {state.error && (
         <p
@@ -151,6 +183,49 @@ export function EditorForm({ article }: { article?: EditorArticle }) {
           </>
         )}
       </div>
+
+      {isNew && (
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-1">
+            <label htmlFor="media" className="text-sm font-medium">
+              Pièce jointe{" "}
+              <span className="font-normal text-foreground/60">
+                (optionnel — image, PDF, MP4/WebM, MP3, 5 Mo max)
+              </span>
+            </label>
+            <input
+              id="media"
+              name="media"
+              type="file"
+              accept={ACCEPT}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                setIsImage(f ? f.type.startsWith("image/") : null);
+              }}
+              className="text-sm"
+            />
+          </div>
+          {isImage && (
+            <div className="flex flex-col gap-1">
+              <label htmlFor="alt" className="text-sm font-medium">
+                Texte alternatif{" "}
+                <span className="font-normal text-foreground/60">
+                  (obligatoire — décrit l’image)
+                </span>
+              </label>
+              <input
+                id="alt"
+                name="alt"
+                type="text"
+                required
+                maxLength={1500}
+                placeholder="Décris l’image pour les personnes qui ne la voient pas"
+                className={fieldClass}
+              />
+            </div>
+          )}
+        </div>
+      )}
 
       <SubmitButtons />
     </form>

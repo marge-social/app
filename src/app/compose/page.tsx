@@ -5,10 +5,23 @@ import { db } from "@/db";
 import { articles } from "@/db/schema";
 import { EditorForm } from "@/components/EditorForm";
 import { getCurrentUser } from "@/lib/auth";
+import { humanObjectUrl } from "@/lib/config";
+import { resolveInteractionTarget } from "@/lib/interactions";
 
-export default async function ComposePage() {
+export default async function ComposePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ replyTo?: string }>;
+}) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+
+  // Réponse-billet (§2.3) : on ne propage `replyTo` que s'il désigne un objet
+  // réellement connu (anti-IRI arbitraire), comme pour like/commentaire.
+  const { replyTo } = await searchParams;
+  const replyTarget = replyTo
+    ? await resolveInteractionTarget(replyTo.trim())
+    : null;
 
   const drafts = await db.query.articles.findMany({
     where: and(eq(articles.authorId, user.id), eq(articles.status, "draft")),
@@ -25,7 +38,12 @@ export default async function ComposePage() {
         </p>
       </div>
 
-      <EditorForm />
+      <EditorForm
+        inReplyTo={replyTarget?.objectIri}
+        replyToHref={
+          replyTarget ? humanObjectUrl(replyTarget.objectIri) : undefined
+        }
+      />
 
       {drafts.length > 0 && (
         <section className="flex flex-col gap-2 border-t border-black/10 pt-6 dark:border-white/15">

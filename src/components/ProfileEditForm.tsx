@@ -74,7 +74,7 @@ export function ProfileEditForm({
           className="text-sm"
         />
         <p className="text-xs text-foreground/55">
-          PNG, JPEG, WebP ou GIF, 1 Mo maximum.
+          PNG, JPEG, WebP ou GIF, 5 Mo maximum.
         </p>
       </div>
 

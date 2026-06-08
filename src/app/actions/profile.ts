@@ -4,8 +4,10 @@ import { and, eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { feedSubscriptions, feeds, userAvatars, users } from "@/db/schema";
+import { feedSubscriptions, feeds, media, users } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
+import { persistMedia, processUpload } from "@/lib/media";
+import { deleteObject } from "@/lib/storage";
 
 export interface ProfileFormState {
   error?: string;
@@ -14,13 +16,6 @@ export interface ProfileFormState {
 
 const NAME_MAX = 80;
 const BIO_MAX = 500;
-const AVATAR_MAX_BYTES = 1_000_000; // 1 Mo
-const AVATAR_TYPES = new Set([
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/gif",
-]);
 
 /** Met à jour le profil de l'utilisateur connecté : nom, bio, avatar (§Lot 5). */
 export async function updateProfileAction(
@@ -41,25 +36,18 @@ export async function updateProfileAction(
     return { error: `Bio trop longue (max ${BIO_MAX} caractères).` };
   }
 
-  // Avatar (optionnel).
+  // Avatar (optionnel) : validé + re-encodé + EXIF purgé, stocké sur le bucket
+  // S3 (cahier médias). Validation AVANT toute écriture.
   const file = formData.get("avatar");
-  let avatarUploaded = false;
+  let newAvatarMediaId: string | null = null;
   if (file instanceof File && file.size > 0) {
-    if (!AVATAR_TYPES.has(file.type)) {
-      return { error: "Format d’image non supporté (JPEG, PNG, WebP, GIF)." };
+    const result = await processUpload(file);
+    if (!result.ok) return { error: result.error };
+    if (result.kind !== "image") {
+      return { error: "L’avatar doit être une image (JPEG, PNG, WebP, GIF)." };
     }
-    if (file.size > AVATAR_MAX_BYTES) {
-      return { error: "Image trop lourde (max 1 Mo)." };
-    }
-    const buffer = Buffer.from(await file.arrayBuffer());
-    await db
-      .insert(userAvatars)
-      .values({ userId: user.id, data: buffer, contentType: file.type })
-      .onConflictDoUpdate({
-        target: userAvatars.userId,
-        set: { data: buffer, contentType: file.type, updatedAt: new Date() },
-      });
-    avatarUploaded = true;
+    const row = await persistMedia({ ownerUserId: user.id, processed: result });
+    newAvatarMediaId = row.id;
   }
 
   await db
@@ -67,9 +55,26 @@ export async function updateProfileAction(
     .set({
       displayName,
       bio,
-      ...(avatarUploaded ? { avatarUpdatedAt: new Date() } : {}),
+      ...(newAvatarMediaId
+        ? { avatarMediaId: newAvatarMediaId, avatarUpdatedAt: new Date() }
+        : {}),
     })
     .where(eq(users.id, user.id));
+
+  // Nettoyage best-effort de l'ancien avatar S3 (remplacement).
+  if (newAvatarMediaId && user.avatarMediaId) {
+    try {
+      const old = await db.query.media.findFirst({
+        where: eq(media.id, user.avatarMediaId),
+        columns: { storageKey: true, thumbnailKey: true },
+      });
+      await db.delete(media).where(eq(media.id, user.avatarMediaId));
+      if (old?.storageKey) await deleteObject(old.storageKey);
+      if (old?.thumbnailKey) await deleteObject(old.thumbnailKey);
+    } catch (err) {
+      console.error("[media] échec du nettoyage de l'ancien avatar :", err);
+    }
+  }
 
   revalidatePath(`/@${user.handle}`);
   revalidatePath("/");

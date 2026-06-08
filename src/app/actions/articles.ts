@@ -6,8 +6,11 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { articles } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
-import { articleApUri } from "@/lib/config";
+import { actorUri, articleApUri, fediverseHandle } from "@/lib/config";
 import { renderMarkdown, slugify } from "@/lib/markdown";
+import { persistMedia, processUpload } from "@/lib/media";
+import { resolveInteractionTarget } from "@/lib/interactions";
+import { routeInteractionNotification } from "@/lib/notifications";
 import {
   deliverCreate,
   deliverDelete,
@@ -58,9 +61,26 @@ export async function saveArticleAction(
   const contentMarkdown = ((formData.get("content") as string) ?? "").trim();
   const summaryInput = ((formData.get("summary") as string) ?? "").trim();
   const intent = formData.get("intent") === "publish" ? "publish" : "draft";
+  // Réponse-billet (§2.3) : IRI du contenu d'origine, posé seulement à la
+  // création (sur édition, on conserve le rattachement existant).
+  const inReplyTo = ((formData.get("inReplyTo") as string) ?? "").trim();
 
   if (!title) return { error: "Le titre est requis." };
   if (!contentMarkdown) return { error: "Le contenu ne peut pas être vide." };
+
+  // Pièce jointe (à la création uniquement, comme inReplyTo). Validation AVANT
+  // toute écriture pour rejeter type/taille immédiatement.
+  const file = formData.get("media");
+  const alt = ((formData.get("alt") as string) ?? "").trim();
+  let processed = null;
+  if (!id && file instanceof File && file.size > 0) {
+    const result = await processUpload(file);
+    if (!result.ok) return { error: result.error };
+    if (result.kind === "image" && !alt) {
+      return { error: "Le texte alternatif est obligatoire pour une image." };
+    }
+    processed = result;
+  }
 
   const contentHtml = renderMarkdown(contentMarkdown);
   // On stocke le chapô explicite de l'auteur tel quel (souvent vide) ; le
@@ -120,9 +140,24 @@ export async function saveArticleAction(
         status: intent === "publish" ? "published" : "draft",
         publishedAt: intent === "publish" ? now : null,
         apUri: intent === "publish" ? articleApUri(user.handle, slug) : null,
+        inReplyToUri: inReplyTo || null,
       })
       .returning({ id: articles.id });
     articleId = created.id;
+
+    // Téléversement S3 + persistance du média, rattaché au nouvel article.
+    if (processed) {
+      try {
+        await persistMedia({
+          ownerUserId: user.id,
+          processed,
+          altText: alt || null,
+          articleId,
+        });
+      } catch (err) {
+        console.error("[media] échec du téléversement (article) :", err);
+      }
+    }
   }
 
   // Fédération sortante (après écriture en base).
@@ -131,8 +166,35 @@ export async function saveArticleAction(
       where: eq(articles.id, articleId),
     });
     if (row) {
-      if (federate === "create") await deliverCreate(user.handle, row);
-      else await deliverUpdate(user.handle, row);
+      if (federate === "create") {
+        // Réponse-billet (§2.3) : à la 1re mise en ligne, notifier l'auteur
+        // d'origine en temps réel (§4.3, sauf auto-réponse) s'il est local, ou
+        // fédérer la réponse à son instance s'il est distant.
+        let parentAuthorActorUri: string | null = null;
+        if (row.inReplyToUri) {
+          const target = await resolveInteractionTarget(row.inReplyToUri);
+          if (target?.authorIsLocal) {
+            if (target.authorUserId && target.authorUserId !== user.id) {
+              await routeInteractionNotification({
+                recipientUserId: target.authorUserId,
+                type: "reply",
+                origin: "local",
+                actor: {
+                  uri: actorUri(user.handle),
+                  handle: fediverseHandle(user.handle),
+                  name: user.displayName,
+                },
+                objectUri: row.inReplyToUri,
+              });
+            }
+          } else if (target) {
+            parentAuthorActorUri = target.authorActorUri;
+          }
+        }
+        await deliverCreate(user.handle, row, parentAuthorActorUri);
+      } else {
+        await deliverUpdate(user.handle, row);
+      }
     }
   }
 

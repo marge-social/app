@@ -5,6 +5,11 @@
 
 {$DOMAIN} {
 	encode zstd gzip
+	# Plafond de taille de corps : rejette tôt les envois > 5 Mo (cahier médias
+	# §3.3), avec une marge pour l'overhead multipart.
+	request_body {
+		max_size 6MB
+	}
 	# Transmet l'hôte public et le schéma à l'app. Caddy le fait par défaut,
 	# mais on l'explicite : Fedify s'appuie sur l'origine canonique (cf. option
 	# `origin` du Federation) et, à défaut, sur ces en-têtes du reverse proxy.
@@ -12,5 +17,16 @@
 		header_up Host {host}
 		header_up X-Forwarded-Host {host}
 		header_up X-Forwarded-Proto {scheme}
+	}
+}
+
+# Origine média séparée (cahier médias §2) : reverse-proxy le bucket S3 OVH en
+# réécrivant l'en-tête Host. Sort le VPS du chemin des fichiers et isole tout
+# contenu des cookies/session de l'app. MEDIA_BUCKET_HOST = hôte S3 du bucket
+# (ex. marge-media.s3.gra.io.cloud.ovh.net).
+{$MEDIA_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy https://{$MEDIA_BUCKET_HOST} {
+		header_up Host {$MEDIA_BUCKET_HOST}
 	}
 }

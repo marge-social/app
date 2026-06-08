@@ -133,6 +133,168 @@ local. Reste : tests d'interop Mastodon réels (S2/S3) via tunnel public.
 & déréférençable, recherche, édition profil+avatar, changement de mot de passe,
 redirections). Reste : interop Mastodon réelle via tunnel.
 
+### v0.2 — Interactions sociales & Notifications (en cours)
+
+Spécification : [le cahier v0.2](docs/cahier-des-charges-v0.2-interactions.md) (4
+primitives : Like, commentaire court, réponse-billet, partage ; notifications
+réglables ; anti-dark-patterns). **Arbitrages tranchés** : §8 compteurs =
+**option (c)** (visibles de tous, jamais utilisés pour trier).
+
+- **Lot Like ✅** (vérifié en local) : table générique `interactions` (journal
+  Like/Announce/Comment/Reply ; IRI acteur+objet ; `origin` local|federated ;
+  `undone_at` pour les bascules ; index partiel unique sur (type,acteur,objet)
+  pour Like/Announce → idempotence §2.1). `src/lib/interactions.ts` :
+  `setLike` (toggle, dé-like = `undone_at`, re-like = réactivation),
+  `getLikeStatsFor` (compte agrégé sans N+1), `resolveLikeTarget` (valide qu'on
+  ne like qu'un objet connu — billet/note local publié ou objet distant ingéré).
+  Émission `Like`/`Undo(Like)` vers l'auteur distant (`buildLike` +
+  `deliverLike`/`deliverUndoLike`, id déterministe `#likes/<objet>`) ; inbox
+  `.on(Like)` + `.on(Undo)` étendu → journalise les likes reçus sur nos objets
+  (origin=federated). Compteur **public discret** sous chaque entrée du fil
+  (`FeedList`, masqué à 0), action `toggleLikeAction`. **Pas de notification de
+  like** : signal pauvre, remis en *digest* par défaut (§4.3) → le digest lira
+  `interactions`. Reste du module : commentaires, réponses-billets, partages,
+  matrice de notifications + digest.
+
+- **Lot Commentaire court ✅** (vérifié en local) : `posts.inReplyToUri` +
+  `remoteObjects.inReplyToUri` (une Note avec `inReplyTo` = commentaire, exclue
+  du fil top-level, affichée **sous** son parent — §2.2). `buildNoteObject` pose
+  `replyTarget` (→ `inReplyTo`) ; `buildCreateForNote` cc l'auteur d'origine ;
+  `deliverComment` livre aux followers + à l'auteur distant. Inbox `.on(Create)`
+  capture `inReplyTo` et, si le parent est local, crée une notification
+  (`comment` pour une Note, `reply` pour un Article — **temps réel** par défaut,
+  §4.3) via `createReplyNotification`. Action `createCommentAction` (≤500 car.,
+  `resolveInteractionTarget` partagé avec le like) ; fil threadé + champ de
+  réponse dans `FeedList` (`buildFeed` charge les commentaires locaux+distants
+  par parent) ; page `/notifications` rend les types + lien profond « voir ».
+  Helper `cacheRemoteActor` factorisé (Follow + Create). Vérifié : commentaire
+  local affiché sous le contenu & exclu du top-level, notification temps réel
+  inter-comptes (bob→alice) avec permalien. Reste du module : réponses-billets,
+  partages (`Announce`), matrice `notification_settings` + digest.
+
+- **Lot Réponse-billet ✅** (vérifié en local) : `articles.inReplyToUri`
+  (Article + inReplyTo, §2.3). **Double existence** : reste en top-level du fil
+  (publication autonome) ET rattaché au parent comme **référence titrée** dans le
+  thread. `buildArticleObject` pose `replyTarget` ; `buildCreateForArticle` cc
+  l'auteur d'origine ; `deliverCreate(handle, article, parentAuthorActorUri?)`
+  livre aussi à l'auteur distant. `saveArticleAction` lit `inReplyTo` (création
+  seulement), stocke, et à la publication notifie l'auteur local (`reply`, temps
+  réel §4.3, sauf auto-réponse) ou fédère au distant. Éditeur atteint via
+  `/compose?replyTo=<IRI>` (bandeau « En réponse à… », hidden `inReplyTo`) ; lien
+  « Répondre par un billet » sous chaque entrée du fil. `buildFeed` n'exclut du
+  top-level que les **Notes**-réponses distantes (les Articles-réponses restent
+  visibles, double existence) ; thread charge commentaires (Notes, en entier) +
+  réponses-billets (Articles, lien titré) locaux & distants. Helper partagé
+  `humanObjectUrl` (config) pour les permaliens humains. Vérifié : réponse-billet
+  affichée top-level + référence threadée sous le parent ; notif `reply` temps
+  réel inter-comptes (dave→carol). Reste du module : partages (`Announce`),
+  matrice `notification_settings` + digest.
+
+- **Lot Partage ✅** (vérifié en local) : bascule `Announce`/`Undo` (§2.4),
+  journalisée dans `interactions` (même mécanique que le Like). Lib généralisée
+  `setLike`→`setToggle(type,…)` + `getLikeStatsFor`→`getToggleStatsFor(type,…)`.
+  `buildAnnounce` (id déterministe `#announces/<objet>`, vers followers) ;
+  `deliverAnnounce`/`deliverUndoAnnounce` ; inbox `.on(Announce)` (journalise +
+  **déréférence/ingère** l'objet partagé dans `remoteObjects`) et `.on(Undo)`
+  étendu. **Ré-émission** dans le fil : `buildFeed` surface les objets annoncés
+  par les comptes suivis **+ soi** (libellé « partagé par X », daté à l'instant
+  du partage), résolus en lots (articles/notes locaux + `remoteObjects`).
+  `toggleAnnounceAction` (livre aux followers du partageur). `ShareButton` dans
+  `FeedList` (compteur public visible, **jamais** utilisé pour trier — §6/§8c).
+  **Pas de notification** (signal pauvre, défaut *digest* §4.3 → le digest lira
+  `interactions`). Vérifié : toggle + compteur ; ré-émission visible par un
+  abonné du partageur **qui ne suit pas l'auteur** (gina↛eve, via frank) ;
+  dé-partage réversible (soft-undo, le boost disparaît). Reste du module :
+  matrice `notification_settings` (canal × portée) + moteur de digest.
+
+- **Lot Notifications réglables (matrice, §4.2) ✅** (vérifié en local) : tables
+  `notification_settings` (dérogations par user×type) + `digest_items` (file) +
+  `notifications.group_count`. **Routeur unique** `routeInteractionNotification`
+  (`src/lib/notifications.ts`) : applique **portée** (local/fédéré/all) puis
+  **canal** (`off`→rien ; `digest`→file ; `realtime`→notif immédiate, dédupliquée
+  pour like/announce). Défauts « calm by default » §4.3 résolus en code
+  (`DEFAULT_NOTIF_SETTINGS` : reply/comment=temps réel, announce/like=digest,
+  portée all). Les 4 types y passent (actions like/announce/comment + saveArticle
+  reply + inbox `.on(Like/Announce/Create)` via `notifyToggleTarget`). UI matrice
+  4×(canal,portée) dans `/preferences` (`saveNotificationSettingsAction`).
+  Vérifié : défaut like→digest (file, pas d'interruption) ; like→temps réel après
+  réglage → notif immédiate ; réglages persistés.
+- **Lot Digest (moteur, §4.3/§4.4) ✅** (vérifié en local) : `src/lib/digest.ts`
+  `runDigest()` regroupe les `digest_items` en attente par (destinataire, type,
+  objet), compte les **acteurs distincts** (like/announce filtrés sur les
+  `interactions` encore actives → un like annulé ne gonfle pas le total), crée
+  **une** notification groupée (`group_count` + acteur représentant) et marque
+  les items `digested_at`. Idempotent. Endpoint cron `/api/cron/digest` (protégé
+  `CRON_SECRET`). Rendu groupé « X et N-1 autres ont … » (§4.4) dans
+  `/notifications`. Vérifié : 2 likes (défaut digest) → 1 notif « Mia et 1 autre
+  ont aimé… », file vidée, re-run idempotent.
+
+**MODULE INTERACTIONS COMPLET (§2 les 4 primitives + §4 notifications réglables
+& digest).** Reste : tests d'interop Mastodon réels via tunnel.
+
+### Médias — stockage objet OVH (S3) + pièces jointes ✅ (vérifié en local)
+
+Spécification : `marge-cdc-medias-stockage-s3`. Tous les médias (pièces jointes
+des posts/billets **et** avatars) sur un bucket S3 OVH, servis depuis une
+**origine séparée** `media.<domaine>` (sécurité : isole le contenu des cookies).
+
+- **Stockage** : `src/lib/storage.ts` (client S3 paresseux, `putObject` pose
+  **`ACL: public-read` + `Content-Type`** validé — pas de bucket policy sur GRA ;
+  clés UUID, jamais le nom fourni). URL via `mediaUrl()`/`MEDIA_BASE_URL`
+  (`src/lib/config.ts`).
+- **Validation/traitement** : `src/lib/media.ts` (**pur**, testable sans réseau).
+  Liste **blanche** par *magic bytes* (`file-type`) : jpg/png/gif/webp, pdf,
+  mp4/webm, mp3 ; **5 Mo** max ; rejet si extension annoncée ≠ contenu. Images
+  re-encodées + **EXIF purgé** + dimensions + **miniature** (`sharp`). PDF servis
+  en `Content-Disposition: attachment`. `processUpload` (validation) puis
+  `persistMedia` (S3 + insert), `loadMediaFor{Posts,Articles}` (sans N+1).
+- **Modèle** : table `media` (FK nullable `postId`/`articleId` → **1 média/post**
+  en V1, extensible) ; `users.avatarMediaId` (avatars S3, fallback bytea legacy
+  conservé) ; `remoteObjects.attachments` (jsonb, PJ distantes). Migration
+  `0008`. **FK circulaire** users↔media : thunk `(): AnyPgColumn => media.id`.
+- **Upload** : champ fichier + **texte alternatif sans friction** (apparaît au
+  choix d'une image, obligatoire) dans `Composer`/`EditorForm` ; avatar dans
+  `ProfileEditForm`. Actions `createPostAction`/`saveArticleAction`(création)/
+  `updateProfileAction` : valident AVANT toute écriture, puis S3 (best-effort).
+- **Fédération** : `attachment` (Document/Image, `name`=alt) sur Note/Article
+  (builders + dispatchers + outbox + livraison) ; **`icon`** acteur = URL média
+  S3 ; inbox `.on(Create/Update/Announce)` ingère les PJ distantes
+  (`extractRemoteAttachments`, liste blanche). `/api/avatar/[handle]` redirige
+  (302) vers le média S3 si présent, sinon sert l'octet legacy.
+- **Affichage** : `media: MediaView[]` sur `FeedEntry` (chargé en lot), composant
+  `Attachments` (image inline+alt, lecteurs vidéo/audio, PDF en lien) dans le fil
+  + vues détaillées article/note.
+- **Déploiement** : bloc Caddy `{$MEDIA_DOMAIN}` (reverse-proxy bucket, réécrit
+  `Host`) + `request_body max_size 6MB` ; vars `S3_*`/`MEDIA_*` dans
+  docker-compose + `.env*.example` ; `DEPLOY.md` §2 ter (bucket, ACL, DNS, clés).
+
+Vérifié en local : `tsc`/`lint`/`build` OK + `scripts/smoke-media.ts`
+(zip/js/exe-renommé/>5 Mo rejetés ; EXIF purgé ; miniature ; pdf OK). **Reste :
+round-trip S3 réel** (credentials OVH) + affichage Mastodon via tunnel.
+
+### Ingestion des contenus distants suivis ✅ (build/tsc/lint OK)
+
+Les publications des comptes ActivityPub suivis (Mastodon, **PeerTube**…)
+alimentent le fil. Le chemin « push » (inbox `.on(Create)` → `remoteObjects` →
+`buildFeed`) existait déjà mais laissait le fil **vide après l'abonnement** :
+
+- **Backfill à l'abonnement** (`backfillRemoteOutbox`, `src/federation/federation.ts`) :
+  `followRemoteActor` récupère l'outbox **public** de l'acteur
+  (`actor.getOutbox()` + `ctx.traverseCollection`, `suppressError`) et ingère ses
+  ~20 contenus récents → le fil se remplit sans attendre une publication poussée.
+  Best-effort : un échec ne fait jamais échouer l'abonnement (déjà persisté).
+- **Types élargis** : `upsertRemoteObject` + gardes `Create`/`Update`/`Announce`
+  acceptent désormais `Note | Article | Video | Page` (helper `isIngestableObject`
+  + `remoteObjectType`). Les `Video` (PeerTube) étaient auparavant rejetés. Pas de
+  migration (`remote_objects.type` est du texte libre).
+
+Reste : vérif d'interop réelle (Mastodon/PeerTube) via tunnel — cf. ci-dessous.
+
+### Cron digest
+`curl -H "Authorization: Bearer $CRON_SECRET" $APP_URL/api/cron/digest`. À brancher
+sur une tâche cron (quotidien par défaut, §4.3). Regroupe les signaux pauvres
+(like/announce et tout type réglé sur `digest`) en notifications « N personnes… ».
+
 ### Cron RSS
 `curl -H "Authorization: Bearer $CRON_SECRET" $APP_URL/api/cron/poll`. À brancher
 sur une vraie tâche cron en prod.

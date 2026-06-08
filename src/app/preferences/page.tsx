@@ -9,9 +9,37 @@ import {
 } from "@/app/actions/follows";
 import { unblockActorAction } from "@/app/actions/moderation";
 import { deleteAccountAction } from "@/app/actions/account";
+import { saveNotificationSettingsAction } from "@/app/actions/notifications";
 import { PasswordChangeForm } from "@/components/PasswordChangeForm";
 import { getCurrentUser } from "@/lib/auth";
 import { fediverseHandle } from "@/lib/config";
+import {
+  type InteractionNotifType,
+  getEffectiveSettings,
+} from "@/lib/notifications";
+
+const NOTIF_TYPE_LABELS: Record<InteractionNotifType, string> = {
+  reply: "Réponses-billets",
+  comment: "Commentaires",
+  announce: "Partages",
+  like: "J’aime",
+};
+const NOTIF_TYPE_ORDER: InteractionNotifType[] = [
+  "reply",
+  "comment",
+  "announce",
+  "like",
+];
+const CHANNEL_OPTIONS: [string, string][] = [
+  ["realtime", "Temps réel"],
+  ["digest", "Digest"],
+  ["off", "Désactivé"],
+];
+const SCOPE_OPTIONS: [string, string][] = [
+  ["all", "Local + fédéré"],
+  ["local", "Local seulement"],
+  ["federated", "Fédéré seulement"],
+];
 
 export const metadata = { title: "Préférences — Marge" };
 
@@ -50,6 +78,8 @@ export default async function PreferencesPage() {
     .from(actorBlocks)
     .where(eq(actorBlocks.userId, user.id));
 
+  const notifSettings = await getEffectiveSettings(user.id);
+
   return (
     <div className="flex flex-col gap-8">
       <h1 className="text-2xl font-bold tracking-tight">Préférences</h1>
@@ -76,6 +106,67 @@ export default async function PreferencesPage() {
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">Changer mon mot de passe</h2>
         <PasswordChangeForm />
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-lg font-semibold">Notifications</h2>
+        <p className="text-sm text-foreground/70">
+          Pour chaque type d’interaction, choisissez quand être interrompu·e
+          (temps réel), regroupé en récapitulatif (digest) ou rien (désactivé),
+          et quelles origines compter. Le réseau parle normalement au Fediverse ;
+          vous décidez de ce qui mérite de vous interrompre.
+        </p>
+        <form
+          action={saveNotificationSettingsAction}
+          className="flex flex-col gap-3"
+        >
+          <div className="flex flex-col divide-y divide-black/10 rounded-lg border border-black/10 dark:divide-white/10 dark:border-white/15">
+            {NOTIF_TYPE_ORDER.map((type) => (
+              <div
+                key={type}
+                className="flex flex-wrap items-center gap-3 px-4 py-3"
+              >
+                <span className="min-w-[9rem] flex-1 text-sm font-medium">
+                  {NOTIF_TYPE_LABELS[type]}
+                </span>
+                <label className="flex items-center gap-1.5 text-xs">
+                  <span className="text-foreground/55">Canal</span>
+                  <select
+                    name={`channel_${type}`}
+                    defaultValue={notifSettings[type].channel}
+                    className="rounded border border-black/15 bg-transparent px-2 py-1 dark:border-white/20"
+                  >
+                    {CHANNEL_OPTIONS.map(([v, l]) => (
+                      <option key={v} value={v}>
+                        {l}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="flex items-center gap-1.5 text-xs">
+                  <span className="text-foreground/55">Portée</span>
+                  <select
+                    name={`scope_${type}`}
+                    defaultValue={notifSettings[type].scope}
+                    className="rounded border border-black/15 bg-transparent px-2 py-1 dark:border-white/20"
+                  >
+                    {SCOPE_OPTIONS.map(([v, l]) => (
+                      <option key={v} value={v}>
+                        {l}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            ))}
+          </div>
+          <button
+            type="submit"
+            className="self-start rounded bg-foreground px-4 py-2 text-sm font-medium text-background hover:opacity-90"
+          >
+            Enregistrer les préférences
+          </button>
+        </form>
       </section>
 
       <section className="flex flex-col gap-3">
