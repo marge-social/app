@@ -1,4 +1,5 @@
 import type { MediaView } from "@/lib/media";
+import { VideoPlayer } from "@/components/VideoPlayer";
 
 /**
  * Rendu des pièces jointes selon leur nature (cahier médias §4.1) : image inline
@@ -31,12 +32,18 @@ export function Attachments({ media }: { media: MediaView[] }) {
           );
         }
         if (m.kind === "video") {
+          // `url` est un mp4/webm lisible nativement, sauf pour une vidéo HLS
+          // distante (PeerTube) où `url` vaut la playlist m3u8.
+          const isHls =
+            m.mimeType === "application/x-mpegURL" ||
+            m.mimeType === "application/vnd.apple.mpegurl";
           return (
-            <video
+            <VideoPlayer
               key={i}
-              src={m.url}
-              controls
-              className="max-h-96 w-full rounded-lg border border-black/10 dark:border-white/15"
+              src={isHls ? null : m.url}
+              hlsUrl={m.hlsUrl ?? (isHls ? m.url : null)}
+              poster={m.thumbnailUrl}
+              alt={m.alt}
             />
           );
         }

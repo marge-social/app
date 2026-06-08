@@ -290,6 +290,41 @@ alimentent le fil. Le chemin « push » (inbox `.on(Create)` → `remoteObjects`
 
 Reste : vérif d'interop réelle (Mastodon/PeerTube) via tunnel — cf. ci-dessous.
 
+### Médias des contenus distants — photos Mastodon & vidéos PeerTube ✅ (vérifié en local)
+
+Les médias des contenus distants suivis s'affichent dans le fil, et **les vidéos
+PeerTube se lisent directement dans Marge** (sans quitter le site, sans iframe
+tierce).
+
+- **Photos Mastodon** : déjà couvertes par `extractRemoteAttachments` (PJ
+  `Document/Image`, liste blanche `image/*`) → rendues par le composant
+  `Attachments`. Inchangé.
+- **Vidéos PeerTube** : un objet `Video` ne porte pas sa vidéo dans `attachment`
+  mais dans son tableau `url` (un `Link` par résolution mp4/webm + une playlist
+  HLS `application/x-mpegURL`) et sa vignette dans `icon`. Nouveau
+  `extractVideoMedia` (`src/federation/federation.ts`, appelé par
+  `upsertRemoteObject` quand `object instanceof Video`) : itère `object.urls`,
+  retient le meilleur mp4/webm (`pickBestVideoFile` : plus haute déf ≤ 720p,
+  sinon plus basse) **ou** à défaut la playlist HLS, extrait la vignette
+  (`extractFirstIconUrl` via `getIcons`) et privilégie le lien `text/html`
+  (page web) comme lien de l'entrée. URL distantes conservées telles quelles
+  (jamais re-hébergées, cf. §4.2).
+- **Modèle** : `RemoteAttachment` (jsonb `remote_objects.attachments`) gagne
+  `poster?` (vignette) + `hlsUrl?` ; `MediaView` gagne `hlsUrl?`
+  (`thumbnailUrl` sert de poster). Pas de migration (jsonb texte libre).
+- **Lecture** : nouveau composant **client** `src/components/VideoPlayer.tsx` —
+  **aucune lecture automatique** (éthos anti-attention) : tant qu'il y a une
+  vignette, on n'affiche que le poster + un bouton « Lire » ; au clic, lecture
+  native (`<video>`) pour le mp4, sinon HLS via **hls.js importé à la demande**
+  (`import("hls.js")` au clic, pas dans le bundle initial), avec repli natif
+  Safari (`canPlayType("application/vnd.apple.mpegurl")`). `Attachments` route
+  les vidéos vers ce lecteur. Dépendance ajoutée : `hls.js`.
+
+Vérifié en local : `tsc`/`lint`/`build` OK + parcours réel via route de test
+jetable (`Attachments` avec un flux HLS public) → poster + bouton, clic →
+bascule en `<video controls>`, flux m3u8 chargé et **en lecture** dans Marge.
+Reste : vidéo PeerTube réelle via tunnel.
+
 ### Mesure d'audience — Matomo (RGPD sans bandeau) ✅ (vérifié en local)
 
 `src/components/MatomoAnalytics.tsx` (client) monté par le layout racine

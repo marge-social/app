@@ -42,6 +42,8 @@ function remoteToMediaViews(
     alt: a.name ?? null,
     width: a.width ?? null,
     height: a.height ?? null,
+    thumbnailUrl: a.poster ?? null,
+    hlsUrl: a.hlsUrl ?? null,
   }));
 }
 

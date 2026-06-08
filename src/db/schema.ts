@@ -33,6 +33,16 @@ export interface RemoteAttachment {
   name?: string | null;
   width?: number | null;
   height?: number | null;
+  /**
+   * Vignette/affiche d'une vidéo distante (PeerTube : `icon`). Sert de poster
+   * sans charger la vidéo tant que l'utilisateur ne lance pas la lecture.
+   */
+  poster?: string | null;
+  /**
+   * Playlist HLS (`application/x-mpegURL`) d'une vidéo distante quand elle est
+   * distincte de `url` (PeerTube HLS-only : `url` = m3u8). Lue via hls.js.
+   */
+  hlsUrl?: string | null;
 }
 
 // --- Enums ---------------------------------------------------------------

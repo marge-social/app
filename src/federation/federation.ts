@@ -11,6 +11,7 @@ import {
   Follow,
   Image,
   Like,
+  Link,
   Note,
   Page,
   Person,
@@ -504,11 +505,21 @@ function remoteObjectType(object: IngestableObject): string {
  */
 async function upsertRemoteObject(object: IngestableObject): Promise<void> {
   if (object.id == null || object.attributionId == null) return;
-  const url =
+  let url =
     object.url instanceof URL
       ? object.url.href
       : (object.url?.href?.toString() ?? null);
   const attachments = await extractRemoteAttachments(object);
+  // Les vidéos (PeerTube & assimilés) portent leur média dans `url`/`icon`, pas
+  // dans `attachment` : on l'extrait à part et on privilégie la page web humaine
+  // comme lien de l'entrée.
+  if (object instanceof Video) {
+    const video = await extractVideoMedia(object);
+    if (video) {
+      attachments.unshift(video.attachment);
+      if (video.htmlUrl) url = video.htmlUrl;
+    }
+  }
   await db
     .insert(remoteObjects)
     .values({
@@ -618,6 +629,125 @@ async function extractRemoteAttachments(
     // Pièces jointes indisponibles : on garde l'objet sans média.
   }
   return out;
+}
+
+/**
+ * Choisit la meilleure source mp4/webm parmi les variantes de résolution d'une
+ * vidéo distante : la plus haute définition ≤ 720p (bon compromis pour une
+ * lecture en flux), sinon la plus basse disponible.
+ */
+function pickBestVideoFile(
+  files: {
+    href: string;
+    mediaType: string;
+    width: number | null;
+    height: number | null;
+  }[],
+): {
+  href: string;
+  mediaType: string;
+  width: number | null;
+  height: number | null;
+} | null {
+  if (files.length === 0) return null;
+  const withHeight = files.filter((f) => f.height != null);
+  const upTo720 = withHeight
+    .filter((f) => (f.height as number) <= 720)
+    .sort((a, b) => (b.height as number) - (a.height as number));
+  if (upTo720.length > 0) return upTo720[0];
+  if (withHeight.length > 0) {
+    return withHeight.sort((a, b) => (a.height as number) - (b.height as number))[0];
+  }
+  return files[0];
+}
+
+/** Première vignette (`icon`) exploitable d'un objet distant, ou null. */
+async function extractFirstIconUrl(
+  object: IngestableObject,
+): Promise<string | null> {
+  try {
+    for await (const icon of object.getIcons({ suppressError: true })) {
+      const u = icon.url;
+      const href = u instanceof URL ? u.href : (u?.href?.href ?? null);
+      if (href) return href;
+    }
+  } catch {
+    // Vignette indisponible : on garde la vidéo sans poster.
+  }
+  return null;
+}
+
+/**
+ * Extrait la vidéo lisible d'un objet `Video` distant (PeerTube & assimilés).
+ * Le média n'est pas dans `attachment` mais dans le tableau `url` (un `Link` par
+ * résolution mp4/webm + une playlist HLS) et la vignette dans `icon`. On retient
+ * un fichier mp4/webm direct si disponible (lecture native), à défaut la playlist
+ * HLS (lue via hls.js côté client), plus la vignette et le lien page web.
+ * Best-effort : `null` si aucune source exploitable. URLs distantes conservées
+ * telles quelles (jamais re-hébergées).
+ */
+async function extractVideoMedia(
+  object: Video,
+): Promise<{ attachment: RemoteAttachment; htmlUrl: string | null } | null> {
+  const files: {
+    href: string;
+    mediaType: string;
+    width: number | null;
+    height: number | null;
+  }[] = [];
+  let hls: string | null = null;
+  let htmlUrl: string | null = null;
+  for (const u of object.urls) {
+    if (u instanceof URL) {
+      // url simple, sans mediaType : lien page web par défaut.
+      if (!htmlUrl) htmlUrl = u.href;
+      continue;
+    }
+    if (!(u instanceof Link)) continue;
+    const mt = u.mediaType ?? null;
+    const href = u.href?.href ?? null;
+    if (!href) continue;
+    if (mt === "video/mp4" || mt === "video/webm") {
+      files.push({
+        href,
+        mediaType: mt,
+        width: u.width ?? null,
+        height: u.height ?? null,
+      });
+    } else if (mt === "application/x-mpegURL" || mt === "application/vnd.apple.mpegurl") {
+      if (!hls) hls = href;
+    } else if (mt === "text/html" || mt == null) {
+      htmlUrl = href;
+    }
+  }
+
+  const best = pickBestVideoFile(files);
+  if (!best && !hls) return null;
+
+  const poster = await extractFirstIconUrl(object);
+  const name = object.name?.toString() ?? null;
+  const attachment: RemoteAttachment = best
+    ? {
+        kind: "video",
+        url: best.href,
+        mediaType: best.mediaType,
+        name,
+        width: best.width,
+        height: best.height,
+        poster,
+        hlsUrl: hls,
+      }
+    : {
+        kind: "video",
+        url: hls as string,
+        mediaType: "application/x-mpegURL",
+        name,
+        width: null,
+        height: null,
+        poster,
+        hlsUrl: hls,
+      };
+  return { attachment, htmlUrl };
 }
 
 /**

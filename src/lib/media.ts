@@ -204,6 +204,11 @@ export interface MediaView {
   alt?: string | null;
   width?: number | null;
   height?: number | null;
+  /**
+   * Playlist HLS d'une vidéo distante (PeerTube) quand `url` n'est pas un mp4
+   * directement lisible. Le lecteur la charge via hls.js à la demande.
+   */
+  hlsUrl?: string | null;
 }
 
 function toView(row: MediaRow): MediaView {
