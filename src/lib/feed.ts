@@ -29,6 +29,7 @@ import {
   loadMediaForPosts,
 } from "@/lib/media";
 import { effectiveSummary, htmlToText, readingTimeMinutes } from "@/lib/markdown";
+import { youtubeEmbedUrl, youtubeVideoId } from "@/lib/youtube";
 
 /** Devine un type MIME image à partir de l'extension de l'URL (défaut jpeg). */
 function guessImageMime(url: string): string {
@@ -65,6 +66,37 @@ function rssImageMediaViews(
       hlsUrl: null,
     },
   ];
+}
+
+/**
+ * Projette le média d'aperçu d'un item RSS. Cas YouTube (lien `watch?v=…`) : on
+ * produit une MediaView vidéo lisible dans le fil via l'embed YouTube (comme une
+ * vidéo PeerTube), la vignette du flux servant d'affiche. Sinon : image simple.
+ */
+function rssMediaViews(
+  imageUrl: string | null,
+  title: string,
+  link: string,
+): MediaView[] {
+  const videoId = youtubeVideoId(link);
+  if (videoId) {
+    return [
+      {
+        kind: "video",
+        url: link,
+        embedUrl: youtubeEmbedUrl(videoId),
+        // Affiche : vignette du flux, sinon vignette déterministe de la vidéo
+        // (garantit un poster même pour les items stockés sans image).
+        thumbnailUrl: imageUrl ?? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+        mimeType: "text/html",
+        alt: title || null,
+        width: null,
+        height: null,
+        hlsUrl: null,
+      },
+    ];
+  }
+  return rssImageMediaViews(imageUrl, title);
 }
 
 /** Convertit les pièces jointes distantes (jsonb) en projection d'affichage. */
@@ -390,7 +422,7 @@ export async function buildFeed(
         shareCount: 0,
         sharedByViewer: false,
         comments: [],
-        media: rssImageMediaViews(r.imageUrl, r.title),
+        media: rssMediaViews(r.imageUrl, r.title, r.link),
       });
     }
   }

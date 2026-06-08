@@ -209,6 +209,11 @@ export interface MediaView {
    * directement lisible. Le lecteur la charge via hls.js à la demande.
    */
   hlsUrl?: string | null;
+  /**
+   * URL d'embed d'un lecteur tiers (YouTube) quand le flux brut n'est pas
+   * accessible. Montée dans une iframe au clic uniquement (pas d'autoplay).
+   */
+  embedUrl?: string | null;
 }
 
 function toView(row: MediaRow): MediaView {

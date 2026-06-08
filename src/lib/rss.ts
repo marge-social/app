@@ -1,6 +1,7 @@
 import Parser from "rss-parser";
 import { APP_URL } from "@/lib/config";
 import { htmlToText } from "@/lib/markdown";
+import { resolveYouTubeFeedUrl } from "@/lib/youtube";
 
 /**
  * User-Agent du crawler : s'identifie et pointe vers la page publique du flux
@@ -45,6 +46,14 @@ function extractFeedLink(html: string, baseUrl: string): string | null {
  * renvoie, sinon on auto-découvre via la page HTML. Lance si rien trouvé.
  */
 export async function discoverFeedUrl(input: string): Promise<string> {
+  // YouTube : une URL ou un @handle de chaîne se résout vers son flux Atom
+  // public (`/feeds/videos.xml`) — court-circuite l'auto-découverte générique
+  // (les pages YouTube sont du JS qui n'expose pas toujours le <link alternate>).
+  const yt = await resolveYouTubeFeedUrl(input, {
+    userAgent: crawlerUserAgent(),
+  });
+  if (yt) return yt;
+
   const url = new URL(input).href; // valide l'URL (lance si invalide)
   const res = await fetch(url, {
     headers: { "User-Agent": crawlerUserAgent(), Accept: "*/*" },
@@ -175,8 +184,11 @@ function detectInlineImage(
     }
   }
 
-  // 2. media:thumbnail.
-  for (const thumb of asArray(it.mediaThumbnail)) {
+  // 2. media:thumbnail (au premier niveau OU dans un media:group — cas YouTube,
+  //    dont la vignette de chaque vidéo est nichée dans le groupe).
+  const thumbs: unknown[] = [...asArray(it.mediaThumbnail)];
+  if (group) thumbs.push(...asArray(group["media:thumbnail"]));
+  for (const thumb of thumbs) {
     const { url } = mediaNodeUrl(thumb);
     if (url) {
       const abs = absoluteHttpUrl(url, baseUrl);

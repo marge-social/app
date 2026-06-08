@@ -34,6 +34,18 @@ export async function Attachments({ media }: { media: MediaView[] }) {
           );
         }
         if (m.kind === "video") {
+          // Vidéo via embed tiers (YouTube) : pas de flux brut, on monte
+          // l'iframe au clic (cf. VideoPlayer).
+          if (m.embedUrl) {
+            return (
+              <VideoPlayer
+                key={i}
+                embedUrl={m.embedUrl}
+                poster={m.thumbnailUrl}
+                alt={m.alt}
+              />
+            );
+          }
           // `url` est un mp4/webm lisible nativement, sauf pour une vidéo HLS
           // distante (PeerTube) où `url` vaut la playlist m3u8.
           const isHls =

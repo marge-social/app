@@ -422,6 +422,40 @@ un compte du Fediverse »).
   l'ancien bloc). Reste : vérif du parcours connecté (réseau + session) — handle
   Mastodon réel + URL de flux.
 
+### Chaînes YouTube — résolveur de flux + lecteur intégré ✅ (vérifié en local)
+
+Une chaîne YouTube s'ajoute comme **n'importe quel flux RSS** (objet
+`feed_subscriptions`, jamais un follow de compte) et ses vidéos se **lisent dans
+le fil** comme les vidéos PeerTube. Le flux d'abonnements personnel
+(`/feed/subscriptions`) reste hors de portée : authentifié, ce n'est pas un flux.
+
+- **Résolveur** (`src/lib/youtube.ts`) : `resolveYouTubeFeedUrl` convertit une URL
+  **ou un `@handle`** de chaîne en flux Atom public `/feeds/videos.xml`. Sans
+  réseau pour `/channel/UC…`, `/playlist?list=…` et un flux déjà formé ; **une**
+  requête HTML pour `/@handle`, `/c/`, `/user/`, `/watch?v=…` (extraction du
+  `channel_id` via le lien d'auto-découverte, l'URL canonique `/channel/UC…` ou
+  `"channelId"` du `ytInitialData`). ⚠️ Le `channel_id` est enfoui **loin** dans
+  la page (~600 Ko sur 2,3 Mo) → on cherche large (cap 4 Mo). Branché en tête de
+  `discoverFeedUrl` (`src/lib/rss.ts`) → marche pour `/recherche` **et** l'ajout
+  de flux, sans toucher les appelants.
+- **Vignette** : `detectInlineImage` lit désormais `media:thumbnail` **niché dans
+  `media:group`** (structure YouTube), avec repli déterministe
+  `i.ytimg.com/vi/<id>/hqdefault.jpg`.
+- **Lecteur** (`rssMediaViews` dans `src/lib/feed.ts` → `MediaView.embedUrl` →
+  `Attachments` → `VideoPlayer`) : un item dont le lien est une vidéo YouTube
+  (`youtubeVideoId`) devient une `MediaView` vidéo **embed**. ⚠️ YouTube n'expose
+  **aucun flux brut** (contrairement à PeerTube) : le seul moyen de lire dans la
+  page est l'**iframe d'embed** — exception assumée au « sans iframe tierce »,
+  atténuée par `youtube-nocookie.com` + montage **au clic uniquement** (poster +
+  bouton « Lire », pas d'autoplay, pas d'iframe au repos → éthos anti-attention).
+- **Pas de revendication** : un flux YouTube n'est pas le blog de l'utilisateur →
+  `/feeds/[id]` masque le `ClaimPanel` quand `isYouTubeFeedUrl(feed.feedUrl)`
+  (abonnement seulement ; réclamation/opt-out à revoir plus tard).
+- Vérifié : `scripts/smoke-youtube.ts` (résolveur + id/embed, offline) ; round-trip
+  réseau réel (`@mkbhd`/`@Kurzgesagt` → flux → 15 items → videoId + vignette) ;
+  lecteur dans le navigateur (poster ytimg → clic → 1 iframe `nocookie` autoplay).
+  Reste : parcours connecté complet (recherche → ajout → fil).
+
 ### Cron digest
 `curl -H "Authorization: Bearer $CRON_SECRET" $APP_URL/api/cron/digest`. À brancher
 sur une tâche cron (quotidien par défaut, §4.3). Regroupe les signaux pauvres
