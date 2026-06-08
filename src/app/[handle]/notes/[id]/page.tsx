@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { db } from "@/db";
 import { posts, users } from "@/db/schema";
 import { Attachments } from "@/components/Attachments";
+import { Container } from "@/components/Container";
 import { fediverseHandle } from "@/lib/config";
 import { loadMediaForPosts } from "@/lib/media";
 import { htmlToText } from "@/lib/markdown";
@@ -54,26 +55,28 @@ export default async function NotePage({ params }: NoteParams) {
   const { locale } = await getServerI18n();
 
   return (
-    <article className="flex flex-col gap-6">
-      <header className="flex flex-col gap-2">
-        <p className="text-sm text-foreground/70">
-          <Link href={`/@${author.handle}`} className="hover:underline">
-            {author.displayName}
-          </Link>{" "}
-          <span className="font-mono">{fediverseHandle(author.handle)}</span>
-          {" · "}
-          <time dateTime={date.toISOString()}>
-            {formatLongDate(date, locale)}
-          </time>
-        </p>
-      </header>
+    <Container>
+      <article className="flex flex-col gap-6">
+        <header className="flex flex-col gap-2">
+          <p className="text-sm text-foreground/70">
+            <Link href={`/@${author.handle}`} className="hover:underline">
+              {author.displayName}
+            </Link>{" "}
+            <span className="font-mono">{fediverseHandle(author.handle)}</span>
+            {" · "}
+            <time dateTime={date.toISOString()}>
+              {formatLongDate(date, locale)}
+            </time>
+          </p>
+        </header>
 
-      <div
-        className="prose-marge"
-        dangerouslySetInnerHTML={{ __html: post.contentHtml }}
-      />
+        <div
+          className="prose-marge"
+          dangerouslySetInnerHTML={{ __html: post.contentHtml }}
+        />
 
-      <Attachments media={media} />
-    </article>
+        <Attachments media={media} />
+      </article>
+    </Container>
   );
 }

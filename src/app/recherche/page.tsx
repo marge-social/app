@@ -3,22 +3,20 @@ import Link from "next/link";
 import { and, desc, eq, ilike, ne, or } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
-import {
-  articles,
-  feedItems,
-  feeds,
-  posts,
-  users,
-} from "@/db/schema";
+import { articles, feedItems, feeds, posts, users } from "@/db/schema";
 import {
   FeedDiscoveryResult,
   type FeedDiscoveryPreview,
 } from "@/components/FeedDiscoveryResult";
+import { Container } from "@/components/Container";
 import { RemoteProfileResult } from "@/components/RemoteProfileResult";
 import { getCurrentUser } from "@/lib/auth";
 import { fediverseHandle } from "@/lib/config";
 import { effectiveSummary, htmlToText } from "@/lib/markdown";
-import { type RemoteActorPreview, previewRemoteActor } from "@/federation/follow";
+import {
+  type RemoteActorPreview,
+  previewRemoteActor,
+} from "@/federation/follow";
 import { isBlocked } from "@/lib/blocklist";
 import { previewFeed } from "@/lib/rss";
 import { interpolate } from "@/lib/i18n/config";
@@ -53,7 +51,9 @@ interface FeedDiscovery {
 }
 
 /** Résout un flux distant à partir d'une URL, best-effort (jamais d'exception). */
-async function resolveFeedDiscovery(input: string): Promise<FeedDiscovery | null> {
+async function resolveFeedDiscovery(
+  input: string,
+): Promise<FeedDiscovery | null> {
   try {
     const preview = await previewFeed(input);
     const [blocked, existing] = await Promise.all([
@@ -66,7 +66,8 @@ async function resolveFeedDiscovery(input: string): Promise<FeedDiscovery | null
     return {
       preview,
       blocked: blocked || existing?.ownershipStatus === "opt_out",
-      existingId: existing && existing.ownershipStatus !== "opt_out" ? existing.id : null,
+      existingId:
+        existing && existing.ownershipStatus !== "opt_out" ? existing.id : null,
     };
   } catch {
     return null;
@@ -284,156 +285,178 @@ export default async function SearchPage({
     (feedDiscovery ? 1 : 0);
 
   return (
-    <div className="flex flex-col gap-8">
-      <header className="flex flex-col gap-3">
-        <h1 className="text-2xl font-bold tracking-tight">{t.title}</h1>
-        <form action="/recherche" method="get" role="search" className="flex gap-2">
-          <label htmlFor="q" className="sr-only">
-            {t.inputLabel}
-          </label>
-          <input
-            id="q"
-            type="search"
-            name="q"
-            defaultValue={q}
-            autoFocus
-            placeholder={t.placeholder}
-            autoCapitalize="none"
-            autoCorrect="off"
-            className="flex-1 rounded border border-black/20 bg-transparent px-3 py-2 text-sm focus:ring-2 focus:ring-foreground/40 focus:outline-none dark:border-white/25"
-          />
-          <button
-            type="submit"
-            className="rounded bg-foreground px-4 py-2 text-sm font-medium text-background hover:opacity-90"
+    <Container>
+      <div className="flex flex-col gap-8">
+        <header className="flex flex-col gap-3">
+          <h1 className="text-2xl font-bold tracking-tight">{t.title}</h1>
+          <form
+            action="/recherche"
+            method="get"
+            role="search"
+            className="flex gap-2"
           >
-            {t.submit}
-          </button>
-        </form>
-      </header>
+            <label htmlFor="q" className="sr-only">
+              {t.inputLabel}
+            </label>
+            <input
+              id="q"
+              type="search"
+              name="q"
+              defaultValue={q}
+              autoFocus
+              placeholder={t.placeholder}
+              autoCapitalize="none"
+              autoCorrect="off"
+              className="flex-1 rounded border border-black/20 bg-transparent px-3 py-2 text-sm focus:ring-2 focus:ring-foreground/40 focus:outline-none dark:border-white/25"
+            />
+            <button
+              type="submit"
+              className="rounded bg-foreground px-4 py-2 text-sm font-medium text-background hover:opacity-90"
+            >
+              {t.submit}
+            </button>
+          </form>
+        </header>
 
-      {!hasQuery ? (
-        <p className="text-foreground/60">{t.promptMinChars}</p>
-      ) : totalResults === 0 ? (
-        <p className="text-foreground/60">
-          {interpolate(t.noResults, { q })}
-        </p>
-      ) : (
-        <>
-          <section aria-labelledby="sec-contenus" className="flex flex-col gap-3">
-            <h2 id="sec-contenus" className="text-sm font-semibold">
-              {t.sectionContents} ({contents.length})
-            </h2>
-            {contents.length === 0 ? (
-              <p className="text-sm text-foreground/55">{t.noContent}</p>
-            ) : (
-              <ul className="flex flex-col gap-4">
-                {contents.map((c) => (
-                  <li key={c.key} className="flex flex-col gap-1">
-                    <div className="text-xs text-foreground/60">{c.meta}</div>
-                    <h3 className="font-medium">
-                      {c.internal ? (
-                        <Link href={c.href} className="hover:underline">
-                          {c.title}
-                        </Link>
-                      ) : (
-                        <a
-                          href={c.href}
-                          className="hover:underline"
-                          rel="noopener noreferrer nofollow"
-                        >
-                          {c.title}
-                        </a>
-                      )}
-                    </h3>
-                    {c.snippet && (
-                      <p className="text-sm text-foreground/75">{c.snippet}</p>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-
-          <section aria-labelledby="sec-comptes" className="flex flex-col gap-3">
-            <h2 id="sec-comptes" className="text-sm font-semibold">
-              {t.sectionAccounts} ({accounts.length + (remoteProfile ? 1 : 0)})
-            </h2>
-            {remoteProfile && <RemoteProfileResult actor={remoteProfile} />}
-            {!remoteProfile && looksLikeRemoteHandle(q) && (
-              <p className="text-sm text-foreground/55">
-                {interpolate(t.remoteNotFound, { q })}
-              </p>
-            )}
-            {accounts.length === 0 && !remoteProfile ? (
-              <p className="text-sm text-foreground/55">{t.noAccount}</p>
-            ) : (
-              <ul className="flex flex-col gap-3">
-                {accounts.map((a) => (
-                  <li key={a.handle} className="flex flex-col gap-0.5">
-                    <Link href={`/@${a.handle}`} className="hover:underline">
-                      <span className="font-medium">{a.displayName}</span>{" "}
-                      <span className="font-mono text-xs text-foreground/60">
-                        {fediverseHandle(a.handle)}
-                      </span>
-                    </Link>
-                    {a.bio && (
-                      <p className="text-sm text-foreground/70">{a.bio}</p>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-
-          <section aria-labelledby="sec-flux" className="flex flex-col gap-3">
-            <h2 id="sec-flux" className="text-sm font-semibold">
-              {t.sectionFeeds} ({fluxResults.length + (feedDiscovery ? 1 : 0)})
-            </h2>
-            {feedDiscovery &&
-              (feedDiscovery.blocked ? (
-                <p className="text-sm text-foreground/55">{t.feedOptOut}</p>
-              ) : feedDiscovery.existingId ? (
-                <Link
-                  href={`/feeds/${feedDiscovery.existingId}`}
-                  className="rounded-lg border border-black/10 p-4 hover:bg-foreground/5 dark:border-white/15"
-                >
-                  <span className="font-medium">
-                    {feedDiscovery.preview.title || feedDiscovery.preview.feedUrl}
-                  </span>{" "}
-                  <span className="text-xs text-foreground/60">
-                    {t.feedAlreadyReferenced}
-                  </span>
-                </Link>
+        {!hasQuery ? (
+          <p className="text-foreground/60">{t.promptMinChars}</p>
+        ) : totalResults === 0 ? (
+          <p className="text-foreground/60">
+            {interpolate(t.noResults, { q })}
+          </p>
+        ) : (
+          <>
+            <section
+              aria-labelledby="sec-contenus"
+              className="flex flex-col gap-3"
+            >
+              <h2 id="sec-contenus" className="text-sm font-semibold">
+                {t.sectionContents} ({contents.length})
+              </h2>
+              {contents.length === 0 ? (
+                <p className="text-sm text-foreground/55">{t.noContent}</p>
               ) : (
-                <FeedDiscoveryResult feed={feedDiscovery.preview} />
-              ))}
-            {!feedDiscovery && looksLikeUrl(q) && (
-              <p className="text-sm text-foreground/55">{t.feedNotReadable}</p>
-            )}
-            {fluxResults.length === 0 && !feedDiscovery ? (
-              <p className="text-sm text-foreground/55">{t.noFeed}</p>
-            ) : (
-              <ul className="flex flex-col gap-3">
-                {fluxResults.map((f) => (
-                  <li key={f.id} className="flex flex-col gap-0.5">
-                    <Link href={`/feeds/${f.id}`} className="hover:underline">
-                      <span className="font-medium">{f.title || f.feedUrl}</span>
-                    </Link>
-                    <p className="text-xs text-foreground/60">
-                      {f.feedUrl}
-                      {f.ownerHandle
-                        ? ` · ${interpolate(t.feedClaimedBy, {
-                            who: fediverseHandle(f.ownerHandle),
-                          })}`
-                        : ` · ${t.feedOrphan}`}
-                    </p>
-                  </li>
+                <ul className="flex flex-col gap-4">
+                  {contents.map((c) => (
+                    <li key={c.key} className="flex flex-col gap-1">
+                      <div className="text-xs text-foreground/60">{c.meta}</div>
+                      <h3 className="font-medium">
+                        {c.internal ? (
+                          <Link href={c.href} className="hover:underline">
+                            {c.title}
+                          </Link>
+                        ) : (
+                          <a
+                            href={c.href}
+                            className="hover:underline"
+                            rel="noopener noreferrer nofollow"
+                          >
+                            {c.title}
+                          </a>
+                        )}
+                      </h3>
+                      {c.snippet && (
+                        <p className="text-sm text-foreground/75">
+                          {c.snippet}
+                        </p>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+
+            <section
+              aria-labelledby="sec-comptes"
+              className="flex flex-col gap-3"
+            >
+              <h2 id="sec-comptes" className="text-sm font-semibold">
+                {t.sectionAccounts} ({accounts.length + (remoteProfile ? 1 : 0)}
+                )
+              </h2>
+              {remoteProfile && <RemoteProfileResult actor={remoteProfile} />}
+              {!remoteProfile && looksLikeRemoteHandle(q) && (
+                <p className="text-sm text-foreground/55">
+                  {interpolate(t.remoteNotFound, { q })}
+                </p>
+              )}
+              {accounts.length === 0 && !remoteProfile ? (
+                <p className="text-sm text-foreground/55">{t.noAccount}</p>
+              ) : (
+                <ul className="flex flex-col gap-3">
+                  {accounts.map((a) => (
+                    <li key={a.handle} className="flex flex-col gap-0.5">
+                      <Link href={`/@${a.handle}`} className="hover:underline">
+                        <span className="font-medium">{a.displayName}</span>{" "}
+                        <span className="font-mono text-xs text-foreground/60">
+                          {fediverseHandle(a.handle)}
+                        </span>
+                      </Link>
+                      {a.bio && (
+                        <p className="text-sm text-foreground/70">{a.bio}</p>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+
+            <section aria-labelledby="sec-flux" className="flex flex-col gap-3">
+              <h2 id="sec-flux" className="text-sm font-semibold">
+                {t.sectionFeeds} ({fluxResults.length + (feedDiscovery ? 1 : 0)}
+                )
+              </h2>
+              {feedDiscovery &&
+                (feedDiscovery.blocked ? (
+                  <p className="text-sm text-foreground/55">{t.feedOptOut}</p>
+                ) : feedDiscovery.existingId ? (
+                  <Link
+                    href={`/feeds/${feedDiscovery.existingId}`}
+                    className="rounded-lg border border-black/10 p-4 hover:bg-foreground/5 dark:border-white/15"
+                  >
+                    <span className="font-medium">
+                      {feedDiscovery.preview.title ||
+                        feedDiscovery.preview.feedUrl}
+                    </span>{" "}
+                    <span className="text-xs text-foreground/60">
+                      {t.feedAlreadyReferenced}
+                    </span>
+                  </Link>
+                ) : (
+                  <FeedDiscoveryResult feed={feedDiscovery.preview} />
                 ))}
-              </ul>
-            )}
-          </section>
-        </>
-      )}
-    </div>
+              {!feedDiscovery && looksLikeUrl(q) && (
+                <p className="text-sm text-foreground/55">
+                  {t.feedNotReadable}
+                </p>
+              )}
+              {fluxResults.length === 0 && !feedDiscovery ? (
+                <p className="text-sm text-foreground/55">{t.noFeed}</p>
+              ) : (
+                <ul className="flex flex-col gap-3">
+                  {fluxResults.map((f) => (
+                    <li key={f.id} className="flex flex-col gap-0.5">
+                      <Link href={`/feeds/${f.id}`} className="hover:underline">
+                        <span className="font-medium">
+                          {f.title || f.feedUrl}
+                        </span>
+                      </Link>
+                      <p className="text-xs text-foreground/60">
+                        {f.feedUrl}
+                        {f.ownerHandle
+                          ? ` · ${interpolate(t.feedClaimedBy, {
+                              who: fediverseHandle(f.ownerHandle),
+                            })}`
+                          : ` · ${t.feedOrphan}`}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          </>
+        )}
+      </div>
+    </Container>
   );
 }
