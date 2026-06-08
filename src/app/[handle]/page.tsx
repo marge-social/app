@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { and, desc, eq, or } from "drizzle-orm";
 import { notFound } from "next/navigation";
@@ -17,23 +18,47 @@ import { subscribeFeedAction, unsubscribeFeedAction } from "@/app/actions/feeds"
 import { removeOwnFeedAction } from "@/app/actions/profile";
 import { ProfileEditForm } from "@/components/ProfileEditForm";
 import { ReferenceFeedForm } from "@/components/ReferenceFeedForm";
+import { SitePageView } from "@/components/SitePageView";
 import { getCurrentUser } from "@/lib/auth";
 import { fediverseHandle } from "@/lib/config";
 import { effectiveSummary } from "@/lib/markdown";
+import { getPage } from "@/lib/pages";
 
 interface ProfileParams {
   params: Promise<{ handle: string }>;
 }
 
 /**
- * Profil public d'un compte : /@handle.
- * Le segment d'URL doit commencer par « @ » (style Fediverse).
+ * Segment racine : un profil `/@handle` (préfixe « @ ») OU une page de contenu
+ * éditable `/slug` (sans « @ », ex. `/mentions-legales`). Les routes statiques
+ * (`/login`, `/feeds`…) priment sur cette route dynamique.
  */
+export async function generateMetadata({
+  params,
+}: ProfileParams): Promise<Metadata> {
+  const { handle: raw } = await params;
+  const decoded = decodeURIComponent(raw);
+  if (!decoded.startsWith("@")) {
+    const page = await getPage(decoded.toLowerCase());
+    return { title: page ? `${page.title} — Marge` : "Marge" };
+  }
+  const profile = await db.query.users.findFirst({
+    where: eq(users.handle, decoded.slice(1).toLowerCase()),
+    columns: { displayName: true },
+  });
+  return { title: profile ? `${profile.displayName} — Marge` : "Marge" };
+}
+
 export default async function ProfilePage({ params }: ProfileParams) {
   // Next.js fournit le segment encodé (« %40claire ») : on décode avant test.
   const { handle: raw } = await params;
   const decoded = decodeURIComponent(raw);
-  if (!decoded.startsWith("@")) notFound();
+  // Sans préfixe « @ » → page de contenu éditable (slug). Sinon, profil.
+  if (!decoded.startsWith("@")) {
+    const page = await getPage(decoded.toLowerCase());
+    if (!page) notFound();
+    return <SitePageView page={page} />;
+  }
   const handle = decoded.slice(1).toLowerCase();
 
   const profile = await db.query.users.findFirst({

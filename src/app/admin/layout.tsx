@@ -29,8 +29,8 @@ export default async function AdminLayout({
           <Link href="/admin/posts" className="hover:underline">
             Billets
           </Link>
-          <Link href="/admin/mentions-legales" className="hover:underline">
-            Mentions légales
+          <Link href="/admin/pages" className="hover:underline">
+            Pages
           </Link>
         </nav>
       </div>

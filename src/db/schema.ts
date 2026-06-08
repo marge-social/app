@@ -515,7 +515,7 @@ export const actorBlocks = pgTable(
  * Pages de contenu éditables depuis l'admin (mentions légales, etc.), en
  * **Markdown**. `contentHtml` est la version **sanitisée** pré-rendue, servie au
  * public (cf. articles). Une page par `slug`. Tant qu'aucune ligne n'existe pour
- * un slug, l'app sert un contenu par défaut (cf. `src/lib/legal.ts`).
+ * un slug, l'app sert un contenu par défaut (cf. `src/lib/pages.ts`).
  */
 export const sitePages = pgTable("site_pages", {
   slug: text("slug").primaryKey(),

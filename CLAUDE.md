@@ -310,18 +310,29 @@ variables runtime). Conçu pour être conforme **sans bandeau de consentement**
 Vars dans `docker-compose.yml` (service `app`) + `.env*.example`. Prod :
 `MATOMO_URL=https://analytics.kilometre-0.fr`, `MATOMO_SITE_ID=10`.
 
-### Pages de contenu éditables (mentions légales) ✅ (vérifié en local)
+### Pages de contenu éditables (CMS minimal) ✅ (vérifié en local)
 
-Table générique `site_pages` (slug PK, `content_markdown` + `content_html`
-sanitisé pré-rendu, `updated_at` ; migration `0009`). Helper `src/lib/legal.ts`
-(`getLegalPage` : sert la ligne enregistrée, sinon un **contenu par défaut**
-minimal rendu à la volée — `DEFAULT_LEGAL_MARKDOWN`, avec section « Mesure
-d'audience » documentant Matomo). Page publique `/mentions-legales` (rendu
-`prose-marge`, date de MAJ), éditeur admin `/admin/mentions-legales`
-(`requireAdmin`, `LegalEditorForm` calqué sur `EditorForm` : textarea Markdown +
-aperçu) via `saveLegalPageAction` (upsert sur le slug, sanitise au rendu). Lien
-public dans un nouveau `SiteFooter` (monté dans le layout racine). Extensible à
-d'autres pages par slug sans migration.
+Pages publiques **éditables en Markdown par les admins**, chacune à une URL
+**propre à la racine** (`/mentions-legales`, `/a-propos`…). Les mentions légales
+sont **une** de ces pages (page « par défaut » fournie par le code).
+
+- **Stockage** : table `site_pages` (slug PK, `content_markdown` + `content_html`
+  sanitisé pré-rendu, `updated_at` ; migration `0009`).
+- **Lib** `src/lib/pages.ts` : `getPage(slug)` (ligne enregistrée, sinon contenu
+  par défaut rendu à la volée, sinon `null`), `listPages()`, `DEFAULT_PAGES`
+  (mentions légales = `DEFAULT_LEGAL_MARKDOWN`, avec section Matomo/RGPD),
+  `RESERVED_SLUGS` (routes statiques racine : login/feeds/admin/… + `new`),
+  `isValidSlug`/`toSlug`.
+- **Public** : résolu par la route racine `src/app/[handle]/page.tsx` — segment
+  **sans** préfixe `@` → `getPage(slug)` → `SitePageView` (sinon `notFound`).
+  Les routes statiques priment sur cette route dynamique ; `generateMetadata`
+  gère titre page **et** profil. ⚠️ Plus de route statique `/mentions-legales`.
+- **Admin** (`requireAdmin`) : `/admin/pages` (liste + « Nouvelle page »),
+  `/admin/pages/new`, `/admin/pages/[slug]` (édition + suppression).
+  `PageEditorForm` (Rédiger/Aperçu) ; `savePageAction` (création : slug validé +
+  réservé + unicité, puis **immuable** ; édition : upsert), `deletePageAction`.
+- Lien `/mentions-legales` dans `SiteFooter`. Supprimer une page « par défaut »
+  la ramène à son contenu par défaut. Extensible sans migration.
 
 ### Cron digest
 `curl -H "Authorization: Bearer $CRON_SECRET" $APP_URL/api/cron/digest`. À brancher

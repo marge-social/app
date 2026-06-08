@@ -1,7 +1,4 @@
-import type { Metadata } from "next";
-import { getLegalPage } from "@/lib/legal";
-
-export const metadata: Metadata = { title: "Mentions légales — Marge" };
+import type { SitePageView as SitePage } from "@/lib/pages";
 
 const dateFormat = new Intl.DateTimeFormat("fr-FR", {
   day: "numeric",
@@ -9,9 +6,8 @@ const dateFormat = new Intl.DateTimeFormat("fr-FR", {
   year: "numeric",
 });
 
-export default async function MentionsLegalesPage() {
-  const page = await getLegalPage();
-
+/** Rendu public d'une page de contenu (Markdown sanitisé + date de MAJ). */
+export function SitePageView({ page }: { page: SitePage }) {
   return (
     <article className="flex flex-col gap-6">
       <h1 className="text-2xl font-semibold tracking-tight">{page.title}</h1>
