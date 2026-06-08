@@ -7,19 +7,21 @@ import {
   loginAction,
   signupAction,
 } from "@/app/actions/auth";
+import { useT } from "@/components/I18nProvider";
 
 const fieldClass =
   "w-full rounded border border-black/20 bg-transparent px-3 py-2 dark:border-white/25 focus:outline-none focus:ring-2 focus:ring-foreground/40";
 
 function SubmitButton({ label }: { label: string }) {
   const { pending } = useFormStatus();
+  const { t } = useT();
   return (
     <button
       type="submit"
       disabled={pending}
       className="rounded bg-foreground px-4 py-2 font-medium text-background hover:opacity-90 disabled:opacity-50"
     >
-      {pending ? "Patiente…" : label}
+      {pending ? t.auth.pending : label}
     </button>
   );
 }
@@ -38,18 +40,20 @@ function ErrorBanner({ message }: { message?: string }) {
 
 export function SignupForm() {
   const [state, action] = useActionState<AuthState, FormData>(signupAction, {});
+  const { t } = useT();
+  const a = t.auth;
   return (
     <form action={action} className="flex flex-col gap-4">
       <ErrorBanner message={state.error} />
       <div className="flex flex-col gap-1">
         <label htmlFor="displayName" className="text-sm font-medium">
-          Nom affiché
+          {a.displayName}
         </label>
         <input id="displayName" name="displayName" required className={fieldClass} />
       </div>
       <div className="flex flex-col gap-1">
         <label htmlFor="handle" className="text-sm font-medium">
-          Handle
+          {a.handle}
         </label>
         <input
           id="handle"
@@ -61,18 +65,18 @@ export function SignupForm() {
           aria-describedby="handle-help"
         />
         <p id="handle-help" className="text-xs text-foreground/60">
-          Lettres minuscules, chiffres, tirets. Formera ton identité fédérée.
+          {a.handleHelp}
         </p>
       </div>
       <div className="flex flex-col gap-1">
         <label htmlFor="email" className="text-sm font-medium">
-          Email
+          {a.email}
         </label>
         <input id="email" name="email" type="email" required className={fieldClass} />
       </div>
       <div className="flex flex-col gap-1">
         <label htmlFor="password" className="text-sm font-medium">
-          Mot de passe
+          {a.password}
         </label>
         <input
           id="password"
@@ -84,28 +88,30 @@ export function SignupForm() {
           aria-describedby="password-help"
         />
         <p id="password-help" className="text-xs text-foreground/60">
-          Au moins 8 caractères.
+          {a.passwordHelp}
         </p>
       </div>
-      <SubmitButton label="Créer mon compte" />
+      <SubmitButton label={a.submitSignup} />
     </form>
   );
 }
 
 export function LoginForm() {
   const [state, action] = useActionState<AuthState, FormData>(loginAction, {});
+  const { t } = useT();
+  const a = t.auth;
   return (
     <form action={action} className="flex flex-col gap-4">
       <ErrorBanner message={state.error} />
       <div className="flex flex-col gap-1">
         <label htmlFor="email" className="text-sm font-medium">
-          Email
+          {a.email}
         </label>
         <input id="email" name="email" type="email" required className={fieldClass} />
       </div>
       <div className="flex flex-col gap-1">
         <label htmlFor="password" className="text-sm font-medium">
-          Mot de passe
+          {a.password}
         </label>
         <input
           id="password"
@@ -115,7 +121,7 @@ export function LoginForm() {
           className={fieldClass}
         />
       </div>
-      <SubmitButton label="Se connecter" />
+      <SubmitButton label={a.submitLogin} />
     </form>
   );
 }

@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { I18nProvider } from "@/components/I18nProvider";
 import { MatomoAnalytics } from "@/components/MatomoAnalytics";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
+import { getServerI18n } from "@/lib/i18n/server";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,13 +17,15 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "Marge",
-  description:
-    "Un média social de contenus longs, sourcés et fédérés — à contre-courant de l'économie attentionnelle.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { dict } = await getServerI18n();
+  return {
+    title: dict.meta.title,
+    description: dict.meta.description,
+  };
+}
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
@@ -31,27 +35,31 @@ export default function RootLayout({
   const matomoUrl = process.env.MATOMO_URL;
   const matomoSiteId = process.env.MATOMO_SITE_ID;
 
+  const { locale, dict } = await getServerI18n();
+
   return (
     <html
-      lang="fr"
+      lang={locale}
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        {matomoUrl && matomoSiteId && (
-          <MatomoAnalytics url={matomoUrl} siteId={matomoSiteId} />
-        )}
-        <a href="#main-content" className="skip-link">
-          Aller au contenu
-        </a>
-        <SiteHeader />
-        <main
-          id="main-content"
-          tabIndex={-1}
-          className="mx-auto w-full max-w-3xl flex-1 px-4 py-8"
-        >
-          {children}
-        </main>
-        <SiteFooter />
+        <I18nProvider locale={locale} dict={dict}>
+          {matomoUrl && matomoSiteId && (
+            <MatomoAnalytics url={matomoUrl} siteId={matomoSiteId} />
+          )}
+          <a href="#main-content" className="skip-link">
+            {dict.common.skipToContent}
+          </a>
+          <SiteHeader />
+          <main
+            id="main-content"
+            tabIndex={-1}
+            className="mx-auto w-full max-w-3xl flex-1 px-4 py-8"
+          >
+            {children}
+          </main>
+          <SiteFooter />
+        </I18nProvider>
       </body>
     </html>
   );

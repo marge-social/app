@@ -142,6 +142,9 @@ export const users = pgTable("users", {
   handle: text("handle").notNull().unique(),
   displayName: text("display_name").notNull(),
   bio: text("bio").notNull().default(""),
+  // Langue d'interface préférée (code BCP-47 court : "fr", "en"…). Texte libre
+  // (pas un enum) pour ajouter une langue sans migration. Défaut : français.
+  locale: text("locale").notNull().default("fr"),
   // Rôle de supervision (admin = accès aux vues /admin en lecture seule, §3).
   role: userRole("role").notNull().default("user"),
   // Renseigné quand un avatar est défini. Sert de garde d'affichage ET de jeton

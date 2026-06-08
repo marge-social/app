@@ -2,18 +2,20 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { SignupForm } from "@/components/AuthForms";
 import { getCurrentUser } from "@/lib/auth";
+import { getServerI18n } from "@/lib/i18n/server";
 
 export default async function SignupPage() {
   if (await getCurrentUser()) redirect("/");
+  const { dict } = await getServerI18n();
 
   return (
     <div className="mx-auto flex max-w-sm flex-col gap-6">
-      <h1 className="text-2xl font-bold tracking-tight">Créer un compte</h1>
+      <h1 className="text-2xl font-bold tracking-tight">{dict.auth.signupTitle}</h1>
       <SignupForm />
       <p className="text-sm text-foreground/70">
-        Déjà inscrit·e ?{" "}
+        {dict.auth.haveAccount}{" "}
         <Link href="/login" className="underline">
-          Se connecter
+          {dict.auth.loginLink}
         </Link>
       </p>
     </div>
