@@ -369,6 +369,30 @@ sont **une** de ces pages (page « par défaut » fournie par le code).
 - Lien `/mentions-legales` dans `SiteFooter`. Supprimer une page « par défaut »
   la ramène à son contenu par défaut. Extensible sans migration.
 
+### Recherche unifiée — profil fédéré & flux RSS résolus en direct ✅ (tsc/lint OK, route compile)
+
+`/recherche?q=` reste **une seule barre, une seule requête**, mais résout
+désormais activement les deux cas externes (avant : un formulaire vide « Suivre
+un compte du Fediverse »).
+
+- **Profil fédéré** : si `q` ressemble à `@user@instance`, `previewRemoteActor`
+  (`src/federation/follow.ts`) résout l'acteur par WebFinger (`ctx.lookupObject`)
+  **pour l'afficher** (uri, handle reconstruit, nom, bio nettoyée via
+  `htmlToText`, avatar via `getIcon`, url) — **sans suivre ni persister**,
+  best-effort (`null` si introuvable). Rendu par `RemoteProfileResult` (carte en
+  tête de la section **Comptes**) avec bouton **Suivre** pré-rempli (réutilise
+  `followRemoteAction`).
+- **Flux RSS** : si `q` est une URL `http(s)://`, `previewFeed` (`src/lib/rss.ts`)
+  auto-découvre + parse le flux **pour l'afficher** (titre, description, nombre
+  d'items) sans persister. La page (`resolveFeedDiscovery`) croise avec
+  `isBlocked` + flux déjà existant → carte `FeedDiscoveryResult` (bouton
+  **Ajouter ce flux** pré-rempli, réutilise `referenceFeedAction`), OU lien
+  « déjà référencé », OU note opt-out/illisible. En tête de la section **Flux**.
+- Les deux résolutions externes tournent **en parallèle** des requêtes locales
+  (`Promise.all`). Composant `RemoteFollowForm` supprimé (n'était utilisé que par
+  l'ancien bloc). Reste : vérif du parcours connecté (réseau + session) — handle
+  Mastodon réel + URL de flux.
+
 ### Cron digest
 `curl -H "Authorization: Bearer $CRON_SECRET" $APP_URL/api/cron/digest`. À brancher
 sur une tâche cron (quotidien par défaut, §4.3). Regroupe les signaux pauvres

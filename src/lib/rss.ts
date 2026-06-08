@@ -63,6 +63,28 @@ export async function discoverFeedUrl(input: string): Promise<string> {
   return discovered;
 }
 
+export interface FeedPreview {
+  feedUrl: string;
+  title: string;
+  description: string;
+  itemCount: number;
+}
+
+/**
+ * Auto-découvre et parse un flux à partir d'une URL pour l'AFFICHER dans la
+ * recherche (sans rien persister). Lance si l'adresse ne répond pas par un flux.
+ */
+export async function previewFeed(input: string): Promise<FeedPreview> {
+  const feedUrl = await discoverFeedUrl(input);
+  const parsed = await parseFeed(feedUrl);
+  return {
+    feedUrl,
+    title: parsed.title,
+    description: parsed.description,
+    itemCount: parsed.items.length,
+  };
+}
+
 export interface ParsedFeed {
   title: string;
   description: string;

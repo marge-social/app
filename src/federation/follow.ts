@@ -8,6 +8,7 @@ import {
   federation,
 } from "@/federation/federation";
 import { APP_URL, actorUri } from "@/lib/config";
+import { htmlToText } from "@/lib/markdown";
 
 function context() {
   return federation.createContext(new URL(APP_URL), undefined);
@@ -16,6 +17,59 @@ function context() {
 export interface RemoteFollowResult {
   ok: boolean;
   error?: string;
+}
+
+export interface RemoteActorPreview {
+  uri: string;
+  handle: string;
+  name: string;
+  summary: string;
+  iconUrl: string | null;
+  url: string;
+}
+
+/**
+ * Résout un acteur distant (WebFinger) pour l'AFFICHER dans la recherche, sans
+ * le suivre ni rien persister. Best-effort : renvoie `null` si le handle est
+ * introuvable ou ne correspond pas à un compte.
+ */
+export async function previewRemoteActor(
+  target: string,
+): Promise<RemoteActorPreview | null> {
+  await ensureFederationStorage();
+  const ctx = context();
+  const handle = target.trim().replace(/^@/, "");
+
+  let actor;
+  try {
+    actor = await ctx.lookupObject(handle);
+  } catch {
+    return null;
+  }
+  if (!isActor(actor) || actor.id == null) return null;
+
+  const username = actor.preferredUsername?.toString() ?? null;
+  const displayHandle = username
+    ? `@${username}@${actor.id.host}`
+    : `@${actor.id.host}`;
+
+  let iconUrl: string | null = null;
+  try {
+    const icon = await actor.getIcon();
+    const u = icon?.url;
+    iconUrl = u instanceof URL ? u.href : (u?.href?.href ?? null);
+  } catch {
+    // Avatar indisponible : dégradation gracieuse.
+  }
+
+  return {
+    uri: actor.id.href,
+    handle: displayHandle,
+    name: actor.name?.toString() ?? username ?? displayHandle,
+    summary: htmlToText(actor.summary?.toString() ?? "").slice(0, 280),
+    iconUrl,
+    url: actor.url instanceof URL ? actor.url.href : actor.id.href,
+  };
 }
 
 /**

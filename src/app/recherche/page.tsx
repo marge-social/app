@@ -10,10 +10,17 @@ import {
   posts,
   users,
 } from "@/db/schema";
-import { RemoteFollowForm } from "@/components/RemoteFollowForm";
+import {
+  FeedDiscoveryResult,
+  type FeedDiscoveryPreview,
+} from "@/components/FeedDiscoveryResult";
+import { RemoteProfileResult } from "@/components/RemoteProfileResult";
 import { getCurrentUser } from "@/lib/auth";
 import { fediverseHandle } from "@/lib/config";
 import { effectiveSummary, htmlToText } from "@/lib/markdown";
+import { type RemoteActorPreview, previewRemoteActor } from "@/federation/follow";
+import { isBlocked } from "@/lib/blocklist";
+import { previewFeed } from "@/lib/rss";
 
 export const metadata: Metadata = { title: "Recherche — Marge" };
 
@@ -24,9 +31,41 @@ function likePattern(q: string): string {
   return `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
 }
 
-/** Détecte un handle Fediverse (@user@instance) pour proposer un suivi (§3.3). */
+/** Détecte un handle Fediverse (@user@instance) pour résoudre un profil (§3.3). */
 function looksLikeRemoteHandle(q: string): boolean {
   return /^@?[^@\s]+@[^@\s]+\.[^@\s]+$/.test(q);
+}
+
+/** Détecte une URL http(s) pour tenter une auto-découverte de flux RSS. */
+function looksLikeUrl(q: string): boolean {
+  return /^https?:\/\/\S+$/i.test(q);
+}
+
+interface FeedDiscovery {
+  preview: FeedDiscoveryPreview;
+  blocked: boolean;
+  existingId: string | null;
+}
+
+/** Résout un flux distant à partir d'une URL, best-effort (jamais d'exception). */
+async function resolveFeedDiscovery(input: string): Promise<FeedDiscovery | null> {
+  try {
+    const preview = await previewFeed(input);
+    const [blocked, existing] = await Promise.all([
+      isBlocked(preview.feedUrl),
+      db.query.feeds.findFirst({
+        where: eq(feeds.feedUrl, preview.feedUrl),
+        columns: { id: true, ownershipStatus: true },
+      }),
+    ]);
+    return {
+      preview,
+      blocked: blocked || existing?.ownershipStatus === "opt_out",
+      existingId: existing && existing.ownershipStatus !== "opt_out" ? existing.id : null,
+    };
+  } catch {
+    return null;
+  }
 }
 
 interface ContentResult {
@@ -64,6 +103,16 @@ export default async function SearchPage({
     feedUrl: string;
     ownerHandle: string | null;
   }[] = [];
+  // Résolutions externes lancées en parallèle des requêtes locales (best-effort) :
+  // profil du Fediverse si la requête est un handle, flux RSS si c'est une URL.
+  const remoteProfilePromise: Promise<RemoteActorPreview | null> =
+    hasQuery && looksLikeRemoteHandle(q)
+      ? previewRemoteActor(q).catch(() => null)
+      : Promise.resolve(null);
+  const feedDiscoveryPromise: Promise<FeedDiscovery | null> =
+    hasQuery && looksLikeUrl(q)
+      ? resolveFeedDiscovery(q)
+      : Promise.resolve(null);
 
   if (hasQuery) {
     // --- Contenus : billets natifs + notes + items de flux référencés ---
@@ -214,8 +263,17 @@ export default async function SearchPage({
     }));
   }
 
+  const [remoteProfile, feedDiscovery] = await Promise.all([
+    remoteProfilePromise,
+    feedDiscoveryPromise,
+  ]);
+
   const totalResults =
-    contents.length + accounts.length + fluxResults.length;
+    contents.length +
+    accounts.length +
+    fluxResults.length +
+    (remoteProfile ? 1 : 0) +
+    (feedDiscovery ? 1 : 0);
 
   return (
     <div className="flex flex-col gap-8">
@@ -244,18 +302,6 @@ export default async function SearchPage({
           </button>
         </form>
       </header>
-
-      {hasQuery && looksLikeRemoteHandle(q) && (
-        <section className="flex flex-col gap-2 rounded-lg border border-black/10 p-4 dark:border-white/15">
-          <h2 className="text-sm font-semibold">
-            Suivre un compte du Fediverse
-          </h2>
-          <p className="text-sm text-foreground/70">
-            « {q} » ressemble à un handle Fediverse. Vous pouvez le suivre :
-          </p>
-          <RemoteFollowForm />
-        </section>
-      )}
 
       {!hasQuery ? (
         <p className="text-foreground/60">
@@ -305,9 +351,16 @@ export default async function SearchPage({
 
           <section aria-labelledby="sec-comptes" className="flex flex-col gap-3">
             <h2 id="sec-comptes" className="text-sm font-semibold">
-              Comptes ({accounts.length})
+              Comptes ({accounts.length + (remoteProfile ? 1 : 0)})
             </h2>
-            {accounts.length === 0 ? (
+            {remoteProfile && <RemoteProfileResult actor={remoteProfile} />}
+            {!remoteProfile && looksLikeRemoteHandle(q) && (
+              <p className="text-sm text-foreground/55">
+                « {q} » ressemble à un compte du Fediverse, mais il reste
+                introuvable.
+              </p>
+            )}
+            {accounts.length === 0 && !remoteProfile ? (
               <p className="text-sm text-foreground/55">Aucun compte.</p>
             ) : (
               <ul className="flex flex-col gap-3">
@@ -330,9 +383,35 @@ export default async function SearchPage({
 
           <section aria-labelledby="sec-flux" className="flex flex-col gap-3">
             <h2 id="sec-flux" className="text-sm font-semibold">
-              Flux ({fluxResults.length})
+              Flux ({fluxResults.length + (feedDiscovery ? 1 : 0)})
             </h2>
-            {fluxResults.length === 0 ? (
+            {feedDiscovery &&
+              (feedDiscovery.blocked ? (
+                <p className="text-sm text-foreground/55">
+                  Ce flux a fait l’objet d’un retrait (opt-out) et ne peut pas
+                  être référencé.
+                </p>
+              ) : feedDiscovery.existingId ? (
+                <Link
+                  href={`/feeds/${feedDiscovery.existingId}`}
+                  className="rounded-lg border border-black/10 p-4 hover:bg-foreground/5 dark:border-white/15"
+                >
+                  <span className="font-medium">
+                    {feedDiscovery.preview.title || feedDiscovery.preview.feedUrl}
+                  </span>{" "}
+                  <span className="text-xs text-foreground/60">
+                    — déjà référencé, voir le flux
+                  </span>
+                </Link>
+              ) : (
+                <FeedDiscoveryResult feed={feedDiscovery.preview} />
+              ))}
+            {!feedDiscovery && looksLikeUrl(q) && (
+              <p className="text-sm text-foreground/55">
+                Aucun flux RSS/Atom n’a pu être lu à cette adresse.
+              </p>
+            )}
+            {fluxResults.length === 0 && !feedDiscovery ? (
               <p className="text-sm text-foreground/55">Aucun flux.</p>
             ) : (
               <ul className="flex flex-col gap-3">
