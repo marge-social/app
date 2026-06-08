@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Icons } from "@/components/discover/icons";
 
@@ -34,6 +35,7 @@ function autosize(el: HTMLTextAreaElement | null) {
  * **aucune** publication câblée. Les actions de sortie sont des stubs `// TODO`.
  */
 export function FeedComposer() {
+  const router = useRouter();
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [fmt, setFmt] = useState<ComposerFormat>("billet");
@@ -68,7 +70,9 @@ export function FeedComposer() {
   };
 
   const onContinue = () => {
-    // TODO: ouvrir l’éditeur complet (route /compose) avec le brouillon courant.
+    // Ouvre l'éditeur complet. TODO: y transmettre le brouillon courant
+    // (titre/corps/format) plutôt que d'ouvrir une page vierge.
+    router.push("/compose");
   };
 
   return (

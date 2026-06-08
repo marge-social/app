@@ -1,100 +1,72 @@
-import { ME } from "@/lib/mock/discover";
+import Link from "next/link";
 import { Avatar } from "@/components/discover/Avatar";
 
-/** Rail gauche — carte profil « moi », navigation personnelle, sujets suivis,
- *  reprise de lecture. Présentationnel (données démo). Les liens sont des
- *  ancres inertes en pré-bêta. */
-export function LeftRail() {
-  const { author, drafts, saved, replies, annotations, topics, resume } = ME;
+export interface MeSummary {
+  name: string;
+  handle: string;
+  /** Handle fédéré complet `@user@domaine` (affiché sous le nom). */
+  fediHandle: string;
+  /** URL de l'avatar S3/legacy, ou null → pastille à initiales. */
+  avatarSrc: string | null;
+  /** Couleur de la pastille de repli. */
+  color: string;
+  textes: number;
+  abonnes: number;
+}
+
+/** Rail gauche — carte profil **réelle** de l'utilisateur connecté + navigation
+ *  personnelle (liens réels uniquement). Les éléments du prototype sans donnée
+ *  backend (sujets suivis, reprise de lecture, compteurs de brouillons…) sont
+ *  retirés tant que les sources n'existent pas. */
+export function LeftRail({ me }: { me: MeSummary }) {
   return (
     <aside className="rail-left" aria-label="Mon espace">
       <div className="me-card">
         <div className="me-head">
-          <Avatar name={author.name} color={author.color} size={44} />
+          {me.avatarSrc ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={me.avatarSrc}
+              alt=""
+              width={44}
+              height={44}
+              style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover" }}
+            />
+          ) : (
+            <Avatar name={me.name} color={me.color} size={44} />
+          )}
           <div className="min-w-0">
-            <div className="me-name">{author.name}</div>
-            <div className="me-handle">{author.handle}</div>
+            <div className="me-name">{me.name}</div>
+            <div className="me-handle">{me.fediHandle}</div>
           </div>
         </div>
         <div className="me-stats">
           <div className="me-stat">
-            <div className="v">{author.rep.textes}</div>
+            <div className="v">{me.textes}</div>
             <div className="l">textes publiés</div>
           </div>
           <div className="me-stat">
-            <div className="v">{author.rep.citations}</div>
-            <div className="l">citations reçues</div>
-          </div>
-          <div className="me-stat">
-            <div className="v">{author.rep.complete}%</div>
-            <div className="l">lectures complètes</div>
-          </div>
-          <div className="me-stat">
-            <div className="v">{author.rep.abonnes}</div>
-            <div className="l">abonnés fidèles</div>
+            <div className="v">{me.abonnes}</div>
+            <div className="l">abonnés</div>
           </div>
         </div>
       </div>
 
-      {/* TODO: câbler ces liens (brouillons, enregistrés, réponses, annotations…). */}
       <nav className="nav-side" aria-label="Mon espace">
         <h4>Mon espace</h4>
-        <a href="#">
-          <span>Mon fil personnalisé</span>
-        </a>
-        <a href="#">
-          <span>Mes brouillons</span>
-          <span className="ct">{drafts}</span>
-        </a>
-        <a href="#">
-          <span>Textes enregistrés</span>
-          <span className="ct">{saved}</span>
-        </a>
-        <a href="#">
-          <span>Mes réponses-billets</span>
-          <span className="ct">{replies}</span>
-        </a>
-        <a href="#">
-          <span>Annotations</span>
-          <span className="ct">{annotations}</span>
-        </a>
-        <a href="#">
-          <span>Historique de lecture</span>
-        </a>
+        <Link href={`/@${me.handle}`}>
+          <span>Mon profil</span>
+        </Link>
+        <Link href="/compose">
+          <span>Écrire un texte</span>
+        </Link>
+        <Link href="/notifications">
+          <span>Notifications</span>
+        </Link>
+        <Link href="/preferences">
+          <span>Préférences</span>
+        </Link>
       </nav>
-
-      <div className="nav-side">
-        <h4>Sujets que je suis</h4>
-        <div className="topic-tag-list" style={{ marginTop: 2 }}>
-          {topics.map((t) => (
-            <a key={t} className="topic-tag" href="#">
-              {t}
-            </a>
-          ))}
-          <a className="topic-tag" href="#">
-            + ajouter
-          </a>
-        </div>
-      </div>
-
-      <div className="nav-side">
-        <h4>Reprendre la lecture</h4>
-        <a href="#" style={{ flexDirection: "column", alignItems: "flex-start", gap: 2 }}>
-          <span
-            style={{
-              fontFamily: "var(--serif)",
-              fontSize: 13.5,
-              color: "var(--ink)",
-              lineHeight: 1.3,
-            }}
-          >
-            {resume.title}
-          </span>
-          <span style={{ fontSize: 11, color: "var(--ink-3)" }}>
-            {resume.author} · {resume.progress}
-          </span>
-        </a>
-      </div>
     </aside>
   );
 }
