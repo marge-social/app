@@ -1,76 +1,68 @@
-"use client";
-
-import { useMemo, useState } from "react";
-import {
-  DEFAULT_SLIDERS,
-  INITIAL_FOLLOWING,
-  orderPosts,
-  POSTS,
-  type SliderState,
-} from "@/lib/mock/discover";
-import { ActiveThreads } from "@/components/discover/ActiveThreads";
-import { AlgoControls } from "@/components/discover/AlgoControls";
-import { AlgoNote } from "@/components/discover/AlgoNote";
-import { FeaturedAuthors } from "@/components/discover/FeaturedAuthors";
+import Link from "next/link";
+import type { FeedEntry } from "@/lib/feed";
+import { getServerI18n } from "@/lib/i18n/server";
 import { FeedComposer } from "@/components/discover/FeedComposer";
-import { LeftRail } from "@/components/discover/LeftRail";
-import { PostCard } from "@/components/discover/PostCard";
+import { FeedEntryCard } from "@/components/discover/FeedEntryCard";
+import { LeftRail, type MeSummary } from "@/components/discover/LeftRail";
+import { AlgoNote } from "@/components/discover/AlgoNote";
 
 /**
- * Shell « Découvrir » — grille 3 colonnes du fil visiteur. Île client : porte
- * l'état réellement interactif (curseurs qui réordonnent le fil, suivis,
- * enregistrements, bascules d'affichage). Données 100 % démo, rien de câblé.
+ * Shell « Découvrir » — grille 3 colonnes du fil de l'utilisateur connecté,
+ * branché sur les **vraies** données (`buildFeed`). Server component : seules
+ * les sous-parties réellement interactives sont des îles client (composer,
+ * note algorithmique). Le fil est chronologique strict, sans classement ni
+ * compteur d'engagement servant au tri (§6).
  */
-export function DiscoverShell() {
-  const [sliders, setSliders] = useState<SliderState>(DEFAULT_SLIDERS);
-  const [following, setFollowing] = useState<Record<string, boolean>>(INITIAL_FOLLOWING);
-  const [saved, setSaved] = useState<Record<string, boolean>>({});
-  const [showReason, setShowReason] = useState(true);
-  const [showReputation, setShowReputation] = useState(true);
-
-  const setSlider = (axis: keyof SliderState, value: number) =>
-    setSliders((s) => ({ ...s, [axis]: value }));
-  const resetSliders = () => setSliders({ depth: 0.5, discovery: 0.5, controversy: 0.5 });
-  const toggleFollow = (id: string) => setFollowing((f) => ({ ...f, [id]: !f[id] }));
-  const toggleSave = (id: string) => setSaved((s) => ({ ...s, [id]: !s[id] }));
-
-  // Tri réel par affinité avec les curseurs — logique locale, publique.
-  const ordered = useMemo(() => orderPosts(POSTS, sliders), [sliders]);
+export async function DiscoverShell({
+  me,
+  entries,
+  hasMore,
+  nextHref,
+}: {
+  me: MeSummary;
+  entries: FeedEntry[];
+  hasMore: boolean;
+  nextHref: string;
+}) {
+  const { locale, dict } = await getServerI18n();
+  const t = dict.feed;
 
   return (
-    <div
-      className="grid-shell"
-      data-density="comfy"
-      data-show-rep={String(showReputation)}
-      data-show-reason={String(showReason)}
-    >
-      <LeftRail />
+    <div className="grid-shell" data-density="comfy">
+      <LeftRail me={me} />
 
       <div className="feed">
         <FeedComposer />
-        {ordered.map((post) => (
-          <PostCard
-            key={post.id}
-            post={post}
-            saved={!!saved[post.id]}
-            onSave={() => toggleSave(post.id)}
-          />
-        ))}
+
+        {entries.length === 0 ? (
+          <p className="text-ink-3" style={{ padding: "16px 0", fontSize: 15 }}>
+            {dict.home.emptyBefore}{" "}
+            <Link href="/recherche" className="underline">
+              {dict.home.emptyLink}
+            </Link>{" "}
+            {dict.home.emptyAfter}
+          </p>
+        ) : (
+          <>
+            {entries.map((e) => (
+              <FeedEntryCard key={e.key} e={e} dict={t} locale={locale} />
+            ))}
+            {hasMore && (
+              <Link
+                href={nextHref}
+                scroll={false}
+                className="composer-action"
+                style={{ alignSelf: "center", marginTop: 24 }}
+              >
+                {dict.home.loadMore}
+              </Link>
+            )}
+          </>
+        )}
       </div>
 
-      <aside className="rail" aria-label="Suggestions et réglages">
-        <FeaturedAuthors following={following} onToggleFollow={toggleFollow} />
-        <ActiveThreads />
+      <aside className="rail" aria-label="À propos du classement">
         <AlgoNote />
-        <AlgoControls
-          sliders={sliders}
-          setSlider={setSlider}
-          reset={resetSliders}
-          showReason={showReason}
-          showReputation={showReputation}
-          onToggleReason={setShowReason}
-          onToggleReputation={setShowReputation}
-        />
       </aside>
     </div>
   );

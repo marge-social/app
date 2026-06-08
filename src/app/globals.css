@@ -861,6 +861,112 @@ body {
   padding-left: 18px;
 }
 
+/* Note réelle (HTML sanitisé, potentiellement multi-paragraphes). */
+.entry-note {
+  font-family: var(--serif);
+  font-size: 17px;
+  font-style: italic;
+  line-height: 1.55;
+  color: var(--ink);
+  margin: 0 0 16px;
+  border-left: 2px solid var(--rule);
+  padding-left: 18px;
+}
+.entry-note > * + * {
+  margin-top: 0.7em;
+}
+.entry-note a {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Métriques/actions réelles : compteur discret accolé à un bouton d'action. */
+.metrics .m.count .v {
+  color: var(--ink-2);
+}
+.ico-btn .ct {
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  margin-left: 5px;
+}
+
+/* Fil de commentaires sous une entrée. */
+.entry-comments {
+  margin-top: 4px;
+  border-left: 2px solid var(--rule-soft);
+  padding-left: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.entry-comment .who {
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+.entry-comment .who a:hover {
+  color: var(--brick);
+}
+.entry-comment .body {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink-2);
+  margin-top: 2px;
+}
+.entry-comment .body a {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.entry-comment .ref {
+  font-size: 13.5px;
+  color: var(--ink-2);
+  margin-top: 2px;
+}
+.entry-comment .ref a {
+  color: var(--ink);
+  font-weight: 500;
+}
+.entry-comment .ref a:hover {
+  color: var(--brick);
+}
+.comment-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.comment-form textarea {
+  width: 100%;
+  resize: vertical;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  background: #fff;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 13.5px;
+  color: var(--ink);
+  outline: none;
+}
+.comment-form textarea:focus {
+  border-color: var(--ink-3);
+}
+.comment-form .submit {
+  align-self: flex-end;
+  appearance: none;
+  border: 1px solid var(--rule);
+  background: #fff;
+  border-radius: 7px;
+  padding: 5px 12px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.comment-form .submit:hover {
+  background: var(--bg-soft);
+  color: var(--ink);
+  border-color: #d6ccb8;
+}
+
 /* Analyse */
 .card-analyse .ttl {
   font-family: var(--serif);
