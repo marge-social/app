@@ -310,6 +310,19 @@ variables runtime). Conçu pour être conforme **sans bandeau de consentement**
 Vars dans `docker-compose.yml` (service `app`) + `.env*.example`. Prod :
 `MATOMO_URL=https://analytics.kilometre-0.fr`, `MATOMO_SITE_ID=10`.
 
+### Pages de contenu éditables (mentions légales) ✅ (vérifié en local)
+
+Table générique `site_pages` (slug PK, `content_markdown` + `content_html`
+sanitisé pré-rendu, `updated_at` ; migration `0009`). Helper `src/lib/legal.ts`
+(`getLegalPage` : sert la ligne enregistrée, sinon un **contenu par défaut**
+minimal rendu à la volée — `DEFAULT_LEGAL_MARKDOWN`, avec section « Mesure
+d'audience » documentant Matomo). Page publique `/mentions-legales` (rendu
+`prose-marge`, date de MAJ), éditeur admin `/admin/mentions-legales`
+(`requireAdmin`, `LegalEditorForm` calqué sur `EditorForm` : textarea Markdown +
+aperçu) via `saveLegalPageAction` (upsert sur le slug, sanitise au rendu). Lien
+public dans un nouveau `SiteFooter` (monté dans le layout racine). Extensible à
+d'autres pages par slug sans migration.
+
 ### Cron digest
 `curl -H "Authorization: Bearer $CRON_SECRET" $APP_URL/api/cron/digest`. À brancher
 sur une tâche cron (quotidien par défaut, §4.3). Regroupe les signaux pauvres

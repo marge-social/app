@@ -16,8 +16,8 @@ export default async function AdminLayout({
       <div className="flex flex-col gap-2">
         <h1 className="text-2xl font-semibold tracking-tight">Administration</h1>
         <p className="text-sm text-black/55 dark:text-white/55">
-          Supervision en lecture seule de l’instance. Aucune action de
-          modération n’est disponible ici.
+          Supervision de l’instance (comptes et billets en lecture seule) et
+          édition des pages de contenu. Aucune action de modération ici.
         </p>
         <nav
           aria-label="Navigation administration"
@@ -28,6 +28,9 @@ export default async function AdminLayout({
           </Link>
           <Link href="/admin/posts" className="hover:underline">
             Billets
+          </Link>
+          <Link href="/admin/mentions-legales" className="hover:underline">
+            Mentions légales
           </Link>
         </nav>
       </div>

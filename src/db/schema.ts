@@ -512,6 +512,22 @@ export const actorBlocks = pgTable(
 );
 
 /**
+ * Pages de contenu éditables depuis l'admin (mentions légales, etc.), en
+ * **Markdown**. `contentHtml` est la version **sanitisée** pré-rendue, servie au
+ * public (cf. articles). Une page par `slug`. Tant qu'aucune ligne n'existe pour
+ * un slug, l'app sert un contenu par défaut (cf. `src/lib/legal.ts`).
+ */
+export const sitePages = pgTable("site_pages", {
+  slug: text("slug").primaryKey(),
+  title: text("title").notNull(),
+  contentMarkdown: text("content_markdown").notNull(),
+  contentHtml: text("content_html").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+/**
  * Notifications destinées à un auteur local (§2). Table générique : V1 ne crée
  * que des notifications `follow`, mais la forme accueille likes/réponses/etc.
  * sans migration de structure. Les infos d'affichage de l'acteur déclencheur
