@@ -25,7 +25,7 @@ export async function updateProfileAction(
   formData: FormData,
 ): Promise<ProfileFormState> {
   const user = await getCurrentUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/");
 
   const displayName = ((formData.get("displayName") as string) ?? "").trim();
   const bio = ((formData.get("bio") as string) ?? "").trim();
@@ -90,7 +90,7 @@ export async function updateProfileAction(
  */
 export async function removeOwnFeedAction(formData: FormData): Promise<void> {
   const user = await getCurrentUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/");
   const feedId = (formData.get("feedId") as string) ?? "";
   if (!feedId) return;
 

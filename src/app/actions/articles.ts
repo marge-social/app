@@ -55,7 +55,7 @@ export async function saveArticleAction(
   formData: FormData,
 ): Promise<ArticleFormState> {
   const user = await getCurrentUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/");
 
   const id = (formData.get("id") as string) || undefined;
   const title = ((formData.get("title") as string) ?? "").trim();
@@ -212,7 +212,7 @@ export async function saveArticleAction(
 /** Supprime un article de l'utilisateur courant. */
 export async function deleteArticleAction(formData: FormData): Promise<void> {
   const user = await getCurrentUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/");
   const id = formData.get("id") as string;
   if (!id) redirect("/compose");
 

@@ -90,7 +90,7 @@ export default async function SearchPage({
   searchParams: Promise<{ q?: string }>;
 }) {
   const viewer = await getCurrentUser();
-  if (!viewer) redirect("/login");
+  if (!viewer) redirect("/");
 
   const { q: rawQ } = await searchParams;
   const q = (rawQ ?? "").trim();

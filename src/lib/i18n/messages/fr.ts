@@ -211,6 +211,222 @@ const fr = {
     altHint: "(obligatoire — décrit l’image)",
     altPlaceholder:
       "Décris l’image pour les personnes qui ne la voient pas",
+    titlePlaceholder: "Titre du billet",
+    chapoPlaceholder:
+      "Chapô (optionnel) — une phrase qui annonce la question posée",
+    bodyPlaceholder:
+      "Commencez à écrire votre billet. Markdown supporté : **gras**, *italique*, ## titre, > citation, [lien](url).",
+    // Sélecteur de format (advisory — l’article fédère toujours comme Article).
+    formats: {
+      note: {
+        name: "Note brève",
+        cap: "≤ 280 mots",
+        blurb:
+          "Diffusion restreinte (abonnés seulement), pas de réponses-billets, format max 280 mots.",
+      },
+      billet: {
+        name: "Billet",
+        cap: "format libre",
+        blurb:
+          "Format standard. Diffusion dans le fil et la découverte, toutes interactions disponibles.",
+      },
+      analyse: {
+        name: "Analyse",
+        cap: "≥ 800 mots",
+        blurb:
+          "Éligible à l’éditorialisation. Sourcing attendu, badge dédié, format minimal 800 mots.",
+      },
+    },
+    formatSelectorLabel: "Choisir un format",
+    // Panneau « miroir ».
+    mirror: {
+      title: "Éditeur miroir",
+      sub: "Un reflet qualitatif de ce que vous écrivez, sans note ni pourcentage.",
+      words: "Mots",
+      reading: "Lecture",
+      readingUnit: "min",
+      sources: "Sources",
+      paragraphs: "Passages annotables",
+      suggestionLabel: "Suggestion",
+      signals: {
+        sources: {
+          name: "Sources citées",
+          on: { one: "{n} référence attachée au texte", other: "{n} références attachées au texte" },
+          off: "Aucune source rattachée pour l’instant",
+        },
+        margeRef: {
+          name: "Référence à un autre auteur de Marge",
+          on: "Vous dialoguez avec une publication existante",
+          off: "Aucun lien vers un autre texte de Marge",
+        },
+        structure: {
+          name: "Structure de lecture",
+          on: "Le texte est divisé en sections (titres intermédiaires)",
+          off: "Aucun titre intermédiaire — texte d’un seul tenant",
+        },
+        argument: {
+          name: "Engagement argumentatif",
+          on: "Articulations contradictoires détectées (mais, cependant, en revanche…)",
+          off: "Pas d’articulation contradictoire repérée",
+        },
+        quote: {
+          name: "Citation directe",
+          on: "Un passage en bloc de citation est présent",
+          off: "Aucun passage en bloc-citation",
+        },
+      },
+      suggestions: {
+        enjeu:
+          "Commencez par poser l’enjeu. Un billet trouve son lectorat quand il annonce clairement la question qu’il pose dans ses dix premières lignes.",
+        noSources:
+          "Aucune source rattachée. Une référence externe — même légère — alourdit votre texte dans les signaux coûteux du classement.",
+        noMargeRef:
+          "Aucune référence à un autre texte de Marge. Pensez-vous à dialoguer avec une publication existante ? Les citations croisées sont fortement pondérées.",
+        noStructure:
+          "Le texte dépasse 350 mots sans titre intermédiaire. Un découpage par H2 aide les lectures longues et améliore le taux de lecture complète.",
+        noArgument:
+          "Le texte n’articule pas de contradiction. Marquer un « mais » ou un « cependant » rend une thèse plus tenable.",
+      },
+      noteLabel: "Format Note brève",
+      noteOverLimit:
+        "Au-delà de 280 mots, ce texte ne pourra plus être publié en Note brève — envisagez de passer en Billet.",
+      analyseLabel: "Format Analyse",
+      analyseUnderLimit: "Le format Analyse attend au moins 800 mots ({n} restants).",
+    },
+    // Rail des sources.
+    sourcesPanel: {
+      title: "Sources",
+      sub: "Dans l’ordre d’apparition dans le texte. Chaque source génère un appel de note numéroté.",
+      addSource: "Ajouter une source",
+      removeSource: "Retirer la source",
+      untitled: "Sans titre",
+      kinds: {
+        url: "Lien",
+        book: "Ouvrage",
+        article: "Article",
+        marge: "Marge",
+      },
+    },
+    // Modale d’ajout de source.
+    sourceModal: {
+      title: "Ajouter une source",
+      close: "Fermer",
+      attachedPassage: "Passage rattaché",
+      noPassage:
+        "Aucun passage sélectionné — l’appel de note sera placé à la position du curseur.",
+      tabs: {
+        url: "Lien web",
+        book: "Ouvrage",
+        article: "Article",
+        marge: "Texte sur Marge",
+      },
+      url: "URL",
+      urlPlaceholder: "https://…",
+      pageTitle: "Titre",
+      pageTitlePlaceholder: "Titre de la page",
+      authorOrMedia: "Auteur ou média",
+      year: "Année",
+      bookTitle: "Titre",
+      author: "Auteur",
+      isbn: "ISBN",
+      isbnPlaceholder: "978-…",
+      isbnHint:
+        "Une recherche automatique récupèrera l’éditeur et la couverture.",
+      articleTitle: "Titre de l’article",
+      authors: "Auteur·rice·s",
+      venue: "Revue",
+      doi: "DOI",
+      doiPlaceholder: "10.…",
+      margeText: "Texte publié sur Marge",
+      margePlaceholder:
+        "Rechercher un texte ou coller un permalien marge.social/…",
+      margeHint:
+        "Citer un texte de Marge alimente l’indice citations croisées de son auteur — un signal coûteux et donc pondéré fortement.",
+      cancel: "Annuler",
+      add: "Ajouter la source",
+    },
+    // Image d’illustration (cover).
+    cover: {
+      addTitle: "Ajouter une image d’illustration",
+      addSub:
+        "Image de couverture affichée en tête du billet, dans le fil de découverte et lors des partages. Glissez un fichier ou cliquez pour parcourir.",
+      replace: "Remplacer",
+      remove: "Retirer",
+      captionPlaceholder: "Légende — décrit l’image, son contexte",
+      captionRequired:
+        "La légende sert de texte alternatif (obligatoire pour une image).",
+      creditPlaceholder: "Crédit — © photographe, source",
+    },
+    // Barre flottante de sélection.
+    toolbar: {
+      bold: "Gras",
+      italic: "Italique",
+      h2: "Titre 2",
+      h3: "Titre 3",
+      quote: "Citation",
+      list: "Liste",
+      link: "Lien",
+      addSource: "Ajouter une source au passage sélectionné",
+      linkPrompt: "URL du lien :",
+    },
+    // Barre de publication.
+    publishBar: {
+      transparency: "Voir comment ce texte sera classé dans le feed",
+      words: { one: "{n} mot", other: "{n} mots" },
+      reading: "~{n} min de lecture",
+    },
+    // Modale de transparence (illustrative — algorithme public et paramétrable).
+    transparency: {
+      title: "Comment ce texte sera classé dans le feed",
+      intro:
+        "L’algorithme de Marge est public et paramétrable. Voici les signaux qu’il combine, avec leur poids relatif. Ils sont décomposés volontairement : aucun score agrégé n’est calculé en coulisses.",
+      signals: {
+        replies: {
+          n: "Réponses-billets reçues",
+          d: "Une réponse-billet est un signal coûteux : elle demande un texte argumenté en retour.",
+        },
+        readRate: {
+          n: "Taux de lecture complète",
+          d: "Mesuré sur les lecteurs ayant atteint au moins 90% du texte.",
+        },
+        crossRefs: {
+          n: "Citations croisées",
+          d: "Quand votre texte cite — ou est cité par — un autre texte publié sur Marge.",
+        },
+        annotations: {
+          n: "Annotations qualifiées",
+          d: "Surlignages accompagnés d’une note. Pèse plus qu’un simple surlignage.",
+        },
+        sources: {
+          n: "Sources citées",
+          d: "Présence et diversité des références externes (URL, ouvrages, articles).",
+        },
+        loyalty: {
+          n: "Fidélité d’audience",
+          d: "Lecteurs revenant à plusieurs de vos textes au fil du temps.",
+        },
+        likes: {
+          n: "Likes & vues",
+          d: "Affichés publiquement, mais pondérés très faiblement dans le classement.",
+        },
+        immediacy: {
+          n: "Réactivité immédiate",
+          d: "Les pics d’engagement dans la première heure ne sont pas survalorisés.",
+        },
+      },
+      whyLabel: "Pour ce brouillon :",
+      whyHasSources: {
+        one: "vous avez {n} source attachée{marge}. Le signal citations croisées jouera en faveur de la remontée.",
+        other:
+          "vous avez {n} sources attachées{marge}. Le signal citations croisées jouera en faveur de la remontée.",
+      },
+      whyMargeClause: " et une référence à un autre texte de Marge",
+      whyNoSources:
+        "aucune source n’est attachée pour le moment. Le signal sources citées sera neutre — un sourcing même léger améliore la remontée.",
+      whyStructured:
+        " Le texte est suffisamment structuré pour que le taux de lecture complète soit mesuré finement.",
+      close: "Fermer",
+    },
   },
   compose: {
     writeTitle: "Écrire un texte",

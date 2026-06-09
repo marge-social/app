@@ -94,7 +94,7 @@ export async function AppHeader() {
             </>
           ) : (
             <>
-              <Link className="btn btn-ghost" href="/login">
+              <Link className="btn btn-ghost" href="/">
                 {nav.login}
               </Link>
               <Link className="btn btn-ink" href="/signup">

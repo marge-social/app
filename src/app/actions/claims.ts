@@ -37,7 +37,7 @@ export async function feedOwnershipAction(
   formData: FormData,
 ): Promise<OwnershipState> {
   const user = await getCurrentUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/");
 
   const intent = formData.get("intent");
   const feedId = formData.get("feedId") as string;
@@ -146,7 +146,7 @@ export async function feedOwnershipAction(
 /** Le propriétaire (flux réclamé) active/désactive le texte intégral. */
 export async function toggleFullTextAction(formData: FormData): Promise<void> {
   const user = await getCurrentUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/");
   const feedId = formData.get("feedId") as string;
   const feed = await db.query.feeds.findFirst({ where: eq(feeds.id, feedId) });
   if (!feed || feed.ownerId !== user.id) return;

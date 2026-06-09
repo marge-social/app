@@ -112,7 +112,7 @@ export default async function FeedDetailPage({ params }: FeedParams) {
             </form>
           ) : (
             <p className="text-sm text-foreground/60">
-              <Link href="/login" className="underline">
+              <Link href="/" className="underline">
                 {dict.profile.loginToFollowLink}
               </Link>{" "}
               {t.loginToFollowSuffix}
@@ -150,7 +150,7 @@ export default async function FeedDetailPage({ params }: FeedParams) {
         ) : viewer ? null : (
           <aside className="rounded border border-black/10 bg-black/[0.03] p-4 text-sm text-foreground/75 dark:border-white/15 dark:bg-white/[0.03]">
             {t.yourBlogBefore}{" "}
-            <Link href="/login" className="underline">
+            <Link href="/" className="underline">
               {t.yourBlogLink}
             </Link>{" "}
             {t.yourBlogAfter}

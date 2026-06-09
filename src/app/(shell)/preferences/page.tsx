@@ -36,7 +36,7 @@ export async function generateMetadata() {
 
 export default async function PreferencesPage() {
   const user = await getCurrentUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/");
   const { dict } = await getServerI18n();
   const t = dict.preferences;
 

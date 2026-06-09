@@ -32,7 +32,7 @@ export async function changePasswordAction(
   formData: FormData,
 ): Promise<PasswordFormState> {
   const user = await getCurrentUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/");
 
   const current = (formData.get("current") as string) ?? "";
   const next = (formData.get("next") as string) ?? "";

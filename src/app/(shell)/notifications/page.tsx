@@ -159,7 +159,7 @@ function NotificationLine({
 
 export default async function NotificationsPage() {
   const user = await getCurrentUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/");
 
   const items = await db.query.notifications.findMany({
     where: eq(notifications.recipientUserId, user.id),

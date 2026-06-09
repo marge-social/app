@@ -198,6 +198,212 @@ const en: Messages = {
     altLabel: "Alternative text",
     altHint: "(required — describes the image)",
     altPlaceholder: "Describe the image for people who can't see it",
+    titlePlaceholder: "Article title",
+    chapoPlaceholder:
+      "Lede (optional) — a sentence that announces the question you raise",
+    bodyPlaceholder:
+      "Start writing your article. Markdown supported: **bold**, *italic*, ## heading, > quote, [link](url).",
+    formats: {
+      note: {
+        name: "Short note",
+        cap: "≤ 280 words",
+        blurb:
+          "Limited reach (followers only), no article-replies, 280-word cap.",
+      },
+      billet: {
+        name: "Article",
+        cap: "free length",
+        blurb:
+          "Standard format. Shown in the feed and discovery, all interactions available.",
+      },
+      analyse: {
+        name: "Analysis",
+        cap: "≥ 800 words",
+        blurb:
+          "Eligible for editorial promotion. Sourcing expected, dedicated badge, 800-word minimum.",
+      },
+    },
+    formatSelectorLabel: "Choose a format",
+    mirror: {
+      title: "Mirror editor",
+      sub: "A qualitative reflection of what you write — no score, no percentage.",
+      words: "Words",
+      reading: "Reading",
+      readingUnit: "min",
+      sources: "Sources",
+      paragraphs: "Annotatable passages",
+      suggestionLabel: "Suggestion",
+      signals: {
+        sources: {
+          name: "Cited sources",
+          on: { one: "{n} reference attached to the text", other: "{n} references attached to the text" },
+          off: "No source attached yet",
+        },
+        margeRef: {
+          name: "Reference to another Marge author",
+          on: "You are engaging with an existing publication",
+          off: "No link to another Marge text",
+        },
+        structure: {
+          name: "Reading structure",
+          on: "The text is split into sections (subheadings)",
+          off: "No subheading — single unbroken text",
+        },
+        argument: {
+          name: "Argumentative engagement",
+          on: "Contrastive connectors detected (but, however, on the other hand…)",
+          off: "No contrastive connector found",
+        },
+        quote: {
+          name: "Direct quotation",
+          on: "A block quotation is present",
+          off: "No block quotation",
+        },
+      },
+      suggestions: {
+        enjeu:
+          "Start by stating the stakes. An article finds its readership when it clearly announces the question it raises in its first ten lines.",
+        noSources:
+          "No source attached. An external reference — even a light one — strengthens your text on the costly ranking signals.",
+        noMargeRef:
+          "No reference to another Marge text. Have you considered engaging with an existing publication? Cross-references are heavily weighted.",
+        noStructure:
+          "The text exceeds 350 words without a subheading. Splitting it with H2s helps long reads and improves the completion rate.",
+        noArgument:
+          "The text doesn't articulate a contradiction. Marking a “but” or “however” makes a thesis more defensible.",
+      },
+      noteLabel: "Short note format",
+      noteOverLimit:
+        "Beyond 280 words, this text can no longer be published as a Short note — consider switching to Article.",
+      analyseLabel: "Analysis format",
+      analyseUnderLimit: "The Analysis format expects at least 800 words ({n} to go).",
+    },
+    sourcesPanel: {
+      title: "Sources",
+      sub: "In order of appearance in the text. Each source generates a numbered footnote.",
+      addSource: "Add a source",
+      removeSource: "Remove source",
+      untitled: "Untitled",
+      kinds: {
+        url: "Link",
+        book: "Book",
+        article: "Article",
+        marge: "Marge",
+      },
+    },
+    sourceModal: {
+      title: "Add a source",
+      close: "Close",
+      attachedPassage: "Attached passage",
+      noPassage:
+        "No passage selected — the footnote marker will be placed at the cursor position.",
+      tabs: {
+        url: "Web link",
+        book: "Book",
+        article: "Article",
+        marge: "Text on Marge",
+      },
+      url: "URL",
+      urlPlaceholder: "https://…",
+      pageTitle: "Title",
+      pageTitlePlaceholder: "Page title",
+      authorOrMedia: "Author or outlet",
+      year: "Year",
+      bookTitle: "Title",
+      author: "Author",
+      isbn: "ISBN",
+      isbnPlaceholder: "978-…",
+      isbnHint: "An automatic lookup will fetch the publisher and cover.",
+      articleTitle: "Article title",
+      authors: "Author(s)",
+      venue: "Journal",
+      doi: "DOI",
+      doiPlaceholder: "10.…",
+      margeText: "Text published on Marge",
+      margePlaceholder: "Search a text or paste a marge.social/… permalink",
+      margeHint:
+        "Citing a Marge text feeds its author's cross-references signal — a costly and therefore heavily weighted signal.",
+      cancel: "Cancel",
+      add: "Add the source",
+    },
+    cover: {
+      addTitle: "Add a cover image",
+      addSub:
+        "Cover image shown at the top of the article, in the discovery feed and when shared. Drag a file or click to browse.",
+      replace: "Replace",
+      remove: "Remove",
+      captionPlaceholder: "Caption — describes the image, its context",
+      captionRequired:
+        "The caption is used as alternative text (required for an image).",
+      creditPlaceholder: "Credit — © photographer, source",
+    },
+    toolbar: {
+      bold: "Bold",
+      italic: "Italic",
+      h2: "Heading 2",
+      h3: "Heading 3",
+      quote: "Quote",
+      list: "List",
+      link: "Link",
+      addSource: "Add a source to the selected passage",
+      linkPrompt: "Link URL:",
+    },
+    publishBar: {
+      transparency: "See how this text will be ranked in the feed",
+      words: { one: "{n} word", other: "{n} words" },
+      reading: "~{n} min read",
+    },
+    transparency: {
+      title: "How this text will be ranked in the feed",
+      intro:
+        "Marge's algorithm is public and configurable. Here are the signals it combines, with their relative weight. They are deliberately decomposed: no aggregate score is computed behind the scenes.",
+      signals: {
+        replies: {
+          n: "Article-replies received",
+          d: "An article-reply is a costly signal: it requires an argued text in return.",
+        },
+        readRate: {
+          n: "Completion rate",
+          d: "Measured on readers who reached at least 90% of the text.",
+        },
+        crossRefs: {
+          n: "Cross-references",
+          d: "When your text cites — or is cited by — another text published on Marge.",
+        },
+        annotations: {
+          n: "Qualified annotations",
+          d: "Highlights accompanied by a note. Weighs more than a plain highlight.",
+        },
+        sources: {
+          n: "Cited sources",
+          d: "Presence and diversity of external references (URLs, books, articles).",
+        },
+        loyalty: {
+          n: "Audience loyalty",
+          d: "Readers returning to several of your texts over time.",
+        },
+        likes: {
+          n: "Likes & views",
+          d: "Shown publicly, but weighted very weakly in ranking.",
+        },
+        immediacy: {
+          n: "Immediate reactivity",
+          d: "Engagement spikes in the first hour are not over-valued.",
+        },
+      },
+      whyLabel: "For this draft:",
+      whyHasSources: {
+        one: "you have {n} source attached{marge}. The cross-references signal will favour visibility.",
+        other:
+          "you have {n} sources attached{marge}. The cross-references signal will favour visibility.",
+      },
+      whyMargeClause: " and a reference to another Marge text",
+      whyNoSources:
+        "no source is attached yet. The cited-sources signal will be neutral — even light sourcing improves visibility.",
+      whyStructured:
+        " The text is structured enough for the completion rate to be measured precisely.",
+      close: "Close",
+    },
   },
   compose: {
     writeTitle: "Write a text",

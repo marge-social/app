@@ -135,7 +135,7 @@ export function AppHeaderNav({
                 </>
               ) : (
                 <>
-                  <Link href="/login">{labels.login}</Link>
+                  <Link href="/">{labels.login}</Link>
                   <Link href="/signup">{labels.signup}</Link>
                 </>
               )}

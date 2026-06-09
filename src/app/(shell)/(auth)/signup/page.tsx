@@ -14,7 +14,7 @@ export default async function SignupPage() {
       <SignupForm />
       <p className="text-sm text-foreground/70">
         {dict.auth.haveAccount}{" "}
-        <Link href="/login" className="underline">
+        <Link href="/" className="underline">
           {dict.auth.loginLink}
         </Link>
       </p>
