@@ -24,7 +24,7 @@ export async function referenceFeedAction(
   formData: FormData,
 ): Promise<FeedFormState> {
   const user = await getCurrentUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/");
 
   const input = ((formData.get("url") as string) ?? "").trim();
   if (!input) return { error: "feedUrlRequired" };
@@ -80,7 +80,7 @@ export async function referenceFeedAction(
 /** Abonne l'utilisateur courant à un flux (FeedSubscription, interne). */
 export async function subscribeFeedAction(formData: FormData): Promise<void> {
   const user = await getCurrentUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/");
   const feedId = formData.get("feedId") as string;
   if (!feedId) return;
   await db
@@ -94,7 +94,7 @@ export async function subscribeFeedAction(formData: FormData): Promise<void> {
 /** Désabonne l'utilisateur courant d'un flux. */
 export async function unsubscribeFeedAction(formData: FormData): Promise<void> {
   const user = await getCurrentUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/");
   const feedId = formData.get("feedId") as string;
   if (!feedId) return;
   await db

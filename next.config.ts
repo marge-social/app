@@ -22,6 +22,11 @@ const nextConfig: NextConfig = {
     // interne de Fedify).
     "@logtape/logtape",
   ],
+  // `/login` n'existe plus : la connexion vit dans le portail visiteur (home
+  // `/`). On renvoie toute ancienne URL (signets, liens externes) vers la home.
+  async redirects() {
+    return [{ source: "/login", destination: "/", permanent: true }];
+  },
 };
 
 export default nextConfig;

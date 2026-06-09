@@ -16,7 +16,7 @@ import {
 /** Suit un compte LOCAL (Marge↔Marge) : relation interne, acceptée d'emblée. */
 export async function followLocalAction(formData: FormData): Promise<void> {
   const viewer = await getCurrentUser();
-  if (!viewer) redirect("/login");
+  if (!viewer) redirect("/");
   const targetId = formData.get("targetUserId") as string;
   if (!targetId || targetId === viewer.id) return;
 
@@ -51,7 +51,7 @@ export async function followLocalAction(formData: FormData): Promise<void> {
 /** Cesse de suivre un compte local. */
 export async function unfollowLocalAction(formData: FormData): Promise<void> {
   const viewer = await getCurrentUser();
-  if (!viewer) redirect("/login");
+  if (!viewer) redirect("/");
   const targetId = formData.get("targetUserId") as string;
   if (!targetId) return;
 
@@ -87,7 +87,7 @@ export async function followRemoteAction(
   formData: FormData,
 ): Promise<RemoteFollowState> {
   const viewer = await getCurrentUser();
-  if (!viewer) redirect("/login");
+  if (!viewer) redirect("/");
   const handle = ((formData.get("handle") as string) ?? "").trim();
   if (!handle) return { error: "handleRequired" };
 
@@ -101,7 +101,7 @@ export async function followRemoteAction(
 /** Cesse de suivre un compte distant. */
 export async function unfollowRemoteAction(formData: FormData): Promise<void> {
   const viewer = await getCurrentUser();
-  if (!viewer) redirect("/login");
+  if (!viewer) redirect("/");
   const remoteUri = formData.get("remoteUri") as string;
   if (!remoteUri) return;
   await unfollowRemoteActor(viewer.handle, remoteUri);

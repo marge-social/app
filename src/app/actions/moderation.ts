@@ -14,7 +14,7 @@ import { getCurrentUser } from "@/lib/auth";
  */
 export async function blockActorAction(formData: FormData): Promise<void> {
   const user = await getCurrentUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/");
   const actorUri = formData.get("actorUri") as string;
   if (!actorUri) return;
 
@@ -37,7 +37,7 @@ export async function blockActorAction(formData: FormData): Promise<void> {
 /** Lève le blocage d'un acteur distant. */
 export async function unblockActorAction(formData: FormData): Promise<void> {
   const user = await getCurrentUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/");
   const actorUri = formData.get("actorUri") as string;
   if (!actorUri) return;
   await db

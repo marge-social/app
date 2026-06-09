@@ -219,7 +219,7 @@ function LoginPanel() {
             <label className="portal-label" htmlFor={`${ids}-pw`}>
               {p.password}
             </label>
-            <Link href="/login" className="portal-forgot">
+            <Link href="/" className="portal-forgot">
               {p.forgotPassword}
             </Link>
           </div>

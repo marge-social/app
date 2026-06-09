@@ -26,7 +26,7 @@ import { routeInteractionNotification } from "@/lib/notifications";
  */
 export async function toggleLikeAction(formData: FormData): Promise<void> {
   const user = await getCurrentUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/");
 
   const objectIri = ((formData.get("objectIri") as string) ?? "").trim();
   const liked = formData.get("liked") === "true";
@@ -83,7 +83,7 @@ export async function toggleLikeAction(formData: FormData): Promise<void> {
  */
 export async function toggleAnnounceAction(formData: FormData): Promise<void> {
   const user = await getCurrentUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/");
 
   const objectIri = ((formData.get("objectIri") as string) ?? "").trim();
   const shared = formData.get("shared") === "true";
@@ -141,7 +141,7 @@ const COMMENT_MAX_LEN = 500;
  */
 export async function createCommentAction(formData: FormData): Promise<void> {
   const user = await getCurrentUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/");
 
   const objectIri = ((formData.get("objectIri") as string) ?? "").trim();
   const body = ((formData.get("body") as string) ?? "").trim();

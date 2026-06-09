@@ -27,7 +27,7 @@ export async function createPostAction(
   formData: FormData,
 ): Promise<PostFormState> {
   const user = await getCurrentUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/");
 
   const contentMarkdown = ((formData.get("body") as string) ?? "").trim();
   const file = formData.get("media");

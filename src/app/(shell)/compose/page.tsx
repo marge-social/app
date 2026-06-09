@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { articles } from "@/db/schema";
 import { Container } from "@/components/Container";
-import { EditorForm } from "@/components/EditorForm";
+import { ArticleEditor } from "@/components/editor/ArticleEditor";
 import { getCurrentUser } from "@/lib/auth";
 import { humanObjectUrl } from "@/lib/config";
 import { resolveInteractionTarget } from "@/lib/interactions";
@@ -18,7 +18,7 @@ export default async function ComposePage({
   searchParams: Promise<{ replyTo?: string }>;
 }) {
   const user = await getCurrentUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/");
 
   // Réponse-billet (§2.3) : on ne propage `replyTo` que s'il désigne un objet
   // réellement connu (anti-IRI arbitraire), comme pour like/commentaire.
@@ -37,22 +37,17 @@ export default async function ComposePage({
   const t = dict.compose;
 
   return (
-    <Container>
-      <div className="flex flex-col gap-8">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-2xl font-bold tracking-tight">{t.writeTitle}</h1>
-          <p className="text-sm text-foreground/70">{t.writeIntro}</p>
-        </div>
+    <>
+      <ArticleEditor
+        inReplyTo={replyTarget?.objectIri}
+        replyToHref={
+          replyTarget ? humanObjectUrl(replyTarget.objectIri) : undefined
+        }
+      />
 
-        <EditorForm
-          inReplyTo={replyTarget?.objectIri}
-          replyToHref={
-            replyTarget ? humanObjectUrl(replyTarget.objectIri) : undefined
-          }
-        />
-
-        {drafts.length > 0 && (
-          <section className="flex flex-col gap-2 border-t border-black/10 pt-6 dark:border-white/15">
+      {drafts.length > 0 && (
+        <Container>
+          <section className="flex flex-col gap-2">
             <h2 className="text-lg font-semibold">{t.drafts}</h2>
             <ul className="flex flex-col gap-1 text-sm">
               {drafts.map((d) => (
@@ -70,8 +65,8 @@ export default async function ComposePage({
               ))}
             </ul>
           </section>
-        )}
-      </div>
-    </Container>
+        </Container>
+      )}
+    </>
   );
 }

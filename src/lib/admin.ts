@@ -14,7 +14,7 @@ type SessionUser = NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>;
  */
 export async function requireAdmin(): Promise<SessionUser> {
   const user = await getCurrentUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/");
   if (user.role !== "admin") redirect("/");
   return user;
 }

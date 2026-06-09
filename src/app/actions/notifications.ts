@@ -24,7 +24,7 @@ export async function saveNotificationSettingsAction(
   formData: FormData,
 ): Promise<void> {
   const user = await getCurrentUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/");
 
   for (const type of INTERACTION_NOTIF_TYPES) {
     const channel = formData.get(`channel_${type}`) as NotifChannel | null;
@@ -46,7 +46,7 @@ export async function saveNotificationSettingsAction(
 /** Marque toutes les notifications non lues de l'utilisateur comme lues (§2.6). */
 export async function markAllNotificationsReadAction(): Promise<void> {
   const user = await getCurrentUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/");
 
   await db
     .update(notifications)
@@ -67,6 +67,6 @@ export async function markAllNotificationsReadAction(): Promise<void> {
  */
 export async function refreshNotificationsAction(): Promise<void> {
   const user = await getCurrentUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/");
   revalidatePath("/notifications");
 }

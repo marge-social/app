@@ -35,7 +35,7 @@ interface ProfileParams {
 /**
  * Segment racine : un profil `/@handle` (préfixe « @ ») OU une page de contenu
  * éditable `/slug` (sans « @ », ex. `/mentions-legales`). Les routes statiques
- * (`/login`, `/feeds`…) priment sur cette route dynamique.
+ * (`/signup`, `/feeds`…) priment sur cette route dynamique.
  */
 export async function generateMetadata({
   params,
@@ -212,7 +212,7 @@ export default async function ProfilePage({ params }: ProfileParams) {
           )}
           {!isSelf && !viewer && (
             <p className="mt-2 text-sm text-foreground/60">
-              <Link href="/login" className="underline">
+              <Link href="/" className="underline">
                 {t.loginToFollowLink}
               </Link>{" "}
               {t.loginToFollowSuffix}

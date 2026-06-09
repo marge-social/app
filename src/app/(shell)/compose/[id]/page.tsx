@@ -4,7 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { db } from "@/db";
 import { articles } from "@/db/schema";
 import { Container } from "@/components/Container";
-import { EditorForm } from "@/components/EditorForm";
+import { ArticleEditor } from "@/components/editor/ArticleEditor";
 import { deleteArticleAction } from "@/app/actions/articles";
 import { getCurrentUser } from "@/lib/auth";
 import { articleUrl } from "@/lib/config";
@@ -16,7 +16,7 @@ interface EditParams {
 
 export default async function EditArticlePage({ params }: EditParams) {
   const user = await getCurrentUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/");
   const { id } = await params;
 
   const article = await db.query.articles.findFirst({
@@ -29,45 +29,40 @@ export default async function EditArticlePage({ params }: EditParams) {
   const t = dict.compose;
 
   return (
-    <Container>
-      <div className="flex flex-col gap-6">
-        <div className="flex items-center justify-between gap-4">
-          <h1 className="text-2xl font-bold tracking-tight">
-            {published ? t.editText : t.editDraft}
-          </h1>
-          {published && (
+    <>
+      <ArticleEditor
+        article={{
+          id: article.id,
+          title: article.title,
+          summary: article.summary,
+          contentMarkdown: article.contentMarkdown,
+          status: article.status,
+        }}
+      />
+
+      <Container>
+        <div className="flex items-center justify-between gap-4 border-t border-rule pt-6">
+          {published ? (
             <Link
               href={articleUrl(user.handle, article.slug)}
               className="text-sm underline"
             >
               {t.viewPublicPage}
             </Link>
+          ) : (
+            <span />
           )}
+          <form action={deleteArticleAction}>
+            <input type="hidden" name="id" value={article.id} />
+            <button
+              type="submit"
+              className="rounded border border-red-500/40 px-3 py-1.5 text-sm text-red-700 hover:bg-red-500/10 dark:text-red-300"
+            >
+              {t.deleteText}
+            </button>
+          </form>
         </div>
-
-        <EditorForm
-          article={{
-            id: article.id,
-            title: article.title,
-            summary: article.summary,
-            contentMarkdown: article.contentMarkdown,
-            status: article.status,
-          }}
-        />
-
-        <form
-          action={deleteArticleAction}
-          className="border-t border-black/10 pt-6 dark:border-white/15"
-        >
-          <input type="hidden" name="id" value={article.id} />
-          <button
-            type="submit"
-            className="rounded border border-red-500/40 px-3 py-1.5 text-sm text-red-700 hover:bg-red-500/10 dark:text-red-300"
-          >
-            {t.deleteText}
-          </button>
-        </form>
-      </div>
-    </Container>
+      </Container>
+    </>
   );
 }
