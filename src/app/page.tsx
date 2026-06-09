@@ -4,8 +4,9 @@ import { articles, follows, posts } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { fediverseHandle } from "@/lib/config";
 import { buildFeed } from "@/lib/feed";
-import { DiscoverLanding } from "@/components/discover/DiscoverLanding";
+import { AppShell } from "@/components/AppShell";
 import { DiscoverShell } from "@/components/discover/DiscoverShell";
+import { Portal } from "@/components/portal/Portal";
 import type { MeSummary } from "@/components/discover/LeftRail";
 
 const PAGE_SIZE = 20;
@@ -56,8 +57,9 @@ async function loadMeSummary(user: {
 
 /**
  * Home « Découvrir » — écran principal. Connecté : carte profil réelle (rail
- * gauche) + fil unifié réel (`buildFeed`). Déconnecté : atterrissage + connexion.
- * Aucune donnée de démo : le contenu provient de la base / fédération.
+ * gauche) + fil unifié réel (`buildFeed`) sous le chrome global. Déconnecté :
+ * portail visiteur plein écran (manifeste + carte d'authentification), autonome
+ * du chrome global. Aucune donnée de démo : le contenu provient de la base.
  */
 export default async function HomePage({
   searchParams,
@@ -65,7 +67,7 @@ export default async function HomePage({
   searchParams: Promise<{ n?: string }>;
 }) {
   const user = await getCurrentUser();
-  if (!user) return <DiscoverLanding />;
+  if (!user) return <Portal />;
 
   const { n } = await searchParams;
   const pages = Math.max(1, Math.min(20, Number.parseInt(n ?? "1", 10) || 1));
@@ -80,11 +82,13 @@ export default async function HomePage({
   ]);
 
   return (
-    <DiscoverShell
-      me={me}
-      entries={entries}
-      hasMore={hasMore}
-      nextHref={`/?n=${pages + 1}`}
-    />
+    <AppShell>
+      <DiscoverShell
+        me={me}
+        entries={entries}
+        hasMore={hasMore}
+        nextHref={`/?n=${pages + 1}`}
+      />
+    </AppShell>
   );
 }

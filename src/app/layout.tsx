@@ -1,10 +1,8 @@
 import type { Metadata } from "next";
 import { Inter_Tight, JetBrains_Mono, Newsreader } from "next/font/google";
 import "./globals.css";
-import { AppHeader } from "@/components/AppHeader";
 import { I18nProvider } from "@/components/I18nProvider";
 import { MatomoAnalytics } from "@/components/MatomoAnalytics";
-import { SiteFooter } from "@/components/SiteFooter";
 import { getServerI18n } from "@/lib/i18n/server";
 
 // Typographie du design : Newsreader (sérif éditoriale — titres, chapôs, notes),
@@ -61,17 +59,10 @@ export default async function RootLayout({
           {matomoUrl && matomoSiteId && (
             <MatomoAnalytics url={matomoUrl} siteId={matomoSiteId} />
           )}
-          <a href="#main-content" className="skip-link">
-            {dict.common.skipToContent}
-          </a>
-          <AppHeader />
-          {/* Conteneur pleine largeur : chaque page maîtrise sa propre grille.
-              La home rend le shell « Découvrir » 3 colonnes ; les autres pages
-              fournissent leur conteneur. */}
-          <main id="main-content" tabIndex={-1} className="w-full flex-1">
-            {children}
-          </main>
-          <SiteFooter />
+          {/* Le chrome global (en-tête + pied) vit dans le layout du groupe
+              `(shell)` ; le portail visiteur (home déconnectée) s'en affranchit
+              pour fournir son propre en-tête/pied plein écran. */}
+          {children}
         </I18nProvider>
       </body>
     </html>

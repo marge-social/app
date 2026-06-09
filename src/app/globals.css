@@ -1887,6 +1887,463 @@ body {
 }
 
 /* ───────────────────────────────────────────────────────────────────────────
+   Portail visiteur — manifeste + carte d'authentification à onglets.
+   Écran plein, autonome du chrome global (en-tête logo seul + pied dédié).
+   Valeurs portées au pixel près depuis la maquette « Portail ».
+─────────────────────────────────────────────────────────────────────────── */
+.portal {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+}
+
+/* En-tête : logo seul, sticky, translucide + blur. */
+.portal-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  padding: 0 40px;
+  background: rgba(251, 248, 243, 0.86);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--rule);
+}
+
+/* Contenu centré entre en-tête et pied. */
+.portal-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.portal-grid {
+  width: 100%;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: clamp(40px, 7vh, 96px) 40px clamp(56px, 9vh, 120px);
+  display: grid;
+  grid-template-columns: minmax(0, 1.06fr) minmax(380px, 0.94fr);
+  gap: clamp(48px, 7vw, 104px);
+  align-items: center;
+}
+
+/* ─── Colonne manifeste ──────────────────────────────────── */
+.portal-manifesto {
+  display: flex;
+  flex-direction: column;
+}
+.portal-title {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: clamp(38px, 4.3vw, 58px);
+  line-height: 1.1;
+  letter-spacing: -0.018em;
+  color: var(--ink);
+  margin: 0;
+}
+.portal-lede {
+  font-family: var(--serif);
+  font-size: 18px;
+  line-height: 1.55;
+  color: var(--ink-2);
+  margin: 22px 0 0;
+}
+.portal-beta {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-top: 28px;
+  padding: 13px 16px;
+  background: var(--brick-soft);
+  border-radius: 8px;
+  color: var(--brick);
+}
+.portal-beta-tag {
+  flex-shrink: 0;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: #fff;
+  background: var(--brick);
+  padding: 3px 6px;
+  border-radius: 4px;
+}
+.portal-beta-text {
+  font-size: 13px;
+  line-height: 1.45;
+}
+.portal-signature {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+  margin-top: 28px;
+  padding-top: 18px;
+  border-top: 1px solid var(--rule);
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+.portal-sig-dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--ink-4);
+  flex-shrink: 0;
+}
+
+/* ─── Colonne carte d'authentification ───────────────────── */
+.portal-card {
+  background: #fff;
+  border: 1px solid var(--rule);
+  border-radius: 14px;
+  padding: 30px;
+  box-shadow: 0 22px 48px -34px rgba(42, 37, 32, 0.4);
+}
+
+/* Onglets segmentés. */
+.portal-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  padding: 3px;
+  background: var(--bg-soft);
+  border-radius: 9px;
+  margin-bottom: 24px;
+}
+.portal-tab {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-3);
+  padding: 8px 10px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition:
+    background 0.12s,
+    color 0.12s,
+    box-shadow 0.12s;
+}
+.portal-tab:hover {
+  color: var(--ink-2);
+}
+.portal-tab[aria-selected="true"] {
+  background: #fff;
+  color: var(--ink);
+  box-shadow: 0 1px 2px rgba(42, 37, 32, 0.1);
+}
+
+.portal-card-head {
+  margin-bottom: 22px;
+}
+.portal-card-title {
+  font-family: var(--serif);
+  font-size: 23px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--ink);
+  margin: 0;
+}
+.portal-card-sub {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ink-3);
+  margin: 6px 0 0;
+}
+
+/* Formulaire + champs. */
+.portal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.portal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.portal-label-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.portal-label {
+  font-family: var(--sans);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+.portal-forgot {
+  font-size: 12px;
+  color: var(--brick);
+  text-decoration: none;
+}
+.portal-forgot:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.portal-input {
+  width: 100%;
+  height: 42px;
+  background: var(--bg);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  padding: 0 12px;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--ink);
+  outline: none;
+  transition:
+    border-color 0.12s,
+    box-shadow 0.12s,
+    background 0.12s;
+}
+.portal-input::placeholder {
+  color: var(--ink-4);
+}
+.portal-input:focus,
+.portal-handle:focus-within,
+.portal-pw:focus-within {
+  border-color: var(--brick);
+  box-shadow: 0 0 0 3px var(--brick-soft);
+  background: #fff;
+}
+.portal-hint {
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: var(--ink-3);
+}
+
+/* Champ composite « handle ». */
+.portal-handle {
+  display: flex;
+  align-items: center;
+  height: 42px;
+  background: var(--bg);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  overflow: hidden;
+  transition:
+    border-color 0.12s,
+    box-shadow 0.12s,
+    background 0.12s;
+}
+.portal-handle-at {
+  padding: 0 2px 0 12px;
+  color: var(--ink-3);
+  font-size: 14px;
+}
+.portal-handle-input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  padding: 0 8px 0 2px;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--ink);
+  outline: none;
+}
+.portal-handle-input::placeholder {
+  color: var(--ink-4);
+}
+.portal-handle-suffix {
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  border-left: 1px solid var(--rule);
+  background: var(--bg-soft);
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+/* Champ mot de passe + bascule Afficher/Masquer. */
+.portal-pw {
+  display: flex;
+  align-items: center;
+  height: 42px;
+  background: var(--bg);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  overflow: hidden;
+  transition:
+    border-color 0.12s,
+    box-shadow 0.12s,
+    background 0.12s;
+}
+.portal-pw input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  padding: 0 4px 0 12px;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--ink);
+  outline: none;
+}
+.portal-pw-toggle {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 0 12px;
+  height: 100%;
+  font-family: inherit;
+  font-size: 11.5px;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+.portal-pw-toggle:hover {
+  color: var(--ink);
+}
+
+/* Bouton submit. */
+.portal-submit {
+  appearance: none;
+  width: 100%;
+  height: 46px;
+  margin-top: 4px;
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: #fbf8f3;
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition:
+    background 0.12s,
+    opacity 0.12s;
+}
+.portal-submit:hover {
+  background: #000;
+  border-color: #000;
+}
+.portal-submit:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.portal-submit svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* Mentions légales sous le bouton. */
+.portal-legal {
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--ink-4);
+  margin: 2px 0 0;
+}
+.portal-legal a {
+  color: var(--ink-3);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.portal-legal a:hover {
+  color: var(--ink-2);
+}
+
+/* Bandeau d'erreur. */
+.portal-error {
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--brick);
+  background: var(--brick-soft);
+  border-radius: 8px;
+  padding: 9px 12px;
+}
+
+/* ─── Pied dédié ─────────────────────────────────────────── */
+.portal-footer {
+  height: 60px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 0 40px;
+  border-top: 1px solid var(--rule);
+}
+.portal-footer-left {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  min-width: 0;
+}
+.portal-footer-brand {
+  font-family: var(--serif);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink-4);
+}
+.portal-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.portal-footer-links a {
+  font-size: 12px;
+  color: var(--ink-3);
+  text-decoration: none;
+}
+.portal-footer-links a:hover {
+  color: var(--ink);
+}
+
+/* ─── Responsive ─────────────────────────────────────────── */
+@media (max-width: 980px) {
+  .portal-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: clamp(36px, 6vh, 56px);
+    max-width: 560px;
+  }
+  .portal-manifesto {
+    text-align: center;
+    align-items: center;
+  }
+  .portal-signature {
+    justify-content: center;
+  }
+}
+@media (max-width: 720px) {
+  .portal-header,
+  .portal-footer {
+    padding-inline: 20px;
+  }
+  .portal-grid {
+    padding: 36px 20px 48px;
+  }
+  .portal-card {
+    padding: 22px;
+  }
+  .portal-footer {
+    height: auto;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding-block: 16px;
+  }
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
    Rendu de lecture des articles (existant) — conservé tel quel.
 ─────────────────────────────────────────────────────────────────────────── */
 .prose-marge {
