@@ -63,6 +63,50 @@ const fr = {
     submitLogin: "Se connecter",
     pending: "Patiente…",
   },
+  portal: {
+    // En-tête / pied autonomes du portail visiteur.
+    skipToCard: "Aller au formulaire de connexion",
+    // Colonne manifeste.
+    manifestoTitle: "Un média social réinventé.",
+    manifestoP1:
+      "Marge est un média social à contre-courant de l’économie attentionnelle : on y publie des contenus longs, on agrège des flux qu’on a choisis, et tout est nativement fédéré et interopérable.",
+    manifestoP2:
+      "Pas de manipulation cachée. Vous réglez vous-même ce qui remonte dans votre fil, et chaque texte affiche la raison concrète de sa présence.",
+    betaTag: "BÊTA",
+    betaText:
+      "En ce moment, on pose les fondations. Inscrivez-vous et expérimentez avec nous.",
+    signature: "Contenus longs d’abord · Flux choisis · Algorithme transparent",
+    // Carte d’authentification — onglets.
+    tabSignup: "Créer un compte",
+    tabLogin: "Se connecter",
+    // Mode inscription.
+    signupHeading: "Créer un compte",
+    signupSubtitle:
+      "Quelques minutes suffisent. Vous pourrez tout affiner ensuite.",
+    displayName: "Nom affiché",
+    displayNamePlaceholder: "Camille Roussel",
+    handle: "Handle",
+    handleHint:
+      "Lettres minuscules, chiffres, tirets. Formera ton identité fédérée.",
+    email: "Email",
+    emailPlaceholder: "camille@exemple.fr",
+    password: "Mot de passe",
+    passwordHint: "Au moins 8 caractères.",
+    showPassword: "Afficher",
+    hidePassword: "Masquer",
+    submitSignup: "Créer mon compte",
+    legalBefore: "En créant un compte, vous acceptez la",
+    legalCharter: "charte",
+    legalAnd: "et la",
+    legalPrivacy: "politique de confidentialité",
+    legalAfter: "de Marge.",
+    // Mode connexion.
+    loginHeading: "Se connecter",
+    loginSubtitle: "Heureux de vous revoir sur Marge.",
+    identifier: "Email ou handle",
+    forgotPassword: "Mot de passe oublié ?",
+    submitLogin: "Se connecter",
+  },
   feed: {
     sources: {
       local: "compte Marge",
