@@ -1,0 +1,1 @@
+ALTER TABLE "remote_actors" ADD COLUMN "summary" text;

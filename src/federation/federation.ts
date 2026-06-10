@@ -42,7 +42,7 @@ import {
   avatarUrl,
   noteUrl,
 } from "@/lib/config";
-import { effectiveSummary } from "@/lib/markdown";
+import { effectiveSummary, htmlToText } from "@/lib/markdown";
 import {
   type MediaView,
   loadMediaForArticles,
@@ -778,6 +778,7 @@ async function cacheRemoteActor(actor: Actor): Promise<NotificationActor> {
   } catch {
     // Avatar indisponible : dégradation gracieuse.
   }
+  const summary = htmlToText(actor.summary?.toString() ?? "").slice(0, 280) || null;
   await db
     .insert(remoteActors)
     .values({
@@ -788,6 +789,7 @@ async function cacheRemoteActor(actor: Actor): Promise<NotificationActor> {
       sharedInboxUrl: actor.endpoints?.sharedInbox?.href ?? null,
       url: actor.url instanceof URL ? actor.url.href : null,
       iconUrl,
+      summary,
     })
     .onConflictDoUpdate({
       target: remoteActors.uri,
@@ -797,6 +799,7 @@ async function cacheRemoteActor(actor: Actor): Promise<NotificationActor> {
         inboxUrl: actor.inboxId?.href ?? null,
         sharedInboxUrl: actor.endpoints?.sharedInbox?.href ?? null,
         iconUrl,
+        summary,
         fetchedAt: new Date(),
       },
     });

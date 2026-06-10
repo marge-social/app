@@ -97,6 +97,7 @@ export async function followRemoteActor(
     return { ok: false, error: "notAnAccount" };
   }
 
+  const summary = htmlToText(actor.summary?.toString() ?? "").slice(0, 280) || null;
   await db
     .insert(remoteActors)
     .values({
@@ -106,12 +107,14 @@ export async function followRemoteActor(
       inboxUrl: actor.inboxId.href,
       sharedInboxUrl: actor.endpoints?.sharedInbox?.href ?? null,
       url: actor.url instanceof URL ? actor.url.href : null,
+      summary,
     })
     .onConflictDoUpdate({
       target: remoteActors.uri,
       set: {
         inboxUrl: actor.inboxId.href,
         name: actor.name?.toString() ?? null,
+        summary,
         fetchedAt: new Date(),
       },
     });

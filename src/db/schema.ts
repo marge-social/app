@@ -457,6 +457,9 @@ export const remoteActors = pgTable("remote_actors", {
   sharedInboxUrl: text("shared_inbox_url"),
   url: text("url"),
   iconUrl: text("icon_url"),
+  // Bio / présentation de l'acteur (`summary` AP, HTML aplati en texte). Affichée
+  // dans l'encart d'auteur du fil. Peuplée au cache ; null si non fournie.
+  summary: text("summary"),
   fetchedAt: timestamp("fetched_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

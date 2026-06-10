@@ -138,6 +138,8 @@ export function FeedEntryCard({
             name={name}
             color={colorFor(e.authorHandle ?? e.authorLabel)}
             src={e.avatarUrl}
+            size={46}
+            className="author-dot author-dot-lg"
           />
           <div className="min-w-0">
             <div className="flex flex-wrap items-baseline gap-x-1.5">
@@ -150,6 +152,7 @@ export function FeedEntryCard({
               )}
               <span className="pub-time">· {relativeTime(e.date, locale)}</span>
             </div>
+            {e.authorBio ? <p className="author-bio">{e.authorBio}</p> : null}
             <div className="author-rep">
               <span>{dict.sources[e.source]}</span>
               {e.readingMinutes ? (
