@@ -2,12 +2,17 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { posts } from "@/db/schema";
+import { media, posts } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { renderMarkdown } from "@/lib/markdown";
 import { persistMedia, processUpload } from "@/lib/media";
-import { deliverCreateNote } from "@/federation/delivery";
+import {
+  deliverCreateNote,
+  deliverDeleteNote,
+  deliverUpdateNote,
+} from "@/federation/delivery";
 
 export interface PostFormState {
   /** Clé i18n (dict.errors) — traduite au rendu via useActionMessage(). */
@@ -80,4 +85,70 @@ export async function createPostAction(
 
   revalidatePath("/");
   return {};
+}
+
+/**
+ * Édite un message court de l'utilisateur courant (texte seul — le média
+ * attaché est conservé tel quel en V1). Ré-applique le pipeline de rendu puis
+ * fédère un `Update(Note)` aux abonnés.
+ */
+export async function updatePostAction(
+  _prev: PostFormState,
+  formData: FormData,
+): Promise<PostFormState> {
+  const user = await getCurrentUser();
+  if (!user) redirect("/");
+
+  const id = (formData.get("id") as string) ?? "";
+  const contentMarkdown = ((formData.get("body") as string) ?? "").trim();
+
+  const existing = await db.query.posts.findFirst({
+    where: and(eq(posts.id, id), eq(posts.authorId, user.id)),
+  });
+  if (!existing) return { error: "notFound" };
+
+  // Un message peut être vide s'il porte un média (image seule).
+  if (!contentMarkdown) {
+    const attached = await db.query.media.findFirst({
+      where: eq(media.postId, existing.id),
+    });
+    if (!attached) return { error: "messageEmpty" };
+  }
+  if (contentMarkdown.length > MAX_LEN) {
+    return { error: "messageTooLong", errorParams: { n: MAX_LEN } };
+  }
+
+  const [updated] = await db
+    .update(posts)
+    .set({ contentMarkdown, contentHtml: renderMarkdown(contentMarkdown) })
+    .where(eq(posts.id, existing.id))
+    .returning();
+
+  // Fédération best-effort : l'édition a déjà réussi en base.
+  await deliverUpdateNote(user.handle, updated);
+
+  revalidatePath("/");
+  revalidatePath(`/@${user.handle}/notes/${existing.id}`);
+  return {};
+}
+
+/**
+ * Supprime un message court de l'utilisateur courant, avec émission d'un
+ * `Delete(Tombstone)` fédéré (même mécanique que les articles). Les médias
+ * attachés suivent en cascade (FK `media.post_id`).
+ */
+export async function deletePostAction(formData: FormData): Promise<void> {
+  const user = await getCurrentUser();
+  if (!user) redirect("/");
+
+  const id = (formData.get("id") as string) ?? "";
+  const existing = await db.query.posts.findFirst({
+    where: and(eq(posts.id, id), eq(posts.authorId, user.id)),
+  });
+  if (existing) {
+    await db.delete(posts).where(eq(posts.id, existing.id));
+    await deliverDeleteNote(user.handle, existing.id);
+    revalidatePath("/");
+  }
+  redirect("/");
 }

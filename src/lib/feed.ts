@@ -148,6 +148,13 @@ export interface FeedEntry {
   summary: string;
   /** Corps complet sanitisé (notes natives, affichées en entier). */
   contentHtml?: string;
+  /**
+   * Renseignés uniquement pour les notes locales du lecteur (`isOwn`) :
+   * permettent l'édition en place et la suppression depuis le fil.
+   */
+  postId?: string;
+  contentMarkdown?: string;
+  isOwn?: boolean;
   href: string;
   /** Lien interne (Next <Link>) vs externe (<a>). */
   internal: boolean;
@@ -294,6 +301,7 @@ export async function buildFeed(
       .select({
         id: posts.id,
         contentHtml: posts.contentHtml,
+        contentMarkdown: posts.contentMarkdown,
         publishedAt: posts.publishedAt,
         authorId: posts.authorId,
       })
@@ -315,6 +323,9 @@ export async function buildFeed(
         date: r.publishedAt,
         summary: "",
         contentHtml: r.contentHtml,
+        postId: r.id,
+        contentMarkdown: r.contentMarkdown,
+        isOwn: r.authorId === viewer.id,
         href: `/@${a.handle}/notes/${r.id}`,
         internal: true,
         source: "local",

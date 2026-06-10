@@ -1,6 +1,7 @@
 import {
   Article,
   Delete,
+  Note,
   Tombstone,
   Undo,
   Update,
@@ -12,6 +13,7 @@ import {
   buildCreateForArticle,
   buildCreateForNote,
   buildLike,
+  buildNoteObject,
   ensureFederationStorage,
   federation,
 } from "@/federation/federation";
@@ -78,6 +80,56 @@ export async function deliverCreateNote(
     );
   } catch (err) {
     console.error("[federation] deliverCreateNote failed:", err);
+  }
+}
+
+/** Émet `Update(Note)` après édition d'un message court. */
+export async function deliverUpdateNote(
+  handle: string,
+  post: PostRow,
+): Promise<void> {
+  try {
+    await ensureFederationStorage();
+    const ctx = context();
+    const attachments = (await loadMediaForPosts([post.id])).get(post.id) ?? [];
+    const object = buildNoteObject(ctx, handle, post, attachments);
+    await ctx.sendActivity(
+      { identifier: handle },
+      "followers",
+      new Update({
+        id: new URL(`${object.id?.href}#update`),
+        actor: ctx.getActorUri(handle),
+        object,
+      }),
+    );
+  } catch (err) {
+    console.error("[federation] deliverUpdateNote failed:", err);
+  }
+}
+
+/** Émet `Delete(Tombstone)` après suppression d'un message court. */
+export async function deliverDeleteNote(
+  handle: string,
+  postId: string,
+): Promise<void> {
+  try {
+    await ensureFederationStorage();
+    const ctx = context();
+    const objectUri = ctx.getObjectUri(Note, {
+      identifier: handle,
+      id: postId,
+    });
+    await ctx.sendActivity(
+      { identifier: handle },
+      "followers",
+      new Delete({
+        id: new URL(`${objectUri.href}#delete`),
+        actor: ctx.getActorUri(handle),
+        object: new Tombstone({ id: objectUri }),
+      }),
+    );
+  } catch (err) {
+    console.error("[federation] deliverDeleteNote failed:", err);
   }
 }
 

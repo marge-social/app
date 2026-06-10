@@ -1,7 +1,11 @@
 import { marked } from "marked";
+import markedLinkifyIt from "marked-linkify-it";
 import DOMPurify from "isomorphic-dompurify";
 
 marked.setOptions({ gfm: true, breaks: false });
+// Auto-lien des URL nues, y compris sans protocole (« lemonde.fr/idees ») —
+// linkify-it s'appuie sur la vraie liste des TLD (« feed.ts » ne lie pas).
+marked.use(markedLinkifyIt());
 
 /** Convertit du Markdown en HTML sanitisé (sûr à injecter via dangerouslySet). */
 export function renderMarkdown(markdown: string): string {
