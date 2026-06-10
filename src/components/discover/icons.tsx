@@ -57,6 +57,13 @@ export const Icons: Record<string, ReactElement> = {
       <path d="M9 4l4 4-4 4" />
     </svg>
   ),
+  image: (
+    <svg {...base} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="3" width="12" height="10" rx="1.5" />
+      <circle cx="5.5" cy="6.5" r="1" />
+      <path d="m3 11 3-2.5 2.5 2 2-1.5L13 11" />
+    </svg>
+  ),
   upload: (
     <svg {...base} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
       <path d="M8 10.5V2.5" />

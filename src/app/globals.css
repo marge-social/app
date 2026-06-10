@@ -1513,14 +1513,6 @@ body {
   font-weight: 600;
   margin-bottom: 2px;
 }
-.composer-meta .pip {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--brick);
-  display: inline-block;
-  flex-shrink: 0;
-}
 .composer-meta .save {
   margin-left: auto;
   font-weight: 500;
@@ -1534,26 +1526,6 @@ body {
   color: var(--check);
   font-weight: 500;
   font-style: normal;
-}
-.composer-title {
-  font-family: var(--serif);
-  font-size: 26px;
-  font-weight: 600;
-  line-height: 1.2;
-  letter-spacing: -0.01em;
-  color: var(--ink);
-  border: 0;
-  outline: 0;
-  background: transparent;
-  width: 100%;
-  padding: 2px 0 0;
-  resize: none;
-  overflow: hidden;
-  min-height: 1.2em;
-}
-.composer-title::placeholder {
-  color: var(--ink-4);
-  font-weight: 500;
 }
 .composer-body {
   font-family: var(--serif);
@@ -1583,44 +1555,11 @@ body {
   border-top: 1px dashed var(--rule);
   flex-wrap: wrap;
 }
-.composer-fmt-pick {
-  display: inline-flex;
-  gap: 0;
-  background: var(--bg-soft);
-  border-radius: 7px;
-  padding: 2px;
-}
-.composer-fmt-pick button {
-  appearance: none;
-  border: 0;
-  background: transparent;
-  padding: 4px 10px;
-  font-size: 11.5px;
-  color: var(--ink-2);
-  border-radius: 5px;
-  cursor: pointer;
-  font-weight: 500;
-  font-family: inherit;
-}
-.composer-fmt-pick button:hover {
-  color: var(--ink);
-}
-.composer-fmt-pick button[aria-selected="true"] {
-  background: #fff;
-  color: var(--ink);
-  box-shadow: 0 1px 2px rgba(42, 37, 32, 0.08);
-}
 .composer-actions {
   margin-left: auto;
   display: flex;
   gap: 6px;
   align-items: center;
-}
-.composer-hint {
-  font-size: 11.5px;
-  color: var(--ink-3);
-  font-style: italic;
-  margin-right: 4px;
 }
 .composer-action {
   appearance: none;
@@ -1672,6 +1611,103 @@ body {
   background: transparent;
   color: var(--ink-4);
   border-color: var(--rule);
+}
+.composer-media {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 4px 0 2px;
+}
+.media-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-soft);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  padding: 5px 6px 5px 8px;
+  max-width: 240px;
+}
+.media-chip.has-thumb {
+  padding-left: 5px;
+}
+.media-thumb {
+  width: 30px;
+  height: 30px;
+  border-radius: 5px;
+  flex-shrink: 0;
+  background-size: cover;
+  background-position: center;
+  border: 1px solid var(--rule);
+}
+.media-ic {
+  width: 26px;
+  height: 26px;
+  border-radius: 5px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border: 1px solid var(--rule);
+  color: var(--ink-3);
+  font-size: 11px;
+}
+.media-name {
+  font-size: 12px;
+  color: var(--ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.media-x {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0 2px;
+  flex-shrink: 0;
+  border-radius: 4px;
+  transition:
+    color 0.12s,
+    background 0.12s;
+}
+.media-x:hover {
+  color: var(--brick);
+  background: var(--brick-soft);
+}
+/* Texte alternatif d'une image jointe (hors prototype : exigé par le cahier
+   médias §4.1 — apparaît sans étape dès qu'une image est choisie). */
+.composer-alt {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 2px 0;
+}
+.composer-alt label {
+  font-size: 11px;
+  color: var(--ink-3);
+}
+.composer-alt input {
+  width: 100%;
+  border: 1px solid var(--rule);
+  background: var(--bg-soft);
+  border-radius: 7px;
+  padding: 6px 10px;
+  font-size: 12.5px;
+  color: var(--ink);
+  outline: 0;
+}
+.composer-alt input:focus {
+  border-color: #d6ccb8;
+}
+.composer-error {
+  font-size: 12.5px;
+  color: var(--brick);
+  margin: 2px 0 0;
 }
 
 /* ─── Modale (note algorithmique) ────────────────────────── */
