@@ -130,7 +130,11 @@ export function FeedEntryCard({
           {label}
         </span>
         <div className="author-row">
-          <Avatar name={name} color={colorFor(e.authorHandle ?? e.authorLabel)} />
+          <Avatar
+            name={name}
+            color={colorFor(e.authorHandle ?? e.authorLabel)}
+            src={e.avatarUrl}
+          />
           <div className="min-w-0">
             <div className="flex flex-wrap items-baseline gap-x-1.5">
               {e.authorHandle ? (

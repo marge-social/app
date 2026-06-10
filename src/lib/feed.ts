@@ -119,6 +119,14 @@ function remoteToMediaViews(
 export type FeedEntryKind = "note" | "article" | "remote" | "rss";
 
 /**
+ * URL d'avatar d'un compte local. `avatarUpdatedAt` sert de garde (null = pas
+ * d'avatar) et de jeton de cache-busting — même convention que la page profil.
+ */
+function localAvatarUrl(handle: string, updatedAt: Date | null): string | null {
+  return updatedAt ? `/api/avatar/${handle}?v=${updatedAt.getTime()}` : null;
+}
+
+/**
  * Une réponse rattachée à une entrée du fil via `inReplyTo` : commentaire court
  * (§2.2, `contentHtml` affiché en entier) ou réponse-billet (§2.3, `title`
  * renseigné → rendue comme référence titrée vers la publication autonome).
@@ -143,6 +151,8 @@ export interface FeedEntry {
   authorLabel: string;
   /** Handle local de l'auteur (pour l'avatar) ; absent pour distant/RSS. */
   authorHandle?: string;
+  /** Photo de profil de l'auteur (local ou distant) ; null = pastille initiales. */
+  avatarUrl?: string | null;
   date: Date;
   /** Aperçu honnête (article/distant/RSS). */
   summary: string;
@@ -203,7 +213,12 @@ export async function buildFeed(
 
   // Comptes Marge suivis + soi-même (pour voir ses propres publications).
   const localFollows = await db
-    .select({ id: users.id, handle: users.handle, name: users.displayName })
+    .select({
+      id: users.id,
+      handle: users.handle,
+      name: users.displayName,
+      avatarUpdatedAt: users.avatarUpdatedAt,
+    })
     .from(follows)
     .innerJoin(users, eq(users.id, follows.followingUserId))
     .where(
@@ -214,13 +229,26 @@ export async function buildFeed(
       ),
     );
 
-  const localAccounts = new Map<string, { handle: string; name: string }>();
+  const [viewerRow] = await db
+    .select({ avatarUpdatedAt: users.avatarUpdatedAt })
+    .from(users)
+    .where(eq(users.id, viewer.id));
+
+  const localAccounts = new Map<
+    string,
+    { handle: string; name: string; avatarUrl: string | null }
+  >();
   localAccounts.set(viewer.id, {
     handle: viewer.handle,
     name: viewer.displayName,
+    avatarUrl: localAvatarUrl(viewer.handle, viewerRow?.avatarUpdatedAt ?? null),
   });
   for (const f of localFollows) {
-    localAccounts.set(f.id, { handle: f.handle, name: f.name });
+    localAccounts.set(f.id, {
+      handle: f.handle,
+      name: f.name,
+      avatarUrl: localAvatarUrl(f.handle, f.avatarUpdatedAt),
+    });
   }
   const localIds = [...localAccounts.keys()];
 
@@ -230,6 +258,7 @@ export async function buildFeed(
       uri: follows.followingUri,
       name: remoteActors.name,
       handle: remoteActors.handle,
+      iconUrl: remoteActors.iconUrl,
     })
     .from(follows)
     .leftJoin(remoteActors, eq(remoteActors.uri, follows.followingUri))
@@ -278,6 +307,7 @@ export async function buildFeed(
         title: r.title,
         authorLabel: `${a.name} · ${fediverseHandle(a.handle)}`,
         authorHandle: a.handle,
+        avatarUrl: a.avatarUrl,
         date: r.publishedAt ?? new Date(0),
         summary: effectiveSummary(r.content, r.summary),
         href: `/@${a.handle}/${r.slug}`,
@@ -320,6 +350,7 @@ export async function buildFeed(
         title: null,
         authorLabel: `${a.name} · ${fediverseHandle(a.handle)}`,
         authorHandle: a.handle,
+        avatarUrl: a.avatarUrl,
         date: r.publishedAt,
         summary: "",
         contentHtml: r.contentHtml,
@@ -365,6 +396,7 @@ export async function buildFeed(
     const labelByUri = new Map(
       remoteFollows.map((f) => [f.uri, f.handle ?? f.name ?? f.uri]),
     );
+    const iconByUri = new Map(remoteFollows.map((f) => [f.uri, f.iconUrl]));
     for (const r of rows) {
       const text = r.contentHtml ? htmlToText(r.contentHtml) : "";
       entries.push({
@@ -372,6 +404,7 @@ export async function buildFeed(
         kind: "remote",
         title: r.name,
         authorLabel: labelByUri.get(r.attributedToUri) ?? r.attributedToUri,
+        avatarUrl: iconByUri.get(r.attributedToUri) ?? null,
         date: r.publishedAt ?? r.fetchedAt,
         summary:
           r.summary ??
@@ -490,6 +523,7 @@ export async function buildFeed(
             content: articles.contentMarkdown,
             handle: users.handle,
             name: users.displayName,
+            avatarUpdatedAt: users.avatarUpdatedAt,
           })
           .from(articles)
           .innerJoin(users, eq(users.id, articles.authorId))
@@ -510,6 +544,7 @@ export async function buildFeed(
             contentHtml: posts.contentHtml,
             handle: users.handle,
             name: users.displayName,
+            avatarUpdatedAt: users.avatarUpdatedAt,
           })
           .from(posts)
           .innerJoin(users, eq(users.id, posts.authorId))
@@ -531,6 +566,7 @@ export async function buildFeed(
             author: remoteObjects.attributedToUri,
             actorHandle: remoteActors.handle,
             actorName: remoteActors.name,
+            actorIcon: remoteActors.iconUrl,
           })
           .from(remoteObjects)
           .leftJoin(
@@ -559,6 +595,7 @@ export async function buildFeed(
           title: art.title,
           authorLabel: `${art.name} · ${fediverseHandle(art.handle)}`,
           authorHandle: art.handle,
+          avatarUrl: localAvatarUrl(art.handle, art.avatarUpdatedAt),
           date: a.date,
           summary: effectiveSummary(art.content, art.summary),
           href: `/@${art.handle}/${art.slug}`,
@@ -584,6 +621,7 @@ export async function buildFeed(
           title: null,
           authorLabel: `${note.name} · ${fediverseHandle(note.handle)}`,
           authorHandle: note.handle,
+          avatarUrl: localAvatarUrl(note.handle, note.avatarUpdatedAt),
           date: a.date,
           summary: "",
           contentHtml: note.contentHtml,
@@ -609,6 +647,7 @@ export async function buildFeed(
           kind: "remote",
           title: rem.name,
           authorLabel: rem.actorHandle ?? rem.actorName ?? rem.author,
+          avatarUrl: rem.actorIcon ?? null,
           date: a.date,
           summary:
             rem.summary ??
