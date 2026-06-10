@@ -66,6 +66,10 @@
   --rail-w: 272px;
   --rail-left-w: 260px;
   --header-h: 60px;
+
+  /* Boîte partagée header/grille : le contenu du header s'aligne sur le fil. */
+  --shell-max-w: 1440px;
+  --shell-pad-x: 36px;
 }
 
 body {
@@ -117,7 +121,9 @@ body {
   border-bottom: 1px solid var(--rule);
   display: flex;
   align-items: center;
-  padding: 0 36px;
+  /* Fond/filet pleine largeur, mais contenu aligné sur la boîte du fil
+     (.grid-shell) : marge auto recalculée dans le padding. */
+  padding: 0 max(var(--shell-pad-x), calc((100% - var(--shell-max-w)) / 2 + var(--shell-pad-x)));
   gap: 28px;
 }
 .brand {
@@ -346,9 +352,9 @@ body {
 
 /* ─── Grille ──────────────────────────────────────────────── */
 .grid-shell {
-  max-width: 1440px;
+  max-width: var(--shell-max-w);
   margin: 0 auto;
-  padding: 56px 36px 100px;
+  padding: 56px var(--shell-pad-x) 100px;
   display: grid;
   grid-template-columns: var(--rail-left-w) minmax(0, 1fr) var(--rail-w);
   gap: 72px;
