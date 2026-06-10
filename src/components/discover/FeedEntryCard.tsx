@@ -4,6 +4,7 @@ import type { Messages } from "@/lib/i18n/dictionaries";
 import type { Locale } from "@/lib/i18n/config";
 import { relativeTime } from "@/lib/relative-time";
 import { Attachments } from "@/components/Attachments";
+import { LinkCard } from "@/components/LinkCard";
 import { NoteBody } from "@/components/NoteBody";
 import { Avatar } from "@/components/discover/Avatar";
 import { Icons } from "@/components/discover/icons";
@@ -160,12 +161,15 @@ export function FeedEntryCard({
       </div>
 
       {isNote ? (
-        <NoteBody
-          html={e.contentHtml ?? ""}
-          postId={e.postId}
-          contentMarkdown={e.contentMarkdown}
-          canEdit={e.isOwn}
-        />
+        <>
+          <NoteBody
+            html={e.contentHtml ?? ""}
+            postId={e.postId}
+            contentMarkdown={e.contentMarkdown}
+            canEdit={e.isOwn}
+          />
+          {e.linkPreview && <LinkCard p={e.linkPreview} />}
+        </>
       ) : (
         <>
           <TitleLink e={e} dict={dict} />

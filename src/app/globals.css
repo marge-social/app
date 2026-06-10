@@ -935,6 +935,380 @@ body {
   justify-content: flex-end;
 }
 
+/* ─── Vignette de lien (aperçu OG) — composer + fil ─────────── */
+/* Carte riche : image (og:image) ou tuile-lettre + domaine/titre/description.
+   Classes partagées entre l'aperçu du composer et la carte du fil. */
+.cmp-lp {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 2px 0;
+}
+.cmp-link.cmp-rich {
+  display: flex;
+  align-items: stretch;
+  padding: 0;
+  gap: 0;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  background: #fff;
+}
+.cmp-rimg {
+  width: 156px;
+  flex-shrink: 0;
+  align-self: stretch;
+  min-height: 112px;
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-soft);
+  border-right: 1px solid var(--rule);
+}
+.cmp-rimg img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.cmp-rimg.is-letter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-right: 0;
+}
+.cmp-rimg.is-letter .lt {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 38px;
+  color: #fff;
+  line-height: 1;
+}
+.cmp-rbody {
+  flex: 1;
+  min-width: 0;
+  padding: 11px 32px 11px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  justify-content: center;
+}
+.cmp-rdom {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.cmp-rsite {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--ink-3);
+  flex-shrink: 0;
+}
+.cmp-rsep {
+  color: var(--ink-4);
+  flex-shrink: 0;
+}
+.cmp-rauth {
+  font-size: 11px;
+  color: var(--ink-2);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cmp-rtitle {
+  font-family: var(--serif);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.005em;
+  color: var(--ink);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.cmp-rdesc {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--ink-2);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.cmp-favic {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--sans);
+}
+.cmp-x {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--ink-3);
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background 0.12s,
+    color 0.12s;
+}
+.cmp-x:hover {
+  background: var(--brick-soft);
+  color: var(--brick);
+}
+.cmp-x-abs {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: rgba(251, 248, 243, 0.82);
+}
+/* Repli « choisir la vignette » sous la carte (plusieurs liens). */
+.cmp-choose {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  flex-wrap: wrap;
+  padding: 0 2px 1px;
+}
+.cmp-change {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--ink-3);
+  padding: 0;
+  cursor: pointer;
+  line-height: 1.3;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: color 0.12s;
+  font-family: inherit;
+}
+.cmp-change:hover,
+.cmp-change[data-on="true"] {
+  color: var(--brick);
+}
+.cmp-change .chev {
+  font-size: 9px;
+  transition: transform 0.15s;
+}
+.cmp-change[data-on="true"] .chev {
+  transform: rotate(180deg);
+}
+.cmp-choose-hint {
+  font-size: 11px;
+  color: var(--ink-4);
+  line-height: 1.3;
+}
+/* Rail des candidats. */
+.cmp-rail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 1px;
+  animation: cmpLpIn 0.18s ease-out;
+}
+@keyframes cmpLpIn {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.cmp-cand {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 9px 4px 4px;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  max-width: 200px;
+  font-family: inherit;
+  transition:
+    border-color 0.12s,
+    background 0.12s,
+    box-shadow 0.12s;
+}
+.cmp-cand:hover {
+  background: var(--bg-soft);
+  border-color: #d6ccb8;
+}
+.cmp-cand[data-on="true"] {
+  border-color: var(--brick);
+  box-shadow: 0 0 0 1px var(--brick);
+  background: #fff;
+}
+.cmp-cand .cct {
+  width: 28px;
+  height: 28px;
+  border-radius: 5px;
+  overflow: hidden;
+  flex-shrink: 0;
+  position: relative;
+  border: 1px solid var(--rule);
+  background: var(--bg-soft);
+}
+.cmp-cand .cct img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.cmp-cand .cct.is-letter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+}
+.cmp-cand .cct .lt {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 14px;
+  color: #fff;
+}
+.cmp-cand .cmeta2 {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+.cmp-cand .cdom2 {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: var(--ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cmp-cand .cttl2 {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 124px;
+}
+.cmp-cand[data-on="true"] .cttl2 {
+  color: var(--ink);
+}
+.cmp-cand .ck2 {
+  color: var(--brick);
+  flex-shrink: 0;
+  display: inline-flex;
+  opacity: 0;
+  transform: scale(0.6);
+  transition:
+    opacity 0.12s,
+    transform 0.12s;
+}
+.cmp-cand[data-on="true"] .ck2 {
+  opacity: 1;
+  transform: scale(1);
+}
+.cmp-cand.none {
+  padding-left: 10px;
+}
+.cmp-cand.none .ni2 {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-3);
+}
+/* Ligne « Aucune vignette » avec restauration. */
+.cmp-restore {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--ink-3);
+  padding: 1px 2px;
+}
+.cmp-restore .rbtn {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--brick);
+  font-weight: 500;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0;
+  font-family: inherit;
+}
+.cmp-restore .rbtn:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+/* Squelette pendant la résolution OG. */
+.cmp-shim {
+  position: relative;
+  overflow: hidden;
+}
+.cmp-shim::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.6),
+    transparent
+  );
+  transform: translateX(-100%);
+  animation: cmpShim 1.1s ease-in-out infinite;
+}
+@keyframes cmpShim {
+  100% {
+    transform: translateX(100%);
+  }
+}
+.cmp-skline {
+  background: var(--bg-soft);
+  border-radius: 3px;
+}
+/* Carte de lien dans le fil / la page note (cliquable). */
+.linkcard {
+  text-decoration: none;
+  margin: -4px 0 16px;
+  transition:
+    border-color 0.12s,
+    box-shadow 0.12s;
+}
+.linkcard:hover {
+  border-color: #d6ccb8;
+  box-shadow: 0 4px 14px -10px rgba(42, 37, 32, 0.25);
+}
+
 /* Métriques/actions réelles : compteur discret accolé à un bouton d'action. */
 .metrics .m.count .v {
   color: var(--ink-2);
