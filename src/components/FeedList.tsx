@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { CommentView, FeedEntry } from "@/lib/feed";
 import { Attachments } from "@/components/Attachments";
+import { cartoucheLinks } from "@/lib/content-links";
 import {
   createCommentAction,
   toggleAnnounceAction,
@@ -152,7 +153,7 @@ function CommentItem({
       ) : (
         <div
           className="prose-marge text-sm"
-          dangerouslySetInnerHTML={{ __html: c.contentHtml }}
+          dangerouslySetInnerHTML={{ __html: cartoucheLinks(c.contentHtml) }}
         />
       )}
     </li>
@@ -236,7 +237,7 @@ export async function FeedList({ entries }: { entries: FeedEntry[] }) {
             <>
               <div
                 className="prose-marge text-sm"
-                dangerouslySetInnerHTML={{ __html: e.contentHtml ?? "" }}
+                dangerouslySetInnerHTML={{ __html: cartoucheLinks(e.contentHtml ?? "") }}
               />
               <Link
                 href={e.href}

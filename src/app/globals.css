@@ -2841,6 +2841,51 @@ body {
   text-decoration: underline;
   text-underline-offset: 2px;
 }
+
+/* Cartouche de lien sortant (fil d'actualité) : flèche + titre (ou domaine).
+   Réécrit par `cartoucheLinks` ; remplace l'URL nue par une pastille compacte.
+   Valeurs conformes à la maquette Claude Design (« Liens dans le fil », .lnk) :
+   titre → étiquette titrée ; sinon → puce de domaine (label en --ink-2). */
+.link-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  vertical-align: baseline;
+  font-family: var(--sans);
+  font-size: 0.7em;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--rule);
+  border-radius: 7px;
+  padding: 0.24em 0.62em;
+  text-decoration: none;
+  max-width: 22em;
+  white-space: nowrap;
+  transform: translateY(-0.04em);
+  transition:
+    border-color 0.12s,
+    background 0.12s;
+}
+.link-chip:hover {
+  border-color: #d6ccb8;
+  background: var(--bg-soft);
+}
+.link-chip__arrow {
+  flex-shrink: 0;
+  font-size: 0.82em;
+  opacity: 0.6;
+  color: var(--brick);
+}
+.link-chip__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.link-chip--domain .link-chip__label {
+  color: var(--ink-2);
+}
 .prose-marge ul,
 .prose-marge ol {
   padding-left: 1.5rem;
