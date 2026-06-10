@@ -128,13 +128,18 @@ export async function updatePostAction(
     return { error: "messageTooLong", errorParams: { n: MAX_LEN } };
   }
 
-  // La vignette suit son lien : si l'URL mise en avant quitte le texte, on la
-  // retire (l'édition ne propose pas de re-choisir une vignette en V1).
-  const linkPreview =
-    existing.linkPreview &&
-    extractUrls(contentMarkdown).includes(existing.linkPreview.url)
-      ? existing.linkPreview
-      : null;
+  // Vignette : le formulaire d'édition envoie l'URL choisie ("" = aucune),
+  // qui doit figurer dans le texte. Si elle est inchangée on conserve
+  // l'aperçu stocké (pas de re-fetch) ; sinon on le re-résout côté serveur
+  // (jamais fourni par le client).
+  const linkUrl = ((formData.get("linkUrl") as string) ?? "").trim();
+  let linkPreview = null;
+  if (linkUrl && extractUrls(contentMarkdown).includes(linkUrl)) {
+    linkPreview =
+      existing.linkPreview?.url === linkUrl
+        ? existing.linkPreview
+        : await fetchLinkPreview(linkUrl);
+  }
 
   const [updated] = await db
     .update(posts)

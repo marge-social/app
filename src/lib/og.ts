@@ -96,6 +96,30 @@ function absoluteHttpUrl(raw: string, baseUrl: string): string | null {
   }
 }
 
+/**
+ * Titres typiques des pages de défi anti-bot (Datadome, Cloudflare, Imperva…)
+ * servies à notre crawler à la place de l'article. Mieux vaut un aperçu
+ * minimal honnête (domaine seul) qu'une carte « Client Challenge ».
+ * Détection par titre uniquement : les marqueurs HTML (scripts datadome/cf)
+ * apparaissent aussi sur les pages normales des sites protégés.
+ */
+const CHALLENGE_TITLES = [
+  "client challenge",
+  "just a moment",
+  "attention required",
+  "access denied",
+  "accès refusé",
+  "are you a robot",
+  "pardon our interruption",
+  "verification required",
+  "captcha",
+];
+
+function isBotChallengeTitle(title: string): boolean {
+  const t = title.toLowerCase();
+  return CHALLENGE_TITLES.some((m) => t.includes(m));
+}
+
 function minimalPreview(url: URL): LinkPreview {
   return {
     url: url.href,
@@ -149,14 +173,17 @@ export async function fetchLinkPreview(
         "twitter:image",
         "twitter:image:src",
       ]);
-      preview = {
-        url: url.href,
-        domain: new URL(finalUrl).hostname.replace(/^www\./, ""),
-        title: title || preview.domain,
-        description: description || null,
-        imageUrl: rawImage ? absoluteHttpUrl(rawImage, finalUrl) : null,
-        siteName: metaContent(html, ["og:site_name"]) || null,
-      };
+      // Page de défi anti-bot → on s'en tient à l'aperçu minimal (domaine).
+      if (!isBotChallengeTitle(title)) {
+        preview = {
+          url: url.href,
+          domain: new URL(finalUrl).hostname.replace(/^www\./, ""),
+          title: title || preview.domain,
+          description: description || null,
+          imageUrl: rawImage ? absoluteHttpUrl(rawImage, finalUrl) : null,
+          siteName: metaContent(html, ["og:site_name"]) || null,
+        };
+      }
     }
   } catch {
     // injoignable → aperçu minimal
