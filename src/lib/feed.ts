@@ -154,6 +154,8 @@ export interface FeedEntry {
   authorHandle?: string;
   /** Photo de profil de l'auteur (local ou distant) ; null = pastille initiales. */
   avatarUrl?: string | null;
+  /** Bio courte de l'auteur affichée dans l'encart (local/distant) ; vide pour RSS. */
+  authorBio?: string | null;
   date: Date;
   /** Aperçu honnête (article/distant/RSS). */
   summary: string;
@@ -220,6 +222,7 @@ export async function buildFeed(
       id: users.id,
       handle: users.handle,
       name: users.displayName,
+      bio: users.bio,
       avatarUpdatedAt: users.avatarUpdatedAt,
     })
     .from(follows)
@@ -233,23 +236,25 @@ export async function buildFeed(
     );
 
   const [viewerRow] = await db
-    .select({ avatarUpdatedAt: users.avatarUpdatedAt })
+    .select({ bio: users.bio, avatarUpdatedAt: users.avatarUpdatedAt })
     .from(users)
     .where(eq(users.id, viewer.id));
 
   const localAccounts = new Map<
     string,
-    { handle: string; name: string; avatarUrl: string | null }
+    { handle: string; name: string; bio: string; avatarUrl: string | null }
   >();
   localAccounts.set(viewer.id, {
     handle: viewer.handle,
     name: viewer.displayName,
+    bio: viewerRow?.bio ?? "",
     avatarUrl: localAvatarUrl(viewer.handle, viewerRow?.avatarUpdatedAt ?? null),
   });
   for (const f of localFollows) {
     localAccounts.set(f.id, {
       handle: f.handle,
       name: f.name,
+      bio: f.bio,
       avatarUrl: localAvatarUrl(f.handle, f.avatarUpdatedAt),
     });
   }
@@ -262,6 +267,7 @@ export async function buildFeed(
       name: remoteActors.name,
       handle: remoteActors.handle,
       iconUrl: remoteActors.iconUrl,
+      summary: remoteActors.summary,
     })
     .from(follows)
     .leftJoin(remoteActors, eq(remoteActors.uri, follows.followingUri))
@@ -311,6 +317,7 @@ export async function buildFeed(
         authorLabel: `${a.name} · ${fediverseHandle(a.handle)}`,
         authorHandle: a.handle,
         avatarUrl: a.avatarUrl,
+        authorBio: a.bio,
         date: r.publishedAt ?? new Date(0),
         summary: effectiveSummary(r.content, r.summary),
         href: `/@${a.handle}/${r.slug}`,
@@ -355,6 +362,7 @@ export async function buildFeed(
         authorLabel: `${a.name} · ${fediverseHandle(a.handle)}`,
         authorHandle: a.handle,
         avatarUrl: a.avatarUrl,
+        authorBio: a.bio,
         date: r.publishedAt,
         summary: "",
         contentHtml: r.contentHtml,
@@ -402,6 +410,7 @@ export async function buildFeed(
       remoteFollows.map((f) => [f.uri, f.handle ?? f.name ?? f.uri]),
     );
     const iconByUri = new Map(remoteFollows.map((f) => [f.uri, f.iconUrl]));
+    const bioByUri = new Map(remoteFollows.map((f) => [f.uri, f.summary]));
     for (const r of rows) {
       const text = r.contentHtml ? htmlToText(r.contentHtml) : "";
       entries.push({
@@ -410,6 +419,7 @@ export async function buildFeed(
         title: r.name,
         authorLabel: labelByUri.get(r.attributedToUri) ?? r.attributedToUri,
         avatarUrl: iconByUri.get(r.attributedToUri) ?? null,
+        authorBio: bioByUri.get(r.attributedToUri) ?? null,
         date: r.publishedAt ?? r.fetchedAt,
         summary:
           r.summary ??
@@ -434,6 +444,7 @@ export async function buildFeed(
       feedId: feedSubscriptions.feedId,
       feedTitle: feeds.title,
       feedUrl: feeds.feedUrl,
+      feedDescription: feeds.description,
     })
     .from(feedSubscriptions)
     .innerJoin(feeds, eq(feeds.id, feedSubscriptions.feedId))
@@ -441,6 +452,11 @@ export async function buildFeed(
   if (subRows.length > 0) {
     const feedLabel = new Map(
       subRows.map((s) => [s.feedId, s.feedTitle || s.feedUrl]),
+    );
+    // À défaut de bio d'auteur, l'encart d'une source RSS porte la description
+    // du flux (peuplée au polling depuis le flux lui-même).
+    const feedBio = new Map(
+      subRows.map((s) => [s.feedId, s.feedDescription || null]),
     );
     const rows = await db
       .select()
@@ -461,6 +477,7 @@ export async function buildFeed(
         authorLabel: r.author
           ? `${r.author} · ${feedLabel.get(r.feedId)}`
           : (feedLabel.get(r.feedId) ?? ""),
+        authorBio: feedBio.get(r.feedId) ?? null,
         date: r.publishedAt ?? r.fetchedAt,
         summary: r.excerpt,
         href: r.link,
@@ -528,6 +545,7 @@ export async function buildFeed(
             content: articles.contentMarkdown,
             handle: users.handle,
             name: users.displayName,
+            bio: users.bio,
             avatarUpdatedAt: users.avatarUpdatedAt,
           })
           .from(articles)
@@ -550,6 +568,7 @@ export async function buildFeed(
             linkPreview: posts.linkPreview,
             handle: users.handle,
             name: users.displayName,
+            bio: users.bio,
             avatarUpdatedAt: users.avatarUpdatedAt,
           })
           .from(posts)
@@ -573,6 +592,7 @@ export async function buildFeed(
             actorHandle: remoteActors.handle,
             actorName: remoteActors.name,
             actorIcon: remoteActors.iconUrl,
+            actorSummary: remoteActors.summary,
           })
           .from(remoteObjects)
           .leftJoin(
@@ -602,6 +622,7 @@ export async function buildFeed(
           authorLabel: `${art.name} · ${fediverseHandle(art.handle)}`,
           authorHandle: art.handle,
           avatarUrl: localAvatarUrl(art.handle, art.avatarUpdatedAt),
+          authorBio: art.bio,
           date: a.date,
           summary: effectiveSummary(art.content, art.summary),
           href: `/@${art.handle}/${art.slug}`,
@@ -628,6 +649,7 @@ export async function buildFeed(
           authorLabel: `${note.name} · ${fediverseHandle(note.handle)}`,
           authorHandle: note.handle,
           avatarUrl: localAvatarUrl(note.handle, note.avatarUpdatedAt),
+          authorBio: note.bio,
           date: a.date,
           summary: "",
           contentHtml: note.contentHtml,
@@ -655,6 +677,7 @@ export async function buildFeed(
           title: rem.name,
           authorLabel: rem.actorHandle ?? rem.actorName ?? rem.author,
           avatarUrl: rem.actorIcon ?? null,
+          authorBio: rem.actorSummary ?? null,
           date: a.date,
           summary:
             rem.summary ??
