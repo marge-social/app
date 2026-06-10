@@ -64,7 +64,19 @@ export async function AppHeader() {
               </Link>
               <details className="acct">
                 <summary aria-label={nav.profile}>
-                  <span className="avatar">{initialsFromHandle(user.handle)}</span>
+                  {user.avatarUpdatedAt ? (
+                    // Photo de profil (avatar legacy/S3 servi par /api/avatar) ;
+                    // avatarUpdatedAt sert aussi de jeton de cache-busting.
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={`/api/avatar/${user.handle}?v=${user.avatarUpdatedAt.getTime()}`}
+                      alt=""
+                      className="avatar"
+                      style={{ objectFit: "cover" }}
+                    />
+                  ) : (
+                    <span className="avatar">{initialsFromHandle(user.handle)}</span>
+                  )}
                 </summary>
                 <div className="acct-menu" role="menu">
                   <Link href={`/@${user.handle}`} role="menuitem">
