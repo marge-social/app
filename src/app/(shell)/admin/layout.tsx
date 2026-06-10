@@ -34,6 +34,9 @@ export default async function AdminLayout({
             <Link href="/admin/pages" className="hover:underline">
               {t.pages}
             </Link>
+            <Link href="/admin/storage" className="hover:underline">
+              {t.storage}
+            </Link>
           </nav>
         </div>
         {children}

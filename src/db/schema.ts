@@ -1,6 +1,7 @@
 import { relations, sql } from "drizzle-orm";
 import {
   type AnyPgColumn,
+  bigint,
   boolean,
   customType,
   index,
@@ -687,6 +688,35 @@ export const interactions = pgTable(
       .on(t.type, t.actorIri, t.objectIri)
       .where(sql`type in ('Like', 'Announce')`),
   ],
+);
+
+/**
+ * Relevé périodique de volumétrie (monitoring admin). Enregistré au plus une
+ * fois par ~20 h, au chargement de /admin/storage (pas de cron dédié). Sert à
+ * suivre la croissance de la base (notamment `remote_objects`/`feed_items`,
+ * non purgés) et à anticiper le dimensionnement du serveur.
+ */
+export const storageSnapshots = pgTable(
+  "storage_snapshots",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    capturedAt: timestamp("captured_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    // pg_database_size : base entière (tables + index + TOAST).
+    dbSizeBytes: bigint("db_size_bytes", { mode: "number" }).notNull(),
+    // Détail par table { relname: pg_total_relation_size } — inclut les tables
+    // hors schéma Drizzle (KV/queue Fedify) puisque lu depuis pg_class.
+    tableSizes: jsonb("table_sizes").$type<Record<string, number>>().notNull(),
+    // Octets cumulés des médias S3 (somme de media.size_bytes ; les miniatures,
+    // non journalisées, ne sont pas comptées — sous-estime légèrement).
+    mediaBytes: bigint("media_bytes", { mode: "number" }).notNull(),
+    // Disque vu par le processus app (statfs). En conteneur : le système de
+    // fichiers du conteneur, pas forcément le volume Postgres. null si échec.
+    diskTotalBytes: bigint("disk_total_bytes", { mode: "number" }),
+    diskFreeBytes: bigint("disk_free_bytes", { mode: "number" }),
+  },
+  (t) => [index("storage_snapshots_captured_idx").on(t.capturedAt.desc())],
 );
 
 // --- Relations (pour les requêtes typées Drizzle) -----------------------
