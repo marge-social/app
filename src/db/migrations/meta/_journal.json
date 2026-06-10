@@ -85,6 +85,13 @@
       "when": 1780946184438,
       "tag": "0011_third_vermin",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1781087576060,
+      "tag": "0012_quiet_killer_shrike",
+      "breakpoints": true
     }
   ]
 }

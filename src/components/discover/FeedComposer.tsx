@@ -2,9 +2,17 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
+import type { LinkPreview } from "@/db/schema";
 import { type PostFormState, createPostAction } from "@/app/actions/posts";
 import { useActionMessage, useT } from "@/components/I18nProvider";
 import { Icons } from "@/components/discover/icons";
+import {
+  ComposerLinkPreview,
+  type LinkCandidate,
+  NONE_KEY,
+  extractUrlsClient,
+  hostnameOf,
+} from "@/components/discover/ComposerLinkPreview";
 
 /** Liste blanche des types acceptés à l'upload (cahier médias §3.2). */
 const ACCEPT =
@@ -63,6 +71,14 @@ export function FeedComposer() {
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  // ── Vignette de lien : URL détectées (débouncées), aperçus OG résolus via
+  // /api/og, choix de l'utilisateur (url | NONE_KEY | null = auto).
+  const [urls, setUrls] = useState<string[]>([]);
+  const [previews, setPreviews] = useState<Record<string, LinkPreview>>({});
+  const [pick, setPick] = useState<string | null>(null);
+  const [railOpen, setRailOpen] = useState(false);
+  const requestedRef = useRef<Set<string>>(new Set());
+
   useEffect(() => autosize(bodyRef.current), [body]);
 
   // Restaure le brouillon local au montage (localStorage est indisponible au
@@ -91,6 +107,40 @@ export function FeedComposer() {
     }, 600);
     return () => clearTimeout(id);
   }, [draft, body]);
+
+  // Détection des liens, débouncée : on attend une courte pause de saisie
+  // avant d'extraire (évite de résoudre des URL incomplètes en cours de frappe).
+  useEffect(() => {
+    const id = setTimeout(() => {
+      setUrls((prev) => {
+        const next = extractUrlsClient(body);
+        return prev.length === next.length && prev.every((u, i) => u === next[i])
+          ? prev
+          : next;
+      });
+    }, 450);
+    return () => clearTimeout(id);
+  }, [body]);
+
+  // Résolution OG des liens nouvellement vus (une seule requête par URL ; en
+  // cas d'échec, repli minimal côté client pour que le candidat reste choisissable).
+  useEffect(() => {
+    for (const u of urls) {
+      if (requestedRef.current.has(u)) continue;
+      requestedRef.current.add(u);
+      fetch(`/api/og?url=${encodeURIComponent(u)}`)
+        .then((r) => (r.ok ? (r.json() as Promise<LinkPreview>) : null))
+        .catch(() => null)
+        .then((p) => {
+          const fallback: LinkPreview = {
+            url: u,
+            domain: hostnameOf(u),
+            title: hostnameOf(u),
+          };
+          setPreviews((prev) => ({ ...prev, [u]: p ?? fallback }));
+        });
+    }
+  }, [urls]);
 
   // Révoque l'URL de prévisualisation devenue obsolète (remplacement, retrait,
   // publication ou démontage).
@@ -128,8 +178,16 @@ export function FeedComposer() {
       setBody("");
       setMedia(null);
       setDraft("idle");
+      setUrls([]);
+      setPick(null);
+      setRailOpen(false);
     }
   }
+
+  // Ajustements pendant le rendu : un choix qui ne correspond plus à aucun
+  // lien du texte revient en auto ; le sélecteur se referme à ≤ 1 lien.
+  if (pick && pick !== NONE_KEY && !urls.includes(pick)) setPick(null);
+  if (railOpen && urls.length <= 1) setRailOpen(false);
   // …et purge le brouillon local (effet : impur), uniquement sur transition —
   // l'état initial `{}` est lui aussi sans erreur.
   const lastPurgedState = useRef(state);
@@ -141,6 +199,19 @@ export function FeedComposer() {
 
   const hasContent = body.trim().length > 0 || media !== null;
   const isImage = media?.file.type.startsWith("image/") ?? false;
+
+  // Vignette par défaut : le lien le plus riche (avec image) déjà résolu,
+  // sinon le premier. Le choix explicite de l'utilisateur prime.
+  const links: LinkCandidate[] = urls.map((url) => ({
+    url,
+    preview: previews[url],
+  }));
+  const autoKey = links.length
+    ? (links.find((l) => l.preview?.imageUrl) ?? links[0]).url
+    : null;
+  const selectedKey = pick ?? autoKey;
+  const featuredUrl =
+    selectedKey && selectedKey !== NONE_KEY ? selectedKey : "";
 
   const onFileChosen = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -231,6 +302,22 @@ export function FeedComposer() {
         </div>
       )}
 
+      {links.length > 0 && (
+        <ComposerLinkPreview
+          links={links}
+          selectedKey={selectedKey}
+          onPick={(u) => {
+            setPick(u);
+            setRailOpen(false);
+          }}
+          onNone={() => setPick(NONE_KEY)}
+          onRestore={() => setPick(null)}
+          railOpen={railOpen}
+          setRailOpen={setRailOpen}
+        />
+      )}
+
+      <input type="hidden" name="linkUrl" value={featuredUrl} />
       <input
         ref={fileRef}
         name="media"

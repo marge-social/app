@@ -2,6 +2,7 @@ import "server-only";
 import { and, desc, eq, inArray, isNull, isNotNull, or } from "drizzle-orm";
 import { db } from "@/db";
 import {
+  type LinkPreview,
   type RemoteAttachment,
   actorBlocks,
   articles,
@@ -165,6 +166,8 @@ export interface FeedEntry {
   postId?: string;
   contentMarkdown?: string;
   isOwn?: boolean;
+  /** Vignette du lien mis en avant (notes locales, cf. `posts.link_preview`). */
+  linkPreview?: LinkPreview | null;
   href: string;
   /** Lien interne (Next <Link>) vs externe (<a>). */
   internal: boolean;
@@ -332,6 +335,7 @@ export async function buildFeed(
         id: posts.id,
         contentHtml: posts.contentHtml,
         contentMarkdown: posts.contentMarkdown,
+        linkPreview: posts.linkPreview,
         publishedAt: posts.publishedAt,
         authorId: posts.authorId,
       })
@@ -357,6 +361,7 @@ export async function buildFeed(
         postId: r.id,
         contentMarkdown: r.contentMarkdown,
         isOwn: r.authorId === viewer.id,
+        linkPreview: r.linkPreview,
         href: `/@${a.handle}/notes/${r.id}`,
         internal: true,
         source: "local",
@@ -542,6 +547,7 @@ export async function buildFeed(
           .select({
             id: posts.id,
             contentHtml: posts.contentHtml,
+            linkPreview: posts.linkPreview,
             handle: users.handle,
             name: users.displayName,
             avatarUpdatedAt: users.avatarUpdatedAt,
@@ -625,6 +631,7 @@ export async function buildFeed(
           date: a.date,
           summary: "",
           contentHtml: note.contentHtml,
+          linkPreview: note.linkPreview,
           href: `/@${note.handle}/notes/${note.id}`,
           internal: true,
           source: "local",

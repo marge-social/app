@@ -8,6 +8,7 @@ import { media, posts } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { renderMarkdown } from "@/lib/markdown";
 import { persistMedia, processUpload } from "@/lib/media";
+import { extractUrls, fetchLinkPreview } from "@/lib/og";
 import {
   deliverCreateNote,
   deliverDeleteNote,
@@ -60,9 +61,18 @@ export async function createPostAction(
 
   const contentHtml = renderMarkdown(contentMarkdown);
 
+  // Vignette du lien mis en avant : le client ne transmet que l'URL choisie
+  // ("" = aucune) ; elle doit être présente dans le texte, et l'aperçu est
+  // résolu côté serveur (jamais fourni par le client). Best-effort.
+  const linkUrl = ((formData.get("linkUrl") as string) ?? "").trim();
+  let linkPreview = null;
+  if (linkUrl && extractUrls(contentMarkdown).includes(linkUrl)) {
+    linkPreview = await fetchLinkPreview(linkUrl);
+  }
+
   const [post] = await db
     .insert(posts)
-    .values({ authorId: user.id, contentMarkdown, contentHtml })
+    .values({ authorId: user.id, contentMarkdown, contentHtml, linkPreview })
     .returning();
 
   // Téléversement S3 + persistance du média, rattaché au post (best-effort :
@@ -118,9 +128,21 @@ export async function updatePostAction(
     return { error: "messageTooLong", errorParams: { n: MAX_LEN } };
   }
 
+  // La vignette suit son lien : si l'URL mise en avant quitte le texte, on la
+  // retire (l'édition ne propose pas de re-choisir une vignette en V1).
+  const linkPreview =
+    existing.linkPreview &&
+    extractUrls(contentMarkdown).includes(existing.linkPreview.url)
+      ? existing.linkPreview
+      : null;
+
   const [updated] = await db
     .update(posts)
-    .set({ contentMarkdown, contentHtml: renderMarkdown(contentMarkdown) })
+    .set({
+      contentMarkdown,
+      contentHtml: renderMarkdown(contentMarkdown),
+      linkPreview,
+    })
     .where(eq(posts.id, existing.id))
     .returning();
 

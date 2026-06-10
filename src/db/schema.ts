@@ -45,6 +45,20 @@ export interface RemoteAttachment {
   hlsUrl?: string | null;
 }
 
+/**
+ * Vignette Open Graph du lien mis en avant d'une note (jsonb sur
+ * `posts.link_preview`). Résolue côté serveur à la publication ; `imageUrl`
+ * pointe l'origine distante (jamais re-hébergé, même logique que les items RSS).
+ */
+export interface LinkPreview {
+  url: string;
+  domain: string;
+  title: string;
+  description?: string | null;
+  imageUrl?: string | null;
+  siteName?: string | null;
+}
+
 // --- Enums ---------------------------------------------------------------
 
 /** Statut de propriété d'un flux RSS (cf. §4 / F3). */
@@ -231,6 +245,9 @@ export const posts = pgTable(
     // (composer) ; renseigné = commentaire court, affiché sous son parent et
     // exclu du fil top-level.
     inReplyToUri: text("in_reply_to_uri"),
+    // Vignette Open Graph du lien mis en avant (choisi au composer, résolu
+    // côté serveur à la publication). null = aucune vignette.
+    linkPreview: jsonb("link_preview").$type<LinkPreview | null>(),
     publishedAt: timestamp("published_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
