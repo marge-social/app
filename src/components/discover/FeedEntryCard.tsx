@@ -4,6 +4,7 @@ import type { Messages } from "@/lib/i18n/dictionaries";
 import type { Locale } from "@/lib/i18n/config";
 import { relativeTime } from "@/lib/relative-time";
 import { Attachments } from "@/components/Attachments";
+import { NoteBody } from "@/components/NoteBody";
 import { Avatar } from "@/components/discover/Avatar";
 import { Icons } from "@/components/discover/icons";
 import {
@@ -155,9 +156,11 @@ export function FeedEntryCard({
       </div>
 
       {isNote ? (
-        <div
-          className="entry-note"
-          dangerouslySetInnerHTML={{ __html: e.contentHtml ?? "" }}
+        <NoteBody
+          html={e.contentHtml ?? ""}
+          postId={e.postId}
+          contentMarkdown={e.contentMarkdown}
+          canEdit={e.isOwn}
         />
       ) : (
         <>

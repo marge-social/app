@@ -6,6 +6,8 @@ import { db } from "@/db";
 import { posts, users } from "@/db/schema";
 import { Attachments } from "@/components/Attachments";
 import { Container } from "@/components/Container";
+import { NoteBody } from "@/components/NoteBody";
+import { getCurrentUser } from "@/lib/auth";
 import { fediverseHandle } from "@/lib/config";
 import { loadMediaForPosts } from "@/lib/media";
 import { htmlToText } from "@/lib/markdown";
@@ -53,6 +55,7 @@ export default async function NotePage({ params }: NoteParams) {
   const date = post.publishedAt ?? post.createdAt;
   const media = (await loadMediaForPosts([post.id])).get(post.id) ?? [];
   const { locale } = await getServerI18n();
+  const viewer = await getCurrentUser();
 
   return (
     <Container>
@@ -70,10 +73,15 @@ export default async function NotePage({ params }: NoteParams) {
           </p>
         </header>
 
-        <div
-          className="prose-marge"
-          dangerouslySetInnerHTML={{ __html: post.contentHtml }}
-        />
+        <div>
+          <NoteBody
+            html={post.contentHtml}
+            className="prose-marge"
+            postId={post.id}
+            contentMarkdown={post.contentMarkdown}
+            canEdit={viewer?.id === author.id}
+          />
+        </div>
 
         <Attachments media={media} />
       </article>

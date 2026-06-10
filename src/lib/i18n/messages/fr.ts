@@ -124,6 +124,12 @@ const fr = {
     articleReplyPrefix: "Réponse-billet :",
     comment: "Commenter",
     commentPlaceholder: "Commenter…",
+    editPost: "Modifier",
+    deletePost: "Supprimer",
+    confirmDeletePost:
+      "Supprimer ce message ? Cette action est définitive.",
+    savePost: "Enregistrer",
+    cancelEdit: "Annuler",
   },
   profile: {
     editProfile: "Modifier mon profil",
@@ -675,6 +681,7 @@ const fr = {
     displayNameRequired: "Le nom affiché est requis.",
     passwordRequired: "Mot de passe requis.",
     // Posts / messages
+    notFound: "Contenu introuvable.",
     messageEmpty: "Le message ne peut pas être vide.",
     messageTooLong: "Message trop long (max {n} caractères).",
     altRequired: "Le texte alternatif est obligatoire pour une image.",
