@@ -7,6 +7,18 @@ marked.setOptions({ gfm: true, breaks: false });
 // linkify-it s'appuie sur la vraie liste des TLD (« feed.ts » ne lie pas).
 marked.use(markedLinkifyIt());
 
+// Liens externes (URL absolue) : nouvel onglet + rel sûr. Hook global, donc
+// appliqué à chaque sanitisation ; les liens relatifs (internes) restent dans
+// l'onglet courant. NB : le HTML étant figé en base à la publication, les
+// contenus existants ne changent qu'à la réédition (ou via
+// scripts/rerender-html.ts).
+DOMPurify.addHook("afterSanitizeAttributes", (node) => {
+  if (node.tagName === "A" && /^https?:\/\//i.test(node.getAttribute("href") ?? "")) {
+    node.setAttribute("target", "_blank");
+    node.setAttribute("rel", "noopener noreferrer");
+  }
+});
+
 /** Convertit du Markdown en HTML sanitisé (sûr à injecter via dangerouslySet). */
 export function renderMarkdown(markdown: string): string {
   const rawHtml = marked.parse(markdown, { async: false }) as string;

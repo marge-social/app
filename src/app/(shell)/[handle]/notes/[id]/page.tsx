@@ -6,7 +6,6 @@ import { db } from "@/db";
 import { posts, users } from "@/db/schema";
 import { Attachments } from "@/components/Attachments";
 import { Container } from "@/components/Container";
-import { LinkCard } from "@/components/LinkCard";
 import { NoteBody } from "@/components/NoteBody";
 import { getCurrentUser } from "@/lib/auth";
 import { fediverseHandle } from "@/lib/config";
@@ -80,9 +79,9 @@ export default async function NotePage({ params }: NoteParams) {
             className="prose-marge"
             postId={post.id}
             contentMarkdown={post.contentMarkdown}
+            linkPreview={post.linkPreview}
             canEdit={viewer?.id === author.id}
           />
-          {post.linkPreview && <LinkCard p={post.linkPreview} />}
         </div>
 
         <Attachments media={media} />

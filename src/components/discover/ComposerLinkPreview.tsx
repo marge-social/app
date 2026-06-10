@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { LinkPreview } from "@/db/schema";
 import { useT } from "@/components/I18nProvider";
 import {
@@ -42,6 +43,55 @@ export function hostnameOf(url: string): string {
   } catch {
     return url;
   }
+}
+
+/**
+ * Détecte les liens d'un texte (débouncé) et résout leurs aperçus OG via
+ * /api/og — une seule requête par URL, repli minimal côté client en cas
+ * d'échec pour que le candidat reste choisissable. Partagé entre le composer
+ * et l'édition en place d'une note.
+ */
+export function useLinkCandidates(body: string): LinkCandidate[] {
+  const [urls, setUrls] = useState<string[]>([]);
+  const [previews, setPreviews] = useState<Record<string, LinkPreview>>({});
+  const requestedRef = useRef<Set<string>>(new Set());
+
+  // Détection débouncée : on attend une courte pause de saisie avant
+  // d'extraire (évite de résoudre des URL incomplètes en cours de frappe).
+  useEffect(() => {
+    const id = setTimeout(() => {
+      setUrls((prev) => {
+        const next = extractUrlsClient(body);
+        return prev.length === next.length && prev.every((u, i) => u === next[i])
+          ? prev
+          : next;
+      });
+    }, 450);
+    return () => clearTimeout(id);
+  }, [body]);
+
+  useEffect(() => {
+    for (const u of urls) {
+      if (requestedRef.current.has(u)) continue;
+      requestedRef.current.add(u);
+      fetch(`/api/og?url=${encodeURIComponent(u)}`)
+        .then((r) => (r.ok ? (r.json() as Promise<LinkPreview>) : null))
+        .catch(() => null)
+        .then((p) => {
+          const fallback: LinkPreview = {
+            url: u,
+            domain: hostnameOf(u),
+            title: hostnameOf(u),
+          };
+          setPreviews((prev) => ({ ...prev, [u]: p ?? fallback }));
+        });
+    }
+  }, [urls]);
+
+  return useMemo(
+    () => urls.map((url) => ({ url, preview: previews[url] })),
+    [urls, previews],
+  );
 }
 
 const NoneIcon = (
