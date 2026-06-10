@@ -5,6 +5,7 @@ import type { Locale } from "@/lib/i18n/config";
 import { relativeTime } from "@/lib/relative-time";
 import { Attachments } from "@/components/Attachments";
 import { NoteBody } from "@/components/NoteBody";
+import { cartoucheLinks } from "@/lib/content-links";
 import { Avatar } from "@/components/discover/Avatar";
 import { Icons } from "@/components/discover/icons";
 import {
@@ -96,8 +97,11 @@ function CommentItem({
           )}
         </p>
       ) : (
-        // contentHtml est déjà sanitisé en amont (lib/feed).
-        <div className="body" dangerouslySetInnerHTML={{ __html: c.contentHtml }} />
+        // contentHtml est déjà sanitisé en amont (lib/feed) ; liens en cartouches.
+        <div
+          className="body"
+          dangerouslySetInnerHTML={{ __html: cartoucheLinks(c.contentHtml) }}
+        />
       )}
     </li>
   );
@@ -161,7 +165,7 @@ export function FeedEntryCard({
 
       {isNote ? (
         <NoteBody
-          html={e.contentHtml ?? ""}
+          html={cartoucheLinks(e.contentHtml ?? "")}
           postId={e.postId}
           contentMarkdown={e.contentMarkdown}
           linkPreview={e.linkPreview}
