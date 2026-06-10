@@ -2886,6 +2886,13 @@ body {
 .link-chip--domain .link-chip__label {
   color: var(--ink-2);
 }
+/* Pas de soulignement dans la cartouche (prime sur .entry-note/.prose-marge/
+   .entry-comment .body a qui soulignent les liens du texte). */
+.entry-note a.link-chip,
+.prose-marge a.link-chip,
+.entry-comment .body a.link-chip {
+  text-decoration: none;
+}
 .prose-marge ul,
 .prose-marge ol {
   padding-left: 1.5rem;
