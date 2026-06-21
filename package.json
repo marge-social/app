@@ -18,6 +18,7 @@
     "@fedify/next": "^2.2.3",
     "@fedify/postgres": "^2.2.3",
     "@js-temporal/polyfill": "^0.5.1",
+    "@logtape/logtape": "^2.1.1",
     "@node-rs/argon2": "^2.0.2",
     "@oslojs/crypto": "^1.0.1",
     "@oslojs/encoding": "^1.1.0",
@@ -25,7 +26,6 @@
     "file-type": "^22.0.1",
     "hls.js": "^1.6.16",
     "isomorphic-dompurify": "^3.15.0",
-    "linkify-it": "^5.0.1",
     "marked": "^18.0.4",
     "marked-linkify-it": "^3.1.15",
     "next": "16.2.7",
@@ -33,6 +33,7 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "rss-parser": "^3.13.0",
+    "server-only": "^0.0.1",
     "sharp": "^0.34.5",
     "turndown": "^7.2.4",
     "zod": "^4.4.3"
