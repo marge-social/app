@@ -189,6 +189,89 @@ export const sessions = pgTable("sessions", {
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
 });
 
+/**
+ * Inscription en attente d'activation (nouveau flux d'inscription en deux temps).
+ *
+ * À l'inscription, on ne demande que l'email + le mot de passe : la ligne vit
+ * ici, **séparée de `users`**, tant que le compte n'est pas finalisé. Un lien
+ * d'activation (jeton à usage unique, dont seul le **hash** est stocké) est
+ * envoyé par email. Au clic, `verifiedAt` est posé et l'onboarding démarre ;
+ * à la fin de l'onboarding, on crée la ligne `users` (handle + clés AP) et on
+ * supprime cette ligne. Garder l'état pré-onboarding hors de `users` évite tout
+ * demi-compte (handle/clés/displayName non nuls restent garantis dans `users`).
+ *
+ * Maintenance (cron `/api/cron/signups`) : si le lien n'est jamais cliqué
+ * (`verifiedAt` nul), rappel à 48 h puis suppression à 96 h.
+ */
+export const pendingSignups = pgTable("pending_signups", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  email: text("email").notNull().unique(),
+  passwordHash: text("password_hash").notNull(),
+  // Hash SHA-256 du jeton d'activation (le jeton brut n'existe que dans le lien).
+  tokenHash: text("token_hash").notNull().unique(),
+  // Langue choisie à l'inscription (pour l'email + l'onboarding).
+  locale: text("locale").notNull().default("fr"),
+  // Posé au premier clic sur le lien d'activation (preuve de contrôle de l'email).
+  // Tant qu'il est nul : éligible au rappel (48 h) puis à la suppression (96 h).
+  verifiedAt: timestamp("verified_at", { withTimezone: true }),
+  // Posé après l'envoi du rappel à 48 h (évite les rappels en double).
+  reminderSentAt: timestamp("reminder_sent_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+// --- Onboarding : packs de départ curatés (admin) -----------------------
+
+/**
+ * Nature d'un item de pack d'onboarding. Détermine le mécanisme d'abonnement à
+ * la finalisation : `marge`/`fediverse` → suivi de compte (interne/distant) ;
+ * `rss`/`youtube` → référencement + abonnement de flux.
+ */
+export const onboardingItemType = pgEnum("onboarding_item_type", [
+  "marge",
+  "fediverse",
+  "rss",
+  "youtube",
+]);
+
+/**
+ * Pack de départ proposé à l'étape « Ton fil » de l'onboarding. Conçu en admin
+ * (`/admin/onboarding`) : un groupe éditorial de comptes/flux **réels** que la
+ * personne peut suivre d'un clic. Aucune donnée fictive (cf. ADR 0006).
+ */
+export const onboardingPacks = pgTable("onboarding_packs", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: text("name").notNull(),
+  // Sous-titre court (ex. « Climat · vivant · transitions »).
+  tag: text("tag").notNull().default(""),
+  // Ordre d'affichage (croissant).
+  position: integer("position").notNull().default(0),
+  // Masqué de l'onboarding sans suppression (brouillon de curation).
+  enabled: boolean("enabled").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+/** Item d'un pack : un compte ou un flux réel à suivre. */
+export const onboardingPackItems = pgTable("onboarding_pack_items", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  packId: uuid("pack_id")
+    .notNull()
+    .references(() => onboardingPacks.id, { onDelete: "cascade" }),
+  type: onboardingItemType("type").notNull(),
+  // Nom affiché dans le pack (curateur).
+  label: text("label").notNull(),
+  // Référence à résoudre à la finalisation : handle (`@user@instance` ou local)
+  // pour marge/fediverse, URL pour rss/youtube.
+  ref: text("ref").notNull(),
+  position: integer("position").notNull().default(0),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
 // --- Articles (publication interne + AP) --------------------------------
 
 export const articles = pgTable(
@@ -765,6 +848,23 @@ export const feedSubscriptionsRelations = relations(
     feed: one(feeds, {
       fields: [feedSubscriptions.feedId],
       references: [feeds.id],
+    }),
+  }),
+);
+
+export const onboardingPacksRelations = relations(
+  onboardingPacks,
+  ({ many }) => ({
+    items: many(onboardingPackItems),
+  }),
+);
+
+export const onboardingPackItemsRelations = relations(
+  onboardingPackItems,
+  ({ one }) => ({
+    pack: one(onboardingPacks, {
+      fields: [onboardingPackItems.packId],
+      references: [onboardingPacks.id],
     }),
   }),
 );

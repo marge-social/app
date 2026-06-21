@@ -59,6 +59,7 @@ nav:
       - Spécification v0.1 (complète): cahier-des-charges.md
       - Interactions v0.2: cahier-des-charges-v0.2-interactions.md
       - Checklist interop v0.2: checklist-interop-v0.2.md
+  - Inscription: inscription.md
   - Décisions (ADR):
       - Journal: decisions/index.md
       - Gabarit MADR: decisions/template.md
@@ -67,4 +68,5 @@ nav:
       - "0003 — Commenter dédoublé": decisions/0003-commenter-dedouble-note-vs-article.md
       - "0004 — Affichage des compteurs": decisions/0004-affichage-compteurs-engagement.md
       - "0005 — Choix du handle de l'utilisateur": decisions/0005-handles-jeu-de-caracteres.md
+      - "0006 — Inscription en deux temps": decisions/0006-inscription-deux-temps-email.md
   - Roadmap: roadmap.md

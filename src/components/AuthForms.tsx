@@ -43,32 +43,26 @@ export function SignupForm() {
   const { t } = useT();
   const msg = useActionMessage();
   const a = t.auth;
+  const p = t.portal;
+
+  // Inscription en deux temps (cf. ADR 0006) : email + mot de passe, puis email
+  // d'activation. Le handle et le profil se choisissent à l'onboarding.
+  if (state.ok) {
+    return (
+      <div
+        role="status"
+        className="flex flex-col gap-2 rounded border border-black/15 bg-black/[0.03] p-4 dark:border-white/15 dark:bg-white/[0.04]"
+      >
+        <p className="font-medium">{p.emailSentHeading}</p>
+        <p className="text-sm text-foreground/70">{p.emailSentBody}</p>
+        <p className="text-xs text-foreground/60">{p.emailSentHint}</p>
+      </div>
+    );
+  }
+
   return (
     <form action={action} className="flex flex-col gap-4">
       <ErrorBanner message={msg(state.error)} />
-      <div className="flex flex-col gap-1">
-        <label htmlFor="displayName" className="text-sm font-medium">
-          {a.displayName}
-        </label>
-        <input id="displayName" name="displayName" required className={fieldClass} />
-      </div>
-      <div className="flex flex-col gap-1">
-        <label htmlFor="handle" className="text-sm font-medium">
-          {a.handle}
-        </label>
-        <input
-          id="handle"
-          name="handle"
-          required
-          autoCapitalize="none"
-          autoCorrect="off"
-          className={fieldClass}
-          aria-describedby="handle-help"
-        />
-        <p id="handle-help" className="text-xs text-foreground/60">
-          {a.handleHelp}
-        </p>
-      </div>
       <div className="flex flex-col gap-1">
         <label htmlFor="email" className="text-sm font-medium">
           {a.email}
@@ -106,10 +100,20 @@ export function LoginForm() {
     <form action={action} className="flex flex-col gap-4">
       <ErrorBanner message={msg(state.error)} />
       <div className="flex flex-col gap-1">
-        <label htmlFor="email" className="text-sm font-medium">
-          {a.email}
+        <label htmlFor="identifier" className="text-sm font-medium">
+          {t.portal.identifier}
         </label>
-        <input id="email" name="email" type="email" required className={fieldClass} />
+        <input
+          id="identifier"
+          name="identifier"
+          type="text"
+          required
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+          autoComplete="username"
+          className={fieldClass}
+        />
       </div>
       <div className="flex flex-col gap-1">
         <label htmlFor="password" className="text-sm font-medium">

@@ -107,6 +107,173 @@ const fr = {
     identifier: "Email ou handle",
     forgotPassword: "Mot de passe oublié ?",
     submitLogin: "Se connecter",
+    // Jauge de robustesse du mot de passe (inscription).
+    pwStrengthWeak: "Faible",
+    pwStrengthMedium: "Moyen",
+    pwStrengthStrong: "Fort",
+    pwReqLength: "8 caractères",
+    pwReqMix: "Lettre, chiffre, caractère spécial",
+    pwReqCommon: "Pas trop courant",
+    // Confirmation après inscription (email d'activation envoyé).
+    emailSentHeading: "Vérifiez votre boîte mail",
+    emailSentBody:
+      "Si cette adresse n’est pas déjà utilisée, un lien d’activation vient de partir. Cliquez dessus pour configurer votre profil et entrer dans Marge.",
+    emailSentHint:
+      "Le lien reste valable 96 heures. Pensez à vérifier vos courriers indésirables.",
+    emailSentBack: "Retour à la connexion",
+  },
+  onboarding: {
+    metaTitle: "Bienvenue — Marge",
+    quit: "Quitter",
+    // Lien d'activation invalide / expiré.
+    invalidTitle: "Lien d’activation invalide",
+    invalidBody:
+      "Ce lien est invalide ou a expiré. Réinscrivez-vous depuis le portail pour recevoir un nouveau lien.",
+    invalidBack: "Retour au portail",
+    // Barre de progression (5 étapes nommées).
+    steps: {
+      welcome: "Bienvenue",
+      profile: "Profil",
+      feed: "Ton fil",
+      settings: "Paramétrage",
+      ready: "C’est prêt",
+    },
+    stepAria: "Étape {n} sur 5 : {label}",
+    stepDone: "(faite)",
+    progressLabel: "Progression de l’inscription",
+    // Navigation.
+    back: "Retour",
+    continue: "Continuer",
+    whyTag: "Pourquoi ?",
+    // Phrases de sens (encart « Pourquoi ? »).
+    why1: "Juste pour adapter le vocabulaire — on ne stocke rien et on ne te juge pas.",
+    why2: "Ton profil est une identité publique : tu choisis qui tu es — vraie identité, pseudo ou marque — et il existe au-delà de Marge.",
+    why3: "T’abonner à un compte, à un blog (RSS) ou à une chaîne YouTube, c’est le même geste. Tout arrive dans ton fil.",
+    why4: "Ici, tu règles ton fil toi-même — pas de « pour toi » imposé.",
+    why5: "Te présenter avec #introduction, c’est rejoindre le flux des nouveaux venus — la communauté vient y accueillir et suivre les arrivant·es.",
+    // Types de source.
+    sourceMarge: "Compte Marge",
+    sourceFediverse: "Fédéré",
+    sourceRss: "Flux RSS",
+    sourceYoutube: "YouTube",
+    // ── Écran 1 — Accueil + détection ──
+    s1Overline: "On commence ensemble",
+    s1Title: "Marge n’est pas un réseau comme les autres.",
+    s1Roadmap:
+      "On va te présenter Marge, puis paramétrer ton compte et ton fil. Cinq étapes, pas plus.",
+    s1Question: "Tu utilises déjà des réseaux sociaux ?",
+    choiceNeophyte: "Les réseaux sociaux, ce n’est pas trop mon truc",
+    choiceMainstream:
+      "J’utilise surtout les grands réseaux — Instagram, TikTok, LinkedIn, X…",
+    choiceFedi:
+      "Je connais déjà le web social ouvert — Mastodon, Bluesky, PeerTube…",
+    s1Primary: "C’est parti",
+    s1PreviewLabel: "Ton fil · pour l’instant",
+    s1PreviewSub: "vide",
+    s1EmptyTxt:
+      "Ton fil est vide — c’est normal. On va le remplir ensemble, et tu en gardes le contrôle.",
+    // ── Écran 2 — Profil ──
+    s2Overline: "Étape 2 · Ton identité",
+    s2Title: "Qui es-tu, sur Marge ?",
+    nameLabel: "Nom affiché",
+    namePlaceholder: "Camille Roussel, La Brèche, un collectif…",
+    nameFallback: "Ton nom",
+    nameTipLabel: "Quel nom mettre ?",
+    nameTip:
+      "Ton vrai nom, un pseudonyme, le nom d’une marque ou d’un collectif — c’est toi qui décides.",
+    addrLabel: "Adresse Marge",
+    addrPlaceholder: "tonpseudo",
+    addrTipLabel: "C’est quoi, une adresse Marge ?",
+    addrTip:
+      "Comme une adresse e-mail, mais pour le web social : elle te rend joignable partout, même depuis un autre réseau. Choisis-la bien : ton adresse est définitive — une fois ton compte créé, elle ne pourra plus être modifiée.",
+    addrChecking: "Vérification de la disponibilité…",
+    addrAvailable: "{handle} est disponible.",
+    addrTaken: "{handle} est déjà pris — essaie une autre adresse.",
+    addrInvalid:
+      "Identifiant non valide — 2 à 30 caractères : lettres, chiffres ou tiret bas.",
+    photoLabel: "Photo de profil",
+    facultatif: "facultatif",
+    avatarHint:
+      "Clique sur le cercle pour ajouter une photo, ou choisis une couleur en attendant.",
+    avatarRemove: "Retirer la photo",
+    avatarAddAria: "Ajouter une photo de profil",
+    avatarChangeAria: "Changer la photo de profil",
+    bioLabel: "Bio",
+    bioPlaceholder: "Une phrase sur ce que tu écris ou ce que tu lis.",
+    s2PreviewLabel: "Vu de l’extérieur",
+    s2PreviewSub: "depuis un autre réseau",
+    s2PreviewNote:
+      "Ton profil existe au-delà de Marge : d’autres réseaux peuvent déjà te suivre.",
+    s2HintName: "Renseigne un nom affiché pour continuer",
+    s2HintChecking: "Vérification de l’adresse…",
+    s2HintAddr: "Choisis une adresse disponible pour continuer",
+    extFollow: "Suivre",
+    extNoBio: "Aucune bio — ton profil reste joignable et valide.",
+    extFollowing: "abonnements",
+    extFollowers: "abonnés",
+    extNew: "tout neuf",
+    // ── Écran 3 — Compose ton fil ──
+    s3Overline: "Étape 3 · Le cœur de Marge",
+    s3Title: "Compose ton fil.",
+    s3Roadmap:
+      "Choisis des packs de départ, ou ajoute toi-même n’importe quelle source. Tout arrive au même endroit.",
+    s3PacksLabel: "Packs de départ",
+    s3PacksNote: "comptes & flux réels, curatés",
+    s3PacksEmpty:
+      "Aucun pack proposé pour l’instant. Ajoute tes sources ci-dessous.",
+    packFollow: "Tout suivre en un clic",
+    packFollowed: "Ajouté — {n} sources",
+    s3AddLabel: "Ou ajoute une source — la même barre pour tout",
+    s3AddPlaceholder:
+      "Un compte, une adresse fédérée, une URL de flux RSS, une chaîne YouTube…",
+    s3AddBtn: "Ajouter au fil",
+    s3ExamplesLabel: "Par exemple :",
+    s3ExampleAccount: "@uncompte",
+    s3ExampleRss: "un flux RSS",
+    s3ExampleYoutube: "une chaîne YouTube",
+    s3PreviewLabel: "Ton fil se remplit",
+    s3PreviewEmptySub: "ajoute une première source",
+    s3PreviewSub: "{n} sources · 1 seul fil",
+    s3PreviewEmpty:
+      "Rien encore. Sélectionne un pack ou ajoute une source : tu verras tout arriver ici, mélangé dans un seul fil.",
+    // ── Écran 4 — Paramétrage (notifications seules) ──
+    s4Overline: "Étape 4 · Notifications",
+    s4Title: "Comment veux-tu être prévenu·e ?",
+    s4Roadmap:
+      "Un seul réglage, réversible à tout moment depuis tes préférences. Aucun autre paramètre imposé.",
+    notifLabel: "Notifications",
+    notifDigest: "Résumé quotidien",
+    notifRealtime: "En temps réel",
+    notifNone: "Aucune",
+    notifDigestHint:
+      "Une seule notification par jour, qui regroupe l’essentiel — sans te happer en continu.",
+    notifRealtimeHint:
+      "Tu es prévenu·e à chaque interaction. Pratique, mais plus sollicitant.",
+    notifNoneHint:
+      "Aucune notification : tu reviens sur Marge quand tu en as envie.",
+    s4PreviewLabel: "Aperçu en direct",
+    s4PreviewEmpty:
+      "Ton fil est encore vide. Reviens à l’étape « Ton fil » pour ajouter des sources.",
+    // ── Écran 5 — C'est prêt ──
+    s5Overline: "Étape 5 · C’est prêt",
+    s5Title: "Un mot pour commencer ?",
+    s5Roadmap:
+      "Présente-toi à la communauté avec le mot-clé #introduction : c’est la meilleure façon de te faire connaître et d’être suivi·e. Tu peux aussi entrer directement.",
+    introPlaceholder:
+      "Présente-toi : qui es-tu, ce que tu comptes partager ou lire, ce qui t’amène sur Marge…",
+    introTag: "#introduction",
+    introChars: { one: "{n} caractère", other: "{n} caractères" },
+    s5Enter: "Entrer dans mon fil",
+    s5PublishEnter: "Publier et entrer",
+    s5Finishing: "Création du compte…",
+    s5PreviewLabel: "Ton fil",
+    s5PreviewIntro: "ta présentation en tête",
+    s5PreviewEmptySub: "vide",
+    s5PreviewLive: "vivant",
+    s5PreviewEmpty:
+      "Aucune source pour l’instant. Ton fil t’attend, tu le rempliras quand tu veux.",
+    // Info-bulle (déplier/replier).
+    tipFallbackName: "Toi",
   },
   feed: {
     sources: {
@@ -599,6 +766,7 @@ const fr = {
     accounts: "Comptes",
     posts: "Billets",
     pages: "Pages",
+    onboarding: "Onboarding",
     accountsMetaTitle: "Comptes — Administration",
     accountsCount: { one: "{n} compte local.", other: "{n} comptes locaux." },
     colAccount: "Compte",
@@ -664,6 +832,41 @@ const fr = {
       one: "{n} relevé depuis le {date}.",
       other: "{n} relevés depuis le {date}.",
     },
+    // Curation des packs de départ de l'onboarding.
+    onboardingMetaTitle: "Onboarding — Administration",
+    onboardingTitle: "Packs de départ",
+    onboardingIntro:
+      "Groupes de comptes et de flux proposés à l’inscription (étape « Ton fil »). Données réelles, suivables d’un clic.",
+    newPack: "Nouveau pack",
+    newPackMetaTitle: "Nouveau pack — Administration",
+    editPackMetaTitle: "Éditer un pack — Administration",
+    allPacks: "← Tous les packs",
+    noPacks: "Aucun pack pour l’instant.",
+    packDisabledBadge: "désactivé",
+    packItemsCount: { one: "{n} élément", other: "{n} éléments" },
+    packName: "Nom du pack",
+    packNamePlaceholder: "Écologie",
+    packTag: "Sous-titre",
+    packTagPlaceholder: "Climat · vivant · transitions",
+    packEnabled: "Activé (visible à l’inscription)",
+    savePack: "Enregistrer le pack",
+    createPack: "Créer le pack",
+    deletePack: "Supprimer ce pack",
+    packItemsTitle: "Comptes & flux",
+    noPackItems: "Aucun compte ni flux dans ce pack.",
+    packItemType: "Type",
+    packItemLabel: "Nom affiché",
+    packItemLabelPlaceholder: "Racines",
+    packItemRef: "Référence",
+    packItemRefPlaceholder: "@racines@marge.social ou https://blog.fr/rss",
+    packItemRefHint:
+      "Compte : @compte@instance (ou un handle local). Flux : l’URL d’un blog, d’un flux RSS/Atom ou d’une chaîne YouTube.",
+    addPackItem: "Ajouter",
+    removePackItem: "retirer",
+    packTypeMarge: "Compte Marge",
+    packTypeFediverse: "Fédéré",
+    packTypeRss: "Flux RSS",
+    packTypeYoutube: "YouTube",
   },
   feedDetail: {
     statusOrphan: "orphelin (sans propriétaire)",
@@ -725,6 +928,15 @@ const fr = {
     emailExists: "Un compte existe déjà avec cet email.",
     handleTaken: "Ce handle est déjà pris.",
     invalidCredentials: "Email ou mot de passe incorrect.",
+    identifierRequired: "Indique ton email ou ton handle.",
+    activationInvalid:
+      "Lien d’activation invalide ou expiré. Réinscris-toi pour en recevoir un nouveau.",
+    // Packs d'onboarding (admin)
+    packNameRequired: "Le nom du pack est requis.",
+    packNotFound: "Pack introuvable.",
+    packItemTypeInvalid: "Type d’élément invalide.",
+    packItemLabelRequired: "Le nom affiché est requis.",
+    packItemRefRequired: "La référence est requise.",
     // Validation (Zod)
     handleTooShort: "Le handle doit faire au moins 2 caractères.",
     handleTooLong: "Le handle ne peut dépasser 32 caractères.",

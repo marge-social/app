@@ -3,7 +3,6 @@ import { Fragment } from "react";
 import { Wordmark } from "@/components/brand/Wordmark";
 import { AuthCard } from "@/components/portal/AuthCard";
 import { LocaleSwitcher } from "@/components/LocaleSwitcher";
-import { INSTANCE_DOMAIN } from "@/lib/config";
 import { getServerI18n } from "@/lib/i18n/server";
 
 /**
@@ -49,7 +48,7 @@ export async function Portal() {
           </section>
 
           <div className="portal-auth">
-            <AuthCard handleSuffix={INSTANCE_DOMAIN} />
+            <AuthCard />
           </div>
         </div>
       </main>

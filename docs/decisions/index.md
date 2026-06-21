@@ -26,6 +26,7 @@ trace du raisonnement, pas seulement de son résultat.
 | [0003](0003-commenter-dedouble-note-vs-article.md)    | Dédoublement du « commenter » : `Note` vs `Article`   | Accepté |
 | [0004](0004-affichage-compteurs-engagement.md)        | Affichage des compteurs d'engagement                  | Proposé |
 | [0005](0005-handles-jeu-de-caracteres.md)             | Choix du handle de l'utilisateur            | Accepté |
+| [0006](0006-inscription-deux-temps-email.md)          | Inscription en deux temps avec activation par email   | Accepté |
 
 > Nouveau record : copier [`template.md`](template.md), le numéroter à la suite
 > (`NNNN-titre-en-kebab.md`) et l'ajouter à ce tableau et à la `nav` du

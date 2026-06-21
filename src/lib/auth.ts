@@ -1,14 +1,10 @@
 import "server-only";
-import { sha256 } from "@oslojs/crypto/sha2";
-import {
-  encodeBase32LowerCaseNoPadding,
-  encodeHexLowerCase,
-} from "@oslojs/encoding";
 import { hash, verify } from "@node-rs/argon2";
 import { and, eq, ne } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { db } from "@/db";
 import { sessions, users } from "@/db/schema";
+import { generateToken, hashToken } from "@/lib/tokens";
 
 const SESSION_COOKIE = "marge_session";
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30; // 30 jours
@@ -35,15 +31,9 @@ export function verifyPassword(
 
 // --- Sessions ------------------------------------------------------------
 
-function generateSessionToken(): string {
-  const bytes = new Uint8Array(20);
-  crypto.getRandomValues(bytes);
-  return encodeBase32LowerCaseNoPadding(bytes);
-}
-
-function sessionIdFromToken(token: string): string {
-  return encodeHexLowerCase(sha256(new TextEncoder().encode(token)));
-}
+// Jetons opaques mutualisés (cf. src/lib/tokens.ts).
+const generateSessionToken = generateToken;
+const sessionIdFromToken = hashToken;
 
 /** Crée une session en base et renvoie le token brut (à poser en cookie). */
 export async function createSession(userId: string): Promise<string> {
