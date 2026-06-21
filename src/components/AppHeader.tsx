@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { countUnreadNotifications } from "@/lib/notifications";
 import { getServerI18n } from "@/lib/i18n/server";
 import { AppHeaderNav } from "@/components/AppHeaderNav";
+import { Wordmark } from "@/components/brand/Wordmark";
 
 function initialsFromHandle(handle: string): string {
   return handle.slice(0, 2).toUpperCase();
@@ -25,10 +26,7 @@ export async function AppHeader() {
 
   return (
     <header className="app-header">
-      <Link href="/" className="brand">
-        <span>Marge</span>
-        <span className="dot">.</span>
-      </Link>
+      <Wordmark href="/" size={20} homeLabel={nav.brandHome} />
 
       <nav className="nav" aria-label={nav.mainLabel}>
         <Link href="/" aria-current="page">

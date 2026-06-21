@@ -186,18 +186,26 @@ body {
   padding: 0 max(var(--shell-pad-x), calc((100% - var(--shell-max-w)) / 2 + var(--shell-pad-x)));
   gap: 28px;
 }
-.brand {
-  font-family: var(--serif);
-  font-size: 22px;
+/* Mot-symbole « marge. » — cf. composant <Wordmark> et la charte. Inter Tight
+   600, approche serrée, mot en encre, point en accent (seule couleur de marque).
+   La taille est posée en `font-size` inline par le composant. */
+.wordmark {
+  font-family: var(--sans);
   font-weight: 600;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.03em;
   line-height: 1;
   text-decoration: none;
-  color: inherit;
+  color: var(--ink);
+  user-select: none;
+  white-space: nowrap;
 }
-.brand .dot {
-  color: var(--brick);
+.wordmark__dot {
+  color: var(--accent);
 }
+/* Dark mode : le mot suit `--ink` (token de texte du thème) et le point reste
+   `--accent`. Pas de surcharge `prefers-color-scheme` en dur : l'app force
+   aujourd'hui `color-scheme: light` (fonds toujours blancs) ; le jour où un vrai
+   thème sombre flippe `--ink` vers le blanc, le mot-symbole basculera seul. */
 .nav {
   display: flex;
   gap: 6px;
@@ -2827,12 +2835,6 @@ body {
   align-items: center;
   gap: 18px;
   min-width: 0;
-}
-.portal-footer-brand {
-  font-family: var(--serif);
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--ink-4);
 }
 .portal-footer-links {
   display: flex;

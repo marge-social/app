@@ -23,6 +23,7 @@ const fr = {
   },
   nav: {
     mainLabel: "Navigation principale",
+    brandHome: "marge, retour à l'accueil",
     searchLabel: "Rechercher",
     searchPlaceholder: "Rechercher…",
     search: "Recherche",

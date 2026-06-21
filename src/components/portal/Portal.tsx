@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Fragment } from "react";
+import { Wordmark } from "@/components/brand/Wordmark";
 import { AuthCard } from "@/components/portal/AuthCard";
 import { LocaleSwitcher } from "@/components/LocaleSwitcher";
 import { INSTANCE_DOMAIN } from "@/lib/config";
@@ -18,10 +19,7 @@ export async function Portal() {
   return (
     <div className="portal">
       <header className="portal-header">
-        <Link href="/" className="brand" aria-label="Marge">
-          <span>Marge</span>
-          <span className="dot">.</span>
-        </Link>
+        <Wordmark href="/" size={22} homeLabel={dict.nav.brandHome} />
       </header>
 
       <a href="#portal-panel" className="skip-link">
@@ -58,7 +56,7 @@ export async function Portal() {
 
       <footer className="portal-footer">
         <div className="portal-footer-left">
-          <span className="portal-footer-brand">Marge</span>
+          <Wordmark size={15} />
           <nav className="portal-footer-links" aria-label={dict.nav.mainLabel}>
             <Link href="/a-propos">À propos</Link>
             <Link href="/charte">Charte</Link>
