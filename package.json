@@ -29,6 +29,7 @@
     "marked": "^18.0.4",
     "marked-linkify-it": "^3.1.15",
     "next": "16.2.7",
+    "nodemailer": "^9.0.1",
     "postgres": "^3.4.9",
     "react": "19.2.4",
     "react-dom": "19.2.4",
@@ -41,6 +42,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/nodemailer": "^8.0.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/turndown": "^5.0.6",

@@ -53,11 +53,15 @@ function PasswordField({
   name,
   autoComplete,
   minLength,
+  value,
+  onValueChange,
 }: {
   id: string;
   name: string;
   autoComplete: "new-password" | "current-password";
   minLength?: number;
+  value?: string;
+  onValueChange?: (v: string) => void;
 }) {
   const { t } = useT();
   const [show, setShow] = useState(false);
@@ -70,6 +74,8 @@ function PasswordField({
         required
         minLength={minLength}
         autoComplete={autoComplete}
+        value={value}
+        onChange={onValueChange ? (e) => onValueChange(e.target.value) : undefined}
       />
       <button
         type="button"
@@ -83,12 +89,121 @@ function PasswordField({
   );
 }
 
-function SignupPanel({ handleSuffix }: { handleSuffix: string }) {
+// Mots de passe trop simples / devinables (liste courte + motifs), repris du
+// prototype : feedback discret, jamais bloquant (le minimum reste 8 caractères).
+const WEAK_PASSWORDS = [
+  "password",
+  "motdepasse",
+  "azerty",
+  "qwerty",
+  "123456",
+  "12345678",
+  "123456789",
+  "000000",
+  "111111",
+  "abc123",
+  "admin",
+  "iloveyou",
+  "bonjour",
+  "soleil",
+  "marge",
+  "loveyou",
+];
+function isGuessable(p: string): boolean {
+  if (!p) return false;
+  const low = p.toLowerCase();
+  if (WEAK_PASSWORDS.some((w) => low.includes(w))) return true;
+  if (/^(.)\1+$/.test(p)) return true; // un seul caractère répété
+  if (/0123|1234|2345|3456|4567|5678|6789|abcd|bcde|cdef|defg/.test(low))
+    return true; // séquences
+  return false;
+}
+
+function CheckMark() {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      width="11"
+      height="11"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M3.5 8.5l3 3 6-6.5" />
+    </svg>
+  );
+}
+
+function PasswordStrength({ value }: { value: string }) {
+  const { t } = useT();
+  const p = t.portal;
+  const cLen = value.length >= 8;
+  const cMix =
+    /[a-zA-Z]/.test(value) && /\d/.test(value) && /[^a-zA-Z0-9]/.test(value);
+  const cStrong = value.length > 0 && !isGuessable(value);
+  const checks = [
+    { ok: cLen, label: p.pwReqLength },
+    { ok: cMix, label: p.pwReqMix },
+    { ok: cStrong, label: p.pwReqCommon },
+  ];
+  const score = checks.filter((c) => c.ok).length;
+  const tier =
+    score <= 1 ? p.pwStrengthWeak : score === 2 ? p.pwStrengthMedium : p.pwStrengthStrong;
+  return (
+    <div className="portal-pw-meter" data-score={score}>
+      <div className="portal-pw-bars">
+        {[0, 1, 2].map((i) => (
+          <span key={i} className="portal-pw-seg" data-on={i < score} />
+        ))}
+        <span className="portal-pw-tier">{tier}</span>
+      </div>
+      <ul className="portal-pw-reqs">
+        {checks.map((c) => (
+          <li key={c.label} data-ok={c.ok}>
+            <span className="portal-pw-mark">
+              {c.ok ? <CheckMark /> : <span className="portal-pw-dot" />}
+            </span>
+            {c.label}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function SignupConfirmation({ onBack }: { onBack: () => void }) {
+  const { t } = useT();
+  const p = t.portal;
+  return (
+    <div className="portal-confirm" role="status">
+      <div className="portal-confirm-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+          <rect x="3" y="5" width="18" height="14" rx="2" />
+          <path d="M4 7l8 6 8-6" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </div>
+      <h2 className="portal-confirm-title">{p.emailSentHeading}</h2>
+      <p className="portal-confirm-body">{p.emailSentBody}</p>
+      <p className="portal-confirm-hint">{p.emailSentHint}</p>
+      <button type="button" className="portal-confirm-back" onClick={onBack}>
+        {p.emailSentBack}
+      </button>
+    </div>
+  );
+}
+
+function SignupPanel({ onSignedUp }: { onSignedUp: () => void }) {
   const { t } = useT();
   const p = t.portal;
   const msg = useActionMessage();
   const [state, action] = useActionState<AuthState, FormData>(signupAction, {});
+  const [password, setPassword] = useState("");
   const ids = useId();
+
+  if (state.ok) return <SignupConfirmation onBack={onSignedUp} />;
 
   return (
     <>
@@ -98,48 +213,6 @@ function SignupPanel({ handleSuffix }: { handleSuffix: string }) {
       </div>
       <form action={action} className="portal-form">
         <ErrorBanner message={msg(state.error)} />
-
-        <div className="portal-field">
-          <label className="portal-label" htmlFor={`${ids}-name`}>
-            {p.displayName}
-          </label>
-          <input
-            id={`${ids}-name`}
-            name="displayName"
-            type="text"
-            required
-            autoComplete="name"
-            className="portal-input"
-            placeholder={p.displayNamePlaceholder}
-          />
-        </div>
-
-        <div className="portal-field">
-          <label className="portal-label" htmlFor={`${ids}-handle`}>
-            {p.handle}
-          </label>
-          <div className="portal-handle">
-            <span className="portal-handle-at" aria-hidden="true">
-              @
-            </span>
-            <input
-              id={`${ids}-handle`}
-              name="handle"
-              type="text"
-              required
-              autoCapitalize="none"
-              autoCorrect="off"
-              spellCheck={false}
-              autoComplete="username"
-              className="portal-handle-input"
-              aria-describedby={`${ids}-handle-hint`}
-            />
-            <span className="portal-handle-suffix">{handleSuffix}</span>
-          </div>
-          <p id={`${ids}-handle-hint`} className="portal-hint">
-            {p.handleHint}
-          </p>
-        </div>
 
         <div className="portal-field">
           <label className="portal-label" htmlFor={`${ids}-email`}>
@@ -165,8 +238,14 @@ function SignupPanel({ handleSuffix }: { handleSuffix: string }) {
             name="password"
             autoComplete="new-password"
             minLength={8}
+            value={password}
+            onValueChange={setPassword}
           />
-          <p className="portal-hint">{p.passwordHint}</p>
+          {password.length > 0 ? (
+            <PasswordStrength value={password} />
+          ) : (
+            <p className="portal-hint">{p.passwordHint}</p>
+          )}
         </div>
 
         <SubmitButton label={p.submitSignup} />
@@ -203,7 +282,7 @@ function LoginPanel() {
           </label>
           <input
             id={`${ids}-id`}
-            name="email"
+            name="identifier"
             type="text"
             required
             autoCapitalize="none"
@@ -238,10 +317,11 @@ function LoginPanel() {
 
 /**
  * Carte d'authentification à onglets du portail visiteur. La bascule
- * inscription/connexion se fait *uniquement* via les onglets. Branchée sur les
- * server actions existantes (`signupAction`/`loginAction`).
+ * inscription/connexion se fait *uniquement* via les onglets. L'inscription ne
+ * demande qu'email + mot de passe (cf. ADR 0006) : un email d'activation est
+ * envoyé, puis le profil se configure à l'onboarding.
  */
-export function AuthCard({ handleSuffix }: { handleSuffix: string }) {
+export function AuthCard() {
   const { t } = useT();
   const p = t.portal;
   const [mode, setMode] = useState<Mode>("signup");
@@ -279,7 +359,7 @@ export function AuthCard({ handleSuffix }: { handleSuffix: string }) {
         aria-labelledby={mode === "signup" ? "portal-tab-signup" : "portal-tab-login"}
       >
         {mode === "signup" ? (
-          <SignupPanel handleSuffix={handleSuffix} />
+          <SignupPanel onSignedUp={() => setMode("login")} />
         ) : (
           <LoginPanel />
         )}

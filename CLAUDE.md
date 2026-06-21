@@ -535,6 +535,45 @@ le fil** comme les vidéos PeerTube. Le flux d'abonnements personnel
   lecteur dans le navigateur (poster ytimg → clic → 1 iframe `nocookie` autoplay).
   Reste : parcours connecté complet (recherche → ajout → fil).
 
+### Inscription en deux temps + onboarding ✅ (vérifié en local)
+
+Refonte du flux d'inscription (cf. [ADR 0006](docs/decisions/0006-inscription-deux-temps-email.md)
++ [docs/inscription.md](docs/inscription.md)). On ne demande plus qu'**email +
+mot de passe** au portail ; un **lien d'activation** par email ouvre un
+**onboarding** où le profil (handle, nom, bio…) est choisi.
+
+- **Tokenisé, sans demi-compte** : l'état pré-activation vit dans
+  `pending_signups` (migration `0015`), **séparé de `users`** — `handle`,
+  `display_name` et les clés AP y restent garantis non nuls. Le compte « réel »
+  (ligne `users` + clés AP + session) naît seulement à la **fin de l'onboarding**
+  (`finishOnboardingAction`). Jetons : seul le **hash SHA-256** est stocké
+  (helpers purs `src/lib/tokens.ts`, partagés avec les sessions).
+- **Email** : `src/lib/mail.ts` (nodemailer SMTP ; **transport « journal »** en
+  console si `SMTP_HOST` vide → flux déroulable en local). Vars `SMTP_*`/`MAIL_FROM`.
+- **Maintenance** : `runSignupMaintenance` (`src/lib/signups.ts`) → endpoint
+  `/api/cron/signups` : rappel à 48 h (jeton tourné) puis suppression à 96 h des
+  inscriptions **non cliquées**. Idempotent.
+- **UI** : portail signup email+mdp + jauge de robustesse + écran « vérifiez vos
+  mails » (`AuthCard`) ; connexion par **email *ou* handle** ; route plein écran
+  `/bienvenue` (`src/components/onboarding/OnboardingWizard.tsx`) = **wizard
+  5 étapes** fidèle au proto (Bienvenue/Profil/Ton fil/Paramétrage/C'est prêt) :
+  niveau (cosmétique → info-bulles), identité (handle dispo en direct + avatar +
+  bio + aperçu « vu de l'extérieur »), flux de départ (packs curatés + ajout
+  libre), notifications, note `#introduction`.
+- **Finalize étendu** (`src/lib/onboarding-finalize.ts`, best-effort) : avatar S3
+  + `notification_settings` + abonnements (suivi local/distant, flux RSS/YouTube)
+  + Note `#introduction` fédérée.
+- **Packs curatés en admin** : `/admin/onboarding` (CRUD groupes + items
+  marge/fediverse/rss/youtube → `onboarding_packs`/`onboarding_pack_items`,
+  migration `0016`) — aucune donnée fictive ; le toggle « ordre du fil » du proto
+  est retiré (fil chronologique seul).
+- Vérifié : `tsc`/`lint`/`build` OK + `scripts/smoke-signup.ts`
+  (`npx tsx --conditions=react-server …`) + **parcours navigateur complet**
+  (admin crée pack « Écologie » {compte local + flux RSS} → signup → `/bienvenue`
+  5 étapes → finalize : compte+clés, follow local *accepted*, abonnement RSS,
+  Note `#introduction` publiée, `notification_settings` = realtime, fil peuplé).
+  Reste : envoi SMTP réel + interop Mastodon via tunnel.
+
 ### Cron digest
 `curl -H "Authorization: Bearer $CRON_SECRET" $APP_URL/api/cron/digest`. À brancher
 sur une tâche cron (quotidien par défaut, §4.3). Regroupe les signaux pauvres
@@ -543,6 +582,12 @@ sur une tâche cron (quotidien par défaut, §4.3). Regroupe les signaux pauvres
 ### Cron RSS
 `curl -H "Authorization: Bearer $CRON_SECRET" $APP_URL/api/cron/poll`. À brancher
 sur une vraie tâche cron en prod.
+
+### Cron inscriptions
+`curl -H "Authorization: Bearer $CRON_SECRET" $APP_URL/api/cron/signups`. Maintenance
+des inscriptions non activées (cf. [docs/inscription.md](docs/inscription.md) +
+ADR 0006) : rappel à 48 h puis suppression à 96 h. Idempotent. Branché toutes les
+heures dans `docker-compose.yml`.
 
 ### Fixtures de test RSS
 `public/test-feed.xml` + `public/test-blog.html` (auto-découverte) servent au

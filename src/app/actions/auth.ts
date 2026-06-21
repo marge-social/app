@@ -12,36 +12,26 @@ import {
   setSessionCookie,
   verifyPassword,
 } from "@/lib/auth";
-import { generateActorKeys } from "@/lib/crypto";
+import { getServerI18n } from "@/lib/i18n/server";
+import { createPendingSignup } from "@/lib/signups";
 import { loginSchema, signupSchema } from "@/lib/validation";
 
 export interface AuthState {
   error?: string;
+  /** Vrai quand l'email d'activation vient (potentiellement) d'être envoyé. */
+  ok?: boolean;
 }
 
-/** Handles réservés (collisionnent avec des routes ou des conventions AP). */
-const RESERVED_HANDLES = new Set([
-  "users",
-  "user",
-  "settings",
-  "feed",
-  "feeds",
-  "compose",
-  "api",
-  "login",
-  "signup",
-  "logout",
-  "admin",
-  "about",
-  "inbox",
-  "outbox",
-  "well-known",
-  "actor",
-  "preferences",
-  "recherche",
-  "notes",
-]);
-
+/**
+ * Inscription (étape 1, cf. ADR 0006) : on ne demande qu'email + mot de passe.
+ * Aucun compte n'est créé ici — une **inscription en attente** est posée et un
+ * email d'activation est envoyé. Le handle et le profil sont choisis ensuite à
+ * l'onboarding.
+ *
+ * Réponse **neutre** (toujours `ok:true` pour une saisie valide) : on ne révèle
+ * pas si l'email est déjà rattaché à un compte (anti-énumération, cohérent avec
+ * le message générique de la connexion).
+ */
 export async function signupAction(
   _prev: AuthState,
   formData: FormData,
@@ -49,66 +39,49 @@ export async function signupAction(
   const parsed = signupSchema.safeParse({
     email: formData.get("email"),
     password: formData.get("password"),
-    handle: formData.get("handle"),
-    displayName: formData.get("displayName"),
   });
   if (!parsed.success) {
     // Les messages Zod portent des clés i18n (cf. validation.ts).
     return { error: parsed.error.issues[0]?.message ?? "invalidData" };
   }
-  const { email, password, handle, displayName } = parsed.data;
+  const { email, password } = parsed.data;
 
-  if (RESERVED_HANDLES.has(handle)) {
-    return { error: "handleReserved" };
-  }
-
+  // Si un compte complet existe déjà, on s'arrête en silence (pas d'énumération).
   const existing = await db.query.users.findFirst({
-    where: or(eq(users.email, email), eq(users.handle, handle)),
+    where: eq(users.email, email),
   });
-  if (existing) {
-    return {
-      error: existing.email === email ? "emailExists" : "handleTaken",
-    };
-  }
+  if (existing) return { ok: true };
 
-  // Génération de la paire de clés + projection acteur AP dès l'inscription.
-  const keys = await generateActorKeys();
   const passwordHash = await hashPassword(password);
+  const { locale } = await getServerI18n();
+  await createPendingSignup(email, passwordHash, locale);
 
-  const [user] = await db
-    .insert(users)
-    .values({
-      email,
-      passwordHash,
-      handle,
-      displayName,
-      publicKeys: keys.publicKeys,
-      privateKeys: keys.privateKeysEncrypted,
-    })
-    .returning({ id: users.id });
-
-  const token = await createSession(user.id);
-  await setSessionCookie(token);
-  redirect("/");
+  return { ok: true };
 }
 
+/**
+ * Connexion par **email ou handle** (cf. portail « Email ou handle »). Message
+ * d'erreur générique pour ne pas révéler l'existence d'un compte.
+ */
 export async function loginAction(
   _prev: AuthState,
   formData: FormData,
 ): Promise<AuthState> {
   const parsed = loginSchema.safeParse({
-    email: formData.get("email"),
+    identifier: formData.get("identifier") ?? formData.get("email"),
     password: formData.get("password"),
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "invalidData" };
   }
-  const { email, password } = parsed.data;
+  const { identifier, password } = parsed.data;
+  // L'identifiant peut être un email (contient @) ou un handle (avec/sans @).
+  const asEmail = identifier.toLowerCase();
+  const asHandle = identifier.replace(/^@/, "").toLowerCase();
 
   const user = await db.query.users.findFirst({
-    where: eq(users.email, email),
+    where: or(eq(users.email, asEmail), eq(users.handle, asHandle)),
   });
-  // Message générique pour ne pas révéler l'existence d'un compte.
   const invalid = { error: "invalidCredentials" };
   if (!user) {
     // Coût constant : on hache quand même pour limiter l'oracle de timing.
