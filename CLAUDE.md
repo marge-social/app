@@ -21,6 +21,85 @@ Le MVP démontre trois choses : **agréger** (flux RSS internes), **publier**
 - **Auth** maison : sessions opaques (`@oslojs`), mots de passe argon2id
   (`@node-rs/argon2`). Clés d'acteur AP chiffrées AES-GCM (`src/lib/crypto.ts`).
 
+## Dépendances
+Chaque dépendance est une surface d'attaque (chaîne
+d'approvisionnement), une dette de maintenance et un coût de soutenabilité. Règle
+par défaut : **on n'ajoute pas une dépendance qu'on peut écrire proprement en
+local**.
+
+### Avant d'ajouter une dépendance
+
+Le justifier explicitement (message de commit / description de PR) en répondant à :
+
+1. **Besoin** — qu'est-ce que ça résout qu'on ne sait pas faire en ~30 lignes
+   pures et testables ?
+2. **Coût** — poids installé **et nombre de dépendances transitives**
+   (`npm ls <pkg>`), pas seulement la taille du paquet lui-même.
+3. **Confiance** — mainteneur actif ? publication récente ? téléchargements ?
+   `npm audit` propre ? (méfiance accrue pour un paquet à mainteneur unique.)
+4. **Réversibilité** — peut-on la retirer plus tard sans réécrire la moitié de
+   l'app ?
+
+Ordre de préférence : **bibliothèque standard / API Web natives** → **fonction
+locale pure** (dans `src/lib/`, avec un smoke test) → **micro-dépendance ciblée** →
+en dernier recours seulement, une grosse lib généraliste.
+
+Ne **jamais** ajouter de dépendance pour une fonction triviale (style `left-pad` :
+formatage de chaîne, petit helper de tableau/date, slug…). Le projet écrit déjà
+ce type d'utilitaires en local (`toSlug`, `htmlToText`, `pickBestVideoFile`,
+`effectiveSummary`…) — continuer ainsi.
+
+### Liste blanche — à NE JAMAIS réimplémenter maison
+
+Marge traite du **contenu distant non fiable** (fédération) et gère
+authentification + cryptographie. Réécrire ces briques soi-même = faille quasi
+garantie. Toujours passer par la lib éprouvée déjà en place :
+
+- **Sanitisation HTML** — `isomorphic-dompurify` (XSS sur le HTML fédéré / rendu Markdown).
+- **Hachage de mot de passe** — `@node-rs/argon2` (argon2id).
+- **Crypto & encodage bas niveau** — `@oslojs/crypto`, `@oslojs/encoding`.
+- **Validation d'entrée / schémas** — `zod`.
+- **Détection de type de fichier par *magic bytes*** — `file-type` (validation d'upload).
+- **Traitement d'image / purge EXIF** — `sharp`.
+- **Parsing Markdown** — `marked` (et sa sortie est **toujours** re-sanitisée).
+
+### Audit du parc existant
+
+Périodiquement, et avant toute montée de version majeure de Next :
+
+```
+npm audit                        # vulnérabilités connues dans l'arbre
+npx depcheck                     # dépendances déclarées mais jamais importées
+npx knip                         # dépendances + exports + fichiers morts (plus fin)
+npm ls <pkg>                     # pourquoi <pkg> est là (qui le tire)
+```
+
+⚠️ **Faux positifs attendus sur cette stack — NE PAS retirer sans vérifier :**
+
+- `eslint-config-next`, `tailwindcss`, `@tailwindcss/postcss`, `postcss`, `eslint`,
+  `typescript`, `@types/*` — outillage build/lint, jamais « importé » dans `src/`.
+- `drizzle-kit`, `tsx`, `dotenv` — invoqués par les **scripts npm** et les
+  `scripts/*.mjs` (migrate, make-admin, backfill…), pas par le code applicatif.
+- `@js-temporal/polyfill` — polyfill ; à retirer le jour où `Temporal` est natif.
+
+Procéder **une dépendance à la fois** : retirer →
+`npx tsc --noEmit` + `npm run lint` + `npm run build` + smoke tests concernés →
+commit. Un retrait « qui semble inutilisé » peut être chargé dynamiquement
+(`import()`), via un script de build, ou en peerDependency.
+
+Note de cadrage : le poids de `node_modules` (modules natifs `sharp`, `argon2`,
+AWS SDK S3) est **normal** et n'est pas l'indicateur à suivre. Suivre plutôt le
+**nombre de dépendances directes** et l'évolution de l'arbre transitif.
+
+### Lien avec la gouvernance (ADR)
+
+Ajouter une **dépendance structurante** (brique runtime non triviale : client
+réseau, moteur de rendu, lib crypto/sécurité, ou remplacement d'une lib de la
+liste blanche) est une **décision de conception** → suivre le *Rituel de capture*
+et rédiger un ADR (`docs/decisions/`) consignant l'alternative locale écartée et
+le pourquoi. Une micro-dépendance ciblée n'a pas besoin d'ADR, seulement de la
+justification en PR.
+
 ## Conventions
 
 - Routes profil : `/@handle` via la route dynamique racine `src/app/[handle]/`.
