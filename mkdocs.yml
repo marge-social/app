@@ -66,4 +66,5 @@ nav:
       - "0002 — Anti-attention par la réception": decisions/0002-notifications-reception-vs-amputation.md
       - "0003 — Commenter dédoublé": decisions/0003-commenter-dedouble-note-vs-article.md
       - "0004 — Affichage des compteurs": decisions/0004-affichage-compteurs-engagement.md
+      - "0005 — Choix du handle de l'utilisateur": decisions/0005-handles-jeu-de-caracteres.md
   - Roadmap: roadmap.md

@@ -19,12 +19,13 @@ trace du raisonnement, pas seulement de son résultat.
 
 ## Index
 
-| N° | Décision | Statut |
-|----|----------|--------|
-| [0001](0001-like-activitypub-standard.md) | Statut du « Like » : standard ActivityPub | Accepté |
+| N°                                                    | Décision                                              | Statut  |
+|-------------------------------------------------------|-------------------------------------------------------|---------|
+| [0001](0001-like-activitypub-standard.md)             | Statut du « Like » : standard ActivityPub             | Accepté |
 | [0002](0002-notifications-reception-vs-amputation.md) | Anti-attention par la réception, non par l'amputation | Accepté |
-| [0003](0003-commenter-dedouble-note-vs-article.md) | Dédoublement du « commenter » : `Note` vs `Article` | Accepté |
-| [0004](0004-affichage-compteurs-engagement.md) | Affichage des compteurs d'engagement | Proposé |
+| [0003](0003-commenter-dedouble-note-vs-article.md)    | Dédoublement du « commenter » : `Note` vs `Article`   | Accepté |
+| [0004](0004-affichage-compteurs-engagement.md)        | Affichage des compteurs d'engagement                  | Proposé |
+| [0005](0005-handles-jeu-de-caracteres.md)             | Choix du handle de l'utilisateur            | Accepté |
 
 > Nouveau record : copier [`template.md`](template.md), le numéroter à la suite
 > (`NNNN-titre-en-kebab.md`) et l'ajouter à ce tableau et à la `nav` du
