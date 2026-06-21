@@ -1,0 +1,69 @@
+site_name: Marge — Documentation
+site_description: >-
+  Spécifications, décisions de conception (ADR) et roadmap de Marge,
+  média social du temps long, fédéré et d'intérêt général.
+
+repo_url: https://github.com/marge-social/app
+repo_name: marge-social/app
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  language: fr
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.instant
+    - navigation.footer
+    - content.action.edit
+    - content.code.copy
+    - search.suggest
+    - search.highlight
+    - toc.follow
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: black
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: Passer en mode sombre
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: black
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Passer en mode clair
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+
+plugins:
+  - search:
+      lang: fr
+
+nav:
+  - Accueil: index.md
+  - Cahier des charges:
+      - Synthèse: cahier-des-charges/index.md
+      - Spécification v0.1 (complète): cahier-des-charges.md
+      - Interactions v0.2: cahier-des-charges-v0.2-interactions.md
+      - Checklist interop v0.2: checklist-interop-v0.2.md
+  - Décisions (ADR):
+      - Journal: decisions/index.md
+      - Gabarit MADR: decisions/template.md
+      - "0001 — Statut du « Like »": decisions/0001-like-activitypub-standard.md
+      - "0002 — Anti-attention par la réception": decisions/0002-notifications-reception-vs-amputation.md
+      - "0003 — Commenter dédoublé": decisions/0003-commenter-dedouble-note-vs-article.md
+      - "0004 — Affichage des compteurs": decisions/0004-affichage-compteurs-engagement.md
+  - Roadmap: roadmap.md

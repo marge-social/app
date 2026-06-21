@@ -29,6 +29,31 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
+## Documentation
+
+La documentation du projet (cahier des charges, journal de décisions ADR,
+roadmap) est construite avec **MkDocs Material** et publiée sur **GitHub Pages**
+à chaque `push` sur `main` via `.github/workflows/deploy-docs.yml`. La source
+vit dans `docs/` ; toute modification passe par une *pull request* relue.
+
+### Aperçu local
+
+```bash
+pip install -r requirements-docs.txt
+mkdocs serve   # http://127.0.0.1:8000
+```
+
+### Mise en route (une fois)
+
+1. Sur GitHub : **Settings → Pages → Build and deployment → Source : GitHub
+   Actions**.
+2. `git push` sur `main` → l'Action construit et publie la doc.
+3. Créer le **GitHub Project** (roadmap) et coller son URL dans
+   `docs/roadmap.md`.
+
+Conventions de tenue de la doc (rituel ADR, gouvernance) : voir la section
+« Conventions de documentation » de [`CLAUDE.md`](CLAUDE.md).
+
 ## Deploy on Vercel
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
