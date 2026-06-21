@@ -138,6 +138,14 @@ const en: Messages = {
     feedClaimed: "claimed",
     feedReferenced: "referenced",
     removeFeed: "remove",
+    contributionsTitle: "Articles & contributions",
+    atAGlance: "At a glance",
+    pinnedText: "Pinned text",
+    copyHandle: "Copy federated handle",
+    copied: "copied",
+    fedNoteBefore:
+      "Federated account — followable from any Fediverse instance (Mastodon…) at",
+    fedNoteAfter: ".",
   },
   search: {
     metaTitle: "Search — Marge",

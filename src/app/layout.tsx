@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
-import { Inter_Tight, JetBrains_Mono, Newsreader } from "next/font/google";
+import { Inter_Tight, Newsreader } from "next/font/google";
 import "./globals.css";
 import { I18nProvider } from "@/components/I18nProvider";
 import { MatomoAnalytics } from "@/components/MatomoAnalytics";
 import { getServerI18n } from "@/lib/i18n/server";
 
-// Typographie du design : Newsreader (sérif éditoriale — titres, chapôs, notes),
-// Inter Tight (sans — UI), JetBrains Mono (mono — légendes techniques).
+// Typographie du design system : Inter Tight (sans — TOUT le chrome d'interface),
+// Newsreader (sérif — corps d'article long UNIQUEMENT). Aucune famille monospace :
+// JetBrains Mono est proscrite (cf. tokens/typography.css du design system).
 const newsreader = Newsreader({
   variable: "--font-newsreader",
   subsets: ["latin"],
@@ -19,13 +20,6 @@ const interTight = Inter_Tight({
   variable: "--font-inter-tight",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
-  display: "swap",
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  variable: "--font-jetbrains-mono",
-  subsets: ["latin"],
-  weight: ["400", "500"],
   display: "swap",
 });
 
@@ -52,7 +46,7 @@ export default async function RootLayout({
   return (
     <html
       lang={locale}
-      className={`${newsreader.variable} ${interTight.variable} ${jetbrainsMono.variable} h-full antialiased`}
+      className={`${newsreader.variable} ${interTight.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <I18nProvider locale={locale} dict={dict}>
