@@ -2,7 +2,7 @@
 
 > Vue d'ensemble des phases. Le **pilotage vivant** (items priorisés, statuts,
 > échéances) se fait sur le tableau **GitHub Projects** :
-> 👉 _[remplacer par l'URL de ton GitHub Project]_
+> 👉 <https://github.com/orgs/marge-social/projects/1>
 >
 > Convention : chaque item du board pointe vers l'**ADR** qui le justifie et
 > vers l'**issue** qui l'implémente.
