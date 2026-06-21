@@ -150,6 +150,14 @@ const fr = {
     feedClaimed: "réclamé",
     feedReferenced: "référencé",
     removeFeed: "retirer",
+    contributionsTitle: "Articles & contributions",
+    atAGlance: "En un coup d’œil",
+    pinnedText: "Texte épinglé",
+    copyHandle: "Copier l’identifiant fédéré",
+    copied: "copié",
+    fedNoteBefore:
+      "Compte fédéré — suivable depuis n’importe quelle instance du Fediverse (Mastodon…) à",
+    fedNoteAfter: ".",
   },
   search: {
     metaTitle: "Recherche — Marge",
