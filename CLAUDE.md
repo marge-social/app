@@ -478,3 +478,51 @@ frais). Ne pas réintroduire de résumé dérivé figé en base.
 1. Lancer un tunnel : `cloudflared tunnel --url http://localhost:3000` (ou ngrok).
 2. Mettre `APP_URL` et `INSTANCE_DOMAIN` (`.env`) sur l'URL/host publics, relancer.
 3. Depuis Mastodon, chercher `@<handle>@<host-tunnel>`, suivre, publier un texte.
+
+## Conventions de documentation
+
+La documentation publiée (MkDocs Material → GitHub Pages) vit dans `docs/`,
+configurée par `mkdocs.yml`. **À lire avant toute tâche touchant à `docs/`.**
+
+### Trois artefacts, à ne pas confondre
+
+- `docs/cahier-des-charges/` — **état présent** du produit. Mutable. On le met à
+  jour quand le périmètre change. (Les spécifications détaillées v0.1/v0.2
+  restent dans `docs/cahier-des-charges*.md`, reliées depuis la synthèse.)
+- `docs/decisions/` — **journal de décisions (ADR)**. Le *pourquoi*. Append-only.
+- `docs/roadmap.md` — **futur**. Synthèse des phases ; le détail vit sur GitHub
+  Projects.
+
+### Rituel de capture (important)
+
+À la **fin de toute discussion qui aboutit à une décision de conception**
+structurante (interaction, fédération, droits sur les flux, modèle de données,
+algorithme de feed, etc.) :
+
+1. Proposer de rédiger un ADR.
+2. Si validé, créer le fichier à partir de `docs/decisions/template.md`.
+3. Le numéroter à la suite : `NNNN-titre-en-kebab.md` (4 chiffres).
+4. L'ajouter **au tableau** de `docs/decisions/index.md` **et** à la `nav` de
+   `mkdocs.yml`.
+5. Un « arbitrage résiduel » non tranché → ADR au statut `Proposé` (ne pas le
+   laisser uniquement dans un fil de discussion).
+
+### Règles ADR
+
+- Format **MADR** : Statut, Date, Contexte, Options envisagées, Décision,
+  Conséquences.
+- **Append-only.** On ne réécrit pas un ADR accepté. Pour revenir sur une
+  décision : créer un nouvel ADR, et passer l'ancien au statut
+  `Remplacé par 00XX`.
+- Relier les ADR entre eux (champ « ADR liés ») plutôt que dupliquer le
+  raisonnement.
+- Toute modification de `docs/` passe par une **pull request** relue (provenance
+  et traçabilité — exigence de gouvernance du projet).
+
+### Publication
+
+- Build local : `pip install -r requirements-docs.txt && mkdocs serve`.
+- Le `push` sur `main` (modifiant `docs/**`, `mkdocs.yml` ou
+  `requirements-docs.txt`) déclenche le déploiement GitHub Pages
+  (`.github/workflows/deploy-docs.yml`). Le build est en `--strict` : un lien
+  cassé ou une page hors `nav` fait échouer le déploiement.
