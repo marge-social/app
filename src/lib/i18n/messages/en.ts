@@ -18,6 +18,7 @@ const en: Messages = {
   },
   nav: {
     mainLabel: "Main navigation",
+    brandHome: "marge, back to home",
     searchLabel: "Search",
     searchPlaceholder: "Search…",
     search: "Search",
