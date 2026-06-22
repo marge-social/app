@@ -4131,14 +4131,7 @@ body {
   color: var(--ink);
   text-decoration: none;
 }
-.wz-brand .wz-dot { color: var(--brick); }
-.wz-quit {
-  font-size: 13px;
-  color: var(--ink-3);
-  text-decoration: none;
-  padding: 6px 4px;
-}
-.wz-quit:hover { color: var(--ink); }
+.wz-brand-dot { color: var(--brick); }
 
 /* Progression */
 .wz-progress { margin-bottom: 22px; }

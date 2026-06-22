@@ -504,8 +504,7 @@ export function OnboardingWizard({
     <div className="wz-stage">
       <div className="wz-shell">
         <header className="wz-top">
-          <Link href="/" className="wz-brand">marge<span className="wz-dot">.</span></Link>
-          <Link href="/" className="wz-quit">{o.quit}</Link>
+          <Link href="/" className="wz-brand">marge<span className="wz-brand-dot">.</span></Link>
         </header>
 
         <ProgressBar step={step} maxReached={maxReached} onGo={go} />
