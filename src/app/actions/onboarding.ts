@@ -1,6 +1,6 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { eq, ilike, or } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { pendingSignups, users } from "@/db/schema";
@@ -43,6 +43,43 @@ export async function checkHandleAvailabilityAction(
     where: eq(users.handle, parsed.data),
   });
   return taken ? "taken" : "available";
+}
+
+export interface LocalAccountSuggestion {
+  handle: string;
+  displayName: string;
+  avatarSrc: string | null;
+}
+
+/**
+ * Suggestions de comptes **locaux** (même instance) pour l'onboarding : sert à
+ * l'autocomplétion de la barre « ajoute une source » et au contrôle de réalité
+ * avant d'ajouter un compte marge au fil. Public (aucune session pendant
+ * l'onboarding), borné à 6 résultats, ne renvoie que des champs publics.
+ */
+export async function searchLocalAccountsAction(
+  query: string,
+): Promise<LocalAccountSuggestion[]> {
+  const raw = query.trim().replace(/^@+/, "").split("@")[0].toLowerCase();
+  if (raw.length < 2) return [];
+  const pattern = `%${raw.replace(/[\\%_]/g, (m) => `\\${m}`)}%`;
+  const rows = await db
+    .select({
+      handle: users.handle,
+      displayName: users.displayName,
+      avatarUpdatedAt: users.avatarUpdatedAt,
+    })
+    .from(users)
+    .where(or(ilike(users.handle, pattern), ilike(users.displayName, pattern)))
+    .orderBy(users.handle)
+    .limit(6);
+  return rows.map((r) => ({
+    handle: r.handle,
+    displayName: r.displayName,
+    avatarSrc: r.avatarUpdatedAt
+      ? `/api/avatar/${r.handle}?v=${r.avatarUpdatedAt.getTime()}`
+      : null,
+  }));
 }
 
 /**
