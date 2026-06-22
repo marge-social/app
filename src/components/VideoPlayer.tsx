@@ -5,7 +5,7 @@ import { useT } from "@/components/I18nProvider";
 import { interpolate } from "@/lib/i18n/config";
 
 /**
- * Lecteur vidéo pour le fil. Lit directement dans Marge :
+ * Lecteur vidéo pour le fil. Lit directement dans marge :
  * - un fichier mp4/webm via `<video>` natif ;
  * - une playlist HLS (PeerTube HLS-only) via hls.js, importé **à la demande**
  *   (au clic sur « Lire ») pour ne pas alourdir le fil ; lecture native sur

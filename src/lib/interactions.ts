@@ -19,7 +19,7 @@ export interface InteractionTarget {
 }
 
 /**
- * Valide qu'`objectIri` désigne un objet réellement interactif connu de Marge —
+ * Valide qu'`objectIri` désigne un objet réellement interactif connu de marge —
  * billet local publié, note locale, ou objet distant déjà ingéré — et renvoie
  * l'auteur (à notifier / à qui fédérer). Empêche d'agir sur un IRI arbitraire.
  * `null` si inconnu. Partagé par like et commentaire.

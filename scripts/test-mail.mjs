@@ -13,7 +13,7 @@ if (!to) {
 }
 
 const host = (process.env.SMTP_HOST || "").trim();
-const from = (process.env.MAIL_FROM || "").trim() || "Marge <no-reply@localhost>";
+const from = (process.env.MAIL_FROM || "").trim() || "marge <no-reply@localhost>";
 
 console.log("— Configuration lue —");
 console.log("  SMTP_HOST  :", host || "(vide → transport JOURNAL, aucun envoi réel)");
@@ -49,9 +49,9 @@ try {
   const info = await transporter.sendMail({
     from,
     to,
-    subject: "Test SMTP — Marge",
+    subject: "Test SMTP — marge",
     text:
-      "Cet email confirme que la configuration SMTP de Marge fonctionne.\n" +
+      "Cet email confirme que la configuration SMTP de marge fonctionne.\n" +
       "Si vous le recevez, l'envoi des liens d'activation est opérationnel.",
   });
   console.log("  ✓ Email accepté par le serveur. messageId :", info.messageId);

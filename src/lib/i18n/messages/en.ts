@@ -6,14 +6,14 @@ import type { Messages } from "./fr";
 
 const en: Messages = {
   meta: {
-    title: "Marge",
+    title: "marge",
     description:
       "A social platform for long-form, sourced and federated content — against the attention economy.",
   },
   common: {
     skipToContent: "Skip to content",
     language: "Language",
-    metaNotFound: "Not found — Marge",
+    metaNotFound: "Not found — marge",
     lastUpdated: "Last updated on {date}.",
   },
   nav: {
@@ -63,7 +63,7 @@ const en: Messages = {
     skipToCard: "Skip to the sign-in form",
     manifestoTitle: "A social platform reimagined.",
     manifestoP1:
-      "Marge is a social platform against the attention economy: you publish long-form content, aggregate feeds you've chosen, and everything is natively federated and interoperable.",
+      "marge is a social platform against the attention economy: you publish long-form content, aggregate feeds you've chosen, and everything is natively federated and interoperable.",
     manifestoP2:
       "No hidden manipulation. You decide for yourself what surfaces in your feed, and every text shows the concrete reason it's there.",
     betaTag: "BETA",
@@ -86,13 +86,13 @@ const en: Messages = {
     showPassword: "Show",
     hidePassword: "Hide",
     submitSignup: "Create my account",
-    legalBefore: "By creating an account, you agree to Marge's",
+    legalBefore: "By creating an account, you agree to marge's",
     legalCharter: "charter",
     legalAnd: "and",
     legalPrivacy: "privacy policy",
     legalAfter: ".",
     loginHeading: "Log in",
-    loginSubtitle: "Glad to see you back on Marge.",
+    loginSubtitle: "Glad to see you back on marge.",
     identifier: "Email or handle",
     forgotPassword: "Forgot password?",
     submitLogin: "Log in",
@@ -104,16 +104,16 @@ const en: Messages = {
     pwReqCommon: "Not too common",
     emailSentHeading: "Check your inbox",
     emailSentBody:
-      "If this address isn’t already in use, an activation link is on its way. Click it to set up your profile and enter Marge.",
+      "If this address isn’t already in use, an activation link is on its way. Click it to set up your profile and enter marge.",
     emailSentHint:
       "The link is valid for 96 hours. Don’t forget to check your spam folder.",
     emailSentBack: "Back to log in",
     notActivatedHeading: "Your account isn’t activated yet",
     notActivatedBody:
-      "You still need to confirm your address to finish signing up. We’ve just sent you a fresh activation link: click it to set up your profile and enter Marge.",
+      "You still need to confirm your address to finish signing up. We’ve just sent you a fresh activation link: click it to set up your profile and enter marge.",
   },
   onboarding: {
-    metaTitle: "Welcome — Marge",
+    metaTitle: "Welcome — marge",
     quit: "Quit",
     invalidTitle: "Invalid activation link",
     invalidBody:
@@ -133,18 +133,18 @@ const en: Messages = {
     continue: "Continue",
     whyTag: "Why?",
     why1: "Just to adapt the wording — we store nothing and we don’t judge you.",
-    why2: "Your profile is a public identity: you choose who you are — real name, alias or brand — and it exists beyond Marge.",
+    why2: "Your profile is a public identity: you choose who you are — real name, alias or brand — and it exists beyond marge.",
     why3: "Following an account, a blog (RSS) or a YouTube channel is the same gesture. Everything lands in your feed.",
     why4: "Here, you tune your feed yourself — no imposed “for you”.",
     why5: "Introducing yourself with #introduction means joining the newcomers’ stream — the community comes there to welcome and follow new arrivals.",
-    sourceMarge: "Marge account",
+    sourceMarge: "marge account",
     sourceFediverse: "Federated",
     sourceRss: "RSS feed",
     sourceYoutube: "YouTube",
     s1Overline: "Let’s start together",
-    s1Title: "Marge isn’t a network like the others.",
+    s1Title: "marge isn’t a network like the others.",
     s1Roadmap:
-      "We’ll introduce Marge, then set up your account and your feed. Five steps, no more.",
+      "We’ll introduce marge, then set up your account and your feed. Five steps, no more.",
     s1Question: "Do you already use social networks?",
     choiceNeophyte: "Social networks aren’t really my thing",
     choiceMainstream:
@@ -157,16 +157,16 @@ const en: Messages = {
     s1EmptyTxt:
       "Your feed is empty — that’s normal. We’ll fill it together, and you stay in control.",
     s2Overline: "Step 2 · Your identity",
-    s2Title: "Who are you, on Marge?",
+    s2Title: "Who are you, on marge?",
     nameLabel: "Display name",
     namePlaceholder: "Camille Roussel, La Brèche, a collective…",
     nameFallback: "Your name",
     nameTipLabel: "Which name to use?",
     nameTip:
       "Your real name, an alias, a brand or a collective’s name — you decide.",
-    addrLabel: "Marge address",
+    addrLabel: "marge address",
     addrPlaceholder: "youralias",
-    addrTipLabel: "What’s a Marge address?",
+    addrTipLabel: "What’s a marge address?",
     addrTip:
       "Like an email address, but for the social web: it makes you reachable everywhere, even from another network. Choose it carefully: your address is permanent — once your account is created, it can no longer be changed.",
     addrChecking: "Checking availability…",
@@ -186,7 +186,7 @@ const en: Messages = {
     s2PreviewLabel: "Seen from outside",
     s2PreviewSub: "from another network",
     s2PreviewNote:
-      "Your profile exists beyond Marge: other networks can already follow you.",
+      "Your profile exists beyond marge: other networks can already follow you.",
     s2HintName: "Enter a display name to continue",
     s2HintChecking: "Checking the address…",
     s2HintAddr: "Choose an available address to continue",
@@ -195,7 +195,7 @@ const en: Messages = {
     extFollowing: "following",
     extFollowers: "followers",
     extNew: "brand new",
-    s3Overline: "Step 3 · The heart of Marge",
+    s3Overline: "Step 3 · The heart of marge",
     s3Title: "Compose your feed.",
     s3Roadmap:
       "Pick starter packs, or add any source yourself. Everything lands in the same place.",
@@ -230,7 +230,7 @@ const en: Messages = {
     notifRealtimeHint:
       "You’re notified on every interaction. Handy, but more demanding.",
     notifNoneHint:
-      "No notification: you come back to Marge whenever you feel like it.",
+      "No notification: you come back to marge whenever you feel like it.",
     s4PreviewLabel: "Live preview",
     s4PreviewEmpty:
       "Your feed is still empty. Go back to the “Your feed” step to add sources.",
@@ -239,7 +239,7 @@ const en: Messages = {
     s5Roadmap:
       "Introduce yourself to the community with the #introduction keyword: it’s the best way to make yourself known and get followed. You can also just enter.",
     introPlaceholder:
-      "Introduce yourself: who you are, what you plan to share or read, what brings you to Marge…",
+      "Introduce yourself: who you are, what you plan to share or read, what brings you to marge…",
     introTag: "#introduction",
     introChars: { one: "{n} character", other: "{n} characters" },
     s5Enter: "Enter my feed",
@@ -255,7 +255,7 @@ const en: Messages = {
   },
   feed: {
     sources: {
-      local: "Marge account",
+      local: "marge account",
       fediverse: "Fediverse",
       rss: "RSS feed",
     },
@@ -305,7 +305,7 @@ const en: Messages = {
     fedNoteAfter: ".",
   },
   search: {
-    metaTitle: "Search — Marge",
+    metaTitle: "Search — marge",
     title: "Search",
     inputLabel: "Search content, accounts or feeds",
     placeholder: "Keywords, @account@instance, feed title…",
@@ -422,9 +422,9 @@ const en: Messages = {
           off: "No source attached yet",
         },
         margeRef: {
-          name: "Reference to another Marge author",
+          name: "Reference to another marge author",
           on: "You are engaging with an existing publication",
-          off: "No link to another Marge text",
+          off: "No link to another marge text",
         },
         structure: {
           name: "Reading structure",
@@ -448,7 +448,7 @@ const en: Messages = {
         noSources:
           "No source attached. An external reference — even a light one — strengthens your text on the costly ranking signals.",
         noMargeRef:
-          "No reference to another Marge text. Have you considered engaging with an existing publication? Cross-references are heavily weighted.",
+          "No reference to another marge text. Have you considered engaging with an existing publication? Cross-references are heavily weighted.",
         noStructure:
           "The text exceeds 350 words without a subheading. Splitting it with H2s helps long reads and improves the completion rate.",
         noArgument:
@@ -470,7 +470,7 @@ const en: Messages = {
         url: "Link",
         book: "Book",
         article: "Article",
-        marge: "Marge",
+        marge: "marge",
       },
     },
     sourceModal: {
@@ -483,7 +483,7 @@ const en: Messages = {
         url: "Web link",
         book: "Book",
         article: "Article",
-        marge: "Text on Marge",
+        marge: "Text on marge",
       },
       url: "URL",
       urlPlaceholder: "https://…",
@@ -501,10 +501,10 @@ const en: Messages = {
       venue: "Journal",
       doi: "DOI",
       doiPlaceholder: "10.…",
-      margeText: "Text published on Marge",
+      margeText: "Text published on marge",
       margePlaceholder: "Search a text or paste a marge.social/… permalink",
       margeHint:
-        "Citing a Marge text feeds its author's cross-references signal — a costly and therefore heavily weighted signal.",
+        "Citing a marge text feeds its author's cross-references signal — a costly and therefore heavily weighted signal.",
       cancel: "Cancel",
       add: "Add the source",
     },
@@ -538,7 +538,7 @@ const en: Messages = {
     transparency: {
       title: "How this text will be ranked in the feed",
       intro:
-        "Marge's algorithm is public and configurable. Here are the signals it combines, with their relative weight. They are deliberately decomposed: no aggregate score is computed behind the scenes.",
+        "marge's algorithm is public and configurable. Here are the signals it combines, with their relative weight. They are deliberately decomposed: no aggregate score is computed behind the scenes.",
       signals: {
         replies: {
           n: "Article-replies received",
@@ -550,7 +550,7 @@ const en: Messages = {
         },
         crossRefs: {
           n: "Cross-references",
-          d: "When your text cites — or is cited by — another text published on Marge.",
+          d: "When your text cites — or is cited by — another text published on marge.",
         },
         annotations: {
           n: "Qualified annotations",
@@ -579,7 +579,7 @@ const en: Messages = {
         other:
           "you have {n} sources attached{marge}. The cross-references signal will favour visibility.",
       },
-      whyMargeClause: " and a reference to another Marge text",
+      whyMargeClause: " and a reference to another marge text",
       whyNoSources:
         "no source is attached yet. The cited-sources signal will be neutral — even light sourcing improves visibility.",
       whyStructured:
@@ -598,7 +598,7 @@ const en: Messages = {
     deleteText: "Delete this text",
   },
   notifications: {
-    metaTitle: "Notifications — Marge",
+    metaTitle: "Notifications — marge",
     title: "Notifications",
     refresh: "Refresh",
     markAllRead: "Mark all as read",
@@ -631,7 +631,7 @@ const en: Messages = {
     },
   },
   preferences: {
-    metaTitle: "Preferences — Marge",
+    metaTitle: "Preferences — marge",
     title: "Preferences",
     accountSection: "Account",
     displayName: "Display name",
@@ -705,7 +705,7 @@ const en: Messages = {
   home: {
     landingTitle: "A social platform for democratic debate.",
     landingP1:
-      "Marge is a social platform against the attention economy: you publish long-form texts, aggregate feeds you've chosen, and everything is natively federated and interoperable (ActivityPub).",
+      "marge is a social platform against the attention economy: you publish long-form texts, aggregate feeds you've chosen, and everything is natively federated and interoperable (ActivityPub).",
     landingP2:
       "Right now we're laying the foundations. You can sign up, but it's still barely usable.",
     feedTitle: "Feed",
@@ -721,7 +721,7 @@ const en: Messages = {
     edit: "Edit",
   },
   admin: {
-    metaTitle: "Administration — Marge",
+    metaTitle: "Administration — marge",
     title: "Administration",
     intro:
       "Instance supervision (accounts and posts, read-only) and content page editing. No moderation actions here.",
@@ -826,7 +826,7 @@ const en: Messages = {
       "Account: @user@instance (or a local handle). Feed: the URL of a blog, an RSS/Atom feed or a YouTube channel.",
     addPackItem: "Add",
     removePackItem: "remove",
-    packTypeMarge: "Marge account",
+    packTypeMarge: "marge account",
     packTypeFediverse: "Federated",
     packTypeRss: "RSS feed",
     packTypeYoutube: "YouTube",
@@ -855,7 +855,7 @@ const en: Messages = {
     optOutTitle: "Confirm removal of this feed",
     claimTitle: "Prove this feed is yours",
     tokenInstructions:
-      "Insert this token in your feed (e.g. in a post's title or description, or a feed tag), republish, then click Verify. Marge fetches the feed and confirms your control.",
+      "Insert this token in your feed (e.g. in a post's title or description, or a feed tag), republish, then click Verify. marge fetches the feed and confirms your control.",
     verifyNow: "Verify now",
     yourBlogTitle: "Is this your blog?",
     referencedBefore: "This feed is referenced",

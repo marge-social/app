@@ -28,7 +28,7 @@ let cachedTransport: Transporter | null | undefined;
 
 /** Adresse d'expéditeur (`MAIL_FROM`), avec un repli lisible en dev. */
 function mailFrom(): string {
-  return process.env.MAIL_FROM?.trim() || "Marge <no-reply@localhost>";
+  return process.env.MAIL_FROM?.trim() || "marge <no-reply@localhost>";
 }
 
 /**
@@ -121,10 +121,10 @@ function actionBlock(url: string, label: string, fallbackLabel: string): string 
 const COPY = {
   activation: {
     fr: {
-      subject: "Activez votre compte Marge",
-      title: "Bienvenue sur Marge",
+      subject: "Activez votre compte marge",
+      title: "Bienvenue sur marge",
       intro:
-        "Vous venez de créer un compte. Une dernière étape pour le configurer et entrer dans Marge :",
+        "Vous venez de créer un compte. Une dernière étape pour le configurer et entrer dans marge :",
       cta: "Configurer mon profil",
       fallback: "Si le bouton ne fonctionne pas, copiez ce lien :",
       expiry:
@@ -132,10 +132,10 @@ const COPY = {
       ignore: "Vous n'êtes pas à l'origine de cette inscription ? Ignorez cet email.",
     },
     en: {
-      subject: "Activate your Marge account",
-      title: "Welcome to Marge",
+      subject: "Activate your marge account",
+      title: "Welcome to marge",
       intro:
-        "You just created an account. One last step to set it up and enter Marge:",
+        "You just created an account. One last step to set it up and enter marge:",
       cta: "Set up my profile",
       fallback: "If the button doesn't work, copy this link:",
       expiry:
@@ -145,10 +145,10 @@ const COPY = {
   },
   reminder: {
     fr: {
-      subject: "Votre compte Marge vous attend",
+      subject: "Votre compte marge vous attend",
       title: "Il vous reste une étape",
       intro:
-        "Votre inscription à Marge n'est pas encore finalisée. Configurez votre profil pour commencer :",
+        "Votre inscription à marge n'est pas encore finalisée. Configurez votre profil pour commencer :",
       cta: "Configurer mon profil",
       fallback: "Si le bouton ne fonctionne pas, copiez ce lien :",
       expiry:
@@ -156,10 +156,10 @@ const COPY = {
       ignore: "Vous n'êtes pas à l'origine de cette inscription ? Ignorez cet email.",
     },
     en: {
-      subject: "Your Marge account is waiting",
+      subject: "Your marge account is waiting",
       title: "One step left",
       intro:
-        "Your Marge sign-up isn't finished yet. Set up your profile to get started:",
+        "Your marge sign-up isn't finished yet. Set up your profile to get started:",
       cta: "Set up my profile",
       fallback: "If the button doesn't work, copy this link:",
       expiry:

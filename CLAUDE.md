@@ -1,6 +1,6 @@
 @AGENTS.md
 
-# Marge
+# marge
 
 Média social de contenus longs, sourcés et fédérés (ActivityPub), à
 contre-courant de l'économie attentionnelle. Spécification complète :
@@ -51,7 +51,7 @@ ce type d'utilitaires en local (`toSlug`, `htmlToText`, `pickBestVideoFile`,
 
 ### Liste blanche — à NE JAMAIS réimplémenter maison
 
-Marge traite du **contenu distant non fiable** (fédération) et gère
+marge traite du **contenu distant non fiable** (fédération) et gère
 authentification + cryptographie. Réécrire ces briques soi-même = faille quasi
 garantie. Toujours passer par la lib éprouvée déjà en place :
 
@@ -141,7 +141,7 @@ Postgres via Homebrew (`brew services start postgresql@16`). Base `marge`.
   (`APP_URL`/`INSTANCE_DOMAIN` à pointer dessus) + compte Mastodon.
 - **S3 ✅** (code + vérif locale) : inbox étendu (Create/Update/Delete →
   `remote_objects`, Accept → follow sortant accepté) ; follow interne
-  Marge↔Marge (relation en base, Accept immédiat, bouton profil) ; suivre un
+  marge↔marge (relation en base, Accept immédiat, bouton profil) ; suivre un
   acteur distant (`followRemoteActor` : WebFinger `lookupObject`, Follow
   sortant) ; fil `/feed` fusionnant articles locaux suivis + objets distants en
   ordre chronologique strict. Vérifié localement : follow/unfollow interne →
@@ -161,7 +161,7 @@ Postgres via Homebrew (`brew services start postgresql@16`). Base `marge`.
   distinct du suivi de compte), déclaration depuis `/settings`.
   ⚠️ L'opt-out bloque l'**URL exacte** (pas le domaine) pour ne pas sur-bloquer
   les hébergeurs multi-tenant.
-- **S6 ✅** : fil unifié chronologique strict des 3 sources (comptes Marge,
+- **S6 ✅** : fil unifié chronologique strict des 3 sources (comptes marge,
   Fediverse, flux RSS) avec aperçus honnêtes (titre, source, date, extrait,
   temps de lecture) et aucun compteur d'engagement ; export Markdown
   (`/api/export/markdown`) et OPML (`/api/export/opml`), liens dans /settings.
@@ -372,7 +372,7 @@ Reste : vérif d'interop réelle (Mastodon/PeerTube) via tunnel — cf. ci-desso
 ### Médias des contenus distants — photos Mastodon & vidéos PeerTube ✅ (vérifié en local)
 
 Les médias des contenus distants suivis s'affichent dans le fil, et **les vidéos
-PeerTube se lisent directement dans Marge** (sans quitter le site, sans iframe
+PeerTube se lisent directement dans marge** (sans quitter le site, sans iframe
 tierce).
 
 - **Photos Mastodon** : déjà couvertes par `extractRemoteAttachments` (PJ
@@ -401,7 +401,7 @@ tierce).
 
 Vérifié en local : `tsc`/`lint`/`build` OK + parcours réel via route de test
 jetable (`Attachments` avec un flux HLS public) → poster + bouton, clic →
-bascule en `<video controls>`, flux m3u8 chargé et **en lecture** dans Marge.
+bascule en `<video controls>`, flux m3u8 chargé et **en lecture** dans marge.
 Reste : vidéo PeerTube réelle via tunnel.
 
 ### Mesure d'audience — Matomo (RGPD sans bandeau) ✅ (vérifié en local)

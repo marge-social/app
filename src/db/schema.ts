@@ -411,7 +411,7 @@ export const media = pgTable(
 // --- Flux RSS (interne) --------------------------------------------------
 
 /**
- * Flux RSS référencé sur Marge. Modèle « permissionless mais contestable » :
+ * Flux RSS référencé sur marge. Modèle « permissionless mais contestable » :
  * owner null = orphelin. Ne fédère JAMAIS.
  */
 export const feeds = pgTable(

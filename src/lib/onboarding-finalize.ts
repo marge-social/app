@@ -27,7 +27,7 @@ import type { OnboardingItemType } from "@/lib/onboarding-packs";
 /**
  * Applique les choix d'onboarding **après** la création du compte (cf. ADR 0006).
  * Tout est **best-effort** : un échec (flux injoignable, compte distant
- * introuvable, S3…) est journalisé mais ne bloque jamais l'entrée dans Marge.
+ * introuvable, S3…) est journalisé mais ne bloque jamais l'entrée dans marge.
  */
 
 export interface OnboardingSource {
@@ -73,7 +73,7 @@ async function applyNotificationChoice(
   }
 }
 
-/** Suit un compte local Marge à partir d'un handle/adresse. */
+/** Suit un compte local marge à partir d'un handle/adresse. */
 async function followLocal(user: FinalizeUser, ref: string): Promise<void> {
   const localHandle = ref.replace(/^@+/, "").split("@")[0].toLowerCase();
   if (!localHandle || localHandle === user.handle) return;

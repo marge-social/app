@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /* ───────────────────────────────────────────────────────────────────────────
-   Design tokens — source de vérité : le design system « Marge » (claude.ai
+   Design tokens — source de vérité : le design system « marge » (claude.ai
    /design). Palette quasi-monochrome neutre, anti-attentionnelle : le contenu
    est la couleur, le chrome reste neutre, un SEUL accent désaturé (lie-de-vin)
    pour les affordances interactives. Interdits : crème, terracotta, corail,
@@ -4278,7 +4278,7 @@ body {
 .wz-input::placeholder, .wz-textarea::placeholder { color: var(--ink-4); }
 .wz-input:focus, .wz-textarea:focus { border-color: var(--brick); background: #fff; box-shadow: 0 0 0 3px var(--brick-soft); }
 
-/* Adresse Marge */
+/* Adresse marge */
 .wz-addr-group {
   display: flex;
   align-items: center;

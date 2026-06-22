@@ -13,7 +13,7 @@ import {
   unfollowRemoteActor,
 } from "@/federation/follow";
 
-/** Suit un compte LOCAL (Marge↔Marge) : relation interne, acceptée d'emblée. */
+/** Suit un compte LOCAL (marge↔marge) : relation interne, acceptée d'emblée. */
 export async function followLocalAction(formData: FormData): Promise<void> {
   const viewer = await getCurrentUser();
   if (!viewer) redirect("/");
@@ -37,7 +37,7 @@ export async function followLocalAction(formData: FormData): Promise<void> {
     })
     .onConflictDoNothing();
 
-  // Notifie le compte suivi (un autre compte Marge se met à le suivre, §2.1).
+  // Notifie le compte suivi (un autre compte marge se met à le suivre, §2.1).
   await createFollowNotification(target.id, {
     uri: actorUri(viewer.handle),
     handle: fediverseHandle(viewer.handle),

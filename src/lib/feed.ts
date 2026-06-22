@@ -203,7 +203,7 @@ const PREVIEW_LEN = 280;
 
 /**
  * Construit le fil unifié d'un utilisateur (§Lot 3) : fusion chronologique
- * stricte des billets/notes des comptes Marge suivis **et de soi-même**, des
+ * stricte des billets/notes des comptes marge suivis **et de soi-même**, des
  * objets distants des comptes Fediverse suivis, et des items des flux RSS
  * suivis. Aucun classement algorithmique, aucun compteur d'engagement.
  *
@@ -216,7 +216,7 @@ export async function buildFeed(
 ): Promise<{ entries: FeedEntry[]; hasMore: boolean }> {
   const fetchLimit = opts.limit + 1;
 
-  // Comptes Marge suivis + soi-même (pour voir ses propres publications).
+  // Comptes marge suivis + soi-même (pour voir ses propres publications).
   const localFollows = await db
     .select({
       id: users.id,

@@ -1,4 +1,4 @@
-# Marge — Cahier des charges fonctionnel du MVP
+# marge — Cahier des charges fonctionnel du MVP
 
 ## Module : Interactions sociales & Notifications
 
@@ -10,7 +10,7 @@
 
 ## 1. Périmètre et principe directeur
 
-Ce module ajoute la **boucle sociale** de Marge : réagir, répondre, amplifier, et
+Ce module ajoute la **boucle sociale** de marge : réagir, répondre, amplifier, et
 être informé de ces réactions — en local comme en fédéré.
 
 Le principe directeur, hérité du positionnement anti-attentionnel du projet, est
@@ -30,7 +30,7 @@ la suppression des fonctionnalités.
 
 Trois verbes demandés, mais quatre objets, car « commenter » se dédouble.
 
-| Interaction | Geste utilisateur | Activité ActivityPub | Objet | Placement dans Marge |
+| Interaction | Geste utilisateur | Activité ActivityPub | Objet | Placement dans marge |
 |---|---|---|---|---|
 | **Like** | 1 clic | `Like` | — | Sous le contenu, discret |
 | **Commentaire court** | Champ texte bref | `Create` | `Note` + `inReplyTo` | Fil sous le contenu |
@@ -150,7 +150,7 @@ signaux pauvres, pour ne jamais déclencher d'interruption au coup par coup.
   - Certaines instances **n'envoient pas les `Like`** par choix de
     confidentialité → des likes distants peuvent ne jamais arriver.
   - On ne contrôle **pas l'affichage distant** : un même billet pourra montrer un
-    compteur de favoris/boosts côté Mastodon même si Marge ne l'affiche pas.
+    compteur de favoris/boosts côté Mastodon même si marge ne l'affiche pas.
 - `Undo` (dé-liker, dé-partager) doit aussi fédérer, sinon désynchronisation.
 
 ---
@@ -163,7 +163,7 @@ Ces points sont des **exigences**, pas des préférences esthétiques.
   le nombre de likes/partages est visible par l'auteur sur son propre contenu
   (via ses notifications/son tableau de bord), mais n'est **pas** affiché comme
   score public sous chaque publication. Le like fédère normalement ; c'est son
-  *affichage chez Marge* qui reste sobre.
+  *affichage chez marge* qui reste sobre.
 - **Pas de badge rouge à compteur croissant.** Un indicateur binaire (point
   « il y a du nouveau ») suffit ; pas de nombre qui gonfle.
 - **Pas de notification de notification** (« X et 3 autres ont aimé… » réémis
@@ -201,7 +201,7 @@ Ces points sont des **exigences**, pas des préférences esthétiques.
 ## 8. Arbitrage résiduel & pistes V2
 
 **À trancher avant développement :**
-- *Affichage des compteurs côté Marge.* Le défaut proposé (§6) : visible par
+- *Affichage des compteurs côté marge.* Le défaut proposé (§6) : visible par
   l'auteur, jamais en score public. Trois variantes possibles : (a) totalement
   invisible, même à l'auteur ; (b) visible à l'auteur seul ; (c) visible à tous
   mais sans tri ni mise en avant. Quelle option ?

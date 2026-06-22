@@ -11,14 +11,14 @@
  */
 const fr = {
   meta: {
-    title: "Marge",
+    title: "marge",
     description:
       "Un média social de contenus longs, sourcés et fédérés — à contre-courant de l'économie attentionnelle.",
   },
   common: {
     skipToContent: "Aller au contenu",
     language: "Langue",
-    metaNotFound: "Introuvable — Marge",
+    metaNotFound: "Introuvable — marge",
     lastUpdated: "Dernière mise à jour le {date}.",
   },
   nav: {
@@ -70,7 +70,7 @@ const fr = {
     // Colonne manifeste.
     manifestoTitle: "Un média social réinventé.",
     manifestoP1:
-      "Marge est un média social à contre-courant de l’économie attentionnelle : on y publie des contenus longs, on agrège des flux qu’on a choisis, et tout est nativement fédéré et interopérable.",
+      "marge est un média social à contre-courant de l’économie attentionnelle : on y publie des contenus longs, on agrège des flux qu’on a choisis, et tout est nativement fédéré et interopérable.",
     manifestoP2:
       "Pas de manipulation cachée. Vous réglez vous-même ce qui remonte dans votre fil, et chaque texte affiche la raison concrète de sa présence.",
     betaTag: "BÊTA",
@@ -100,10 +100,10 @@ const fr = {
     legalCharter: "charte",
     legalAnd: "et la",
     legalPrivacy: "politique de confidentialité",
-    legalAfter: "de Marge.",
+    legalAfter: "de marge.",
     // Mode connexion.
     loginHeading: "Se connecter",
-    loginSubtitle: "Heureux de vous revoir sur Marge.",
+    loginSubtitle: "Heureux de vous revoir sur marge.",
     identifier: "Email ou handle",
     forgotPassword: "Mot de passe oublié ?",
     submitLogin: "Se connecter",
@@ -117,16 +117,16 @@ const fr = {
     // Confirmation après inscription (email d'activation envoyé).
     emailSentHeading: "Vérifiez votre boîte mail",
     emailSentBody:
-      "Si cette adresse n’est pas déjà utilisée, un lien d’activation vient de partir. Cliquez dessus pour configurer votre profil et entrer dans Marge.",
+      "Si cette adresse n’est pas déjà utilisée, un lien d’activation vient de partir. Cliquez dessus pour configurer votre profil et entrer dans marge.",
     emailSentHint:
       "Le lien reste valable 96 heures. Pensez à vérifier vos courriers indésirables.",
     emailSentBack: "Retour à la connexion",
     notActivatedHeading: "Votre compte n’est pas encore activé",
     notActivatedBody:
-      "Vous deviez confirmer votre adresse pour finir votre inscription. Nous venons de vous renvoyer un lien d’activation : cliquez dessus pour configurer votre profil et entrer dans Marge.",
+      "Vous deviez confirmer votre adresse pour finir votre inscription. Nous venons de vous renvoyer un lien d’activation : cliquez dessus pour configurer votre profil et entrer dans marge.",
   },
   onboarding: {
-    metaTitle: "Bienvenue — Marge",
+    metaTitle: "Bienvenue — marge",
     quit: "Quitter",
     // Lien d'activation invalide / expiré.
     invalidTitle: "Lien d’activation invalide",
@@ -150,20 +150,20 @@ const fr = {
     whyTag: "Pourquoi ?",
     // Phrases de sens (encart « Pourquoi ? »).
     why1: "Juste pour adapter le vocabulaire — on ne stocke rien et on ne te juge pas.",
-    why2: "Ton profil est une identité publique : tu choisis qui tu es — vraie identité, pseudo ou marque — et il existe au-delà de Marge.",
+    why2: "Ton profil est une identité publique : tu choisis qui tu es — vraie identité, pseudo ou marque — et il existe au-delà de marge.",
     why3: "T’abonner à un compte, à un blog (RSS) ou à une chaîne YouTube, c’est le même geste. Tout arrive dans ton fil.",
     why4: "Ici, tu règles ton fil toi-même — pas de « pour toi » imposé.",
     why5: "Te présenter avec #introduction, c’est rejoindre le flux des nouveaux venus — la communauté vient y accueillir et suivre les arrivant·es.",
     // Types de source.
-    sourceMarge: "Compte Marge",
+    sourceMarge: "Compte marge",
     sourceFediverse: "Fédéré",
     sourceRss: "Flux RSS",
     sourceYoutube: "YouTube",
     // ── Écran 1 — Accueil + détection ──
     s1Overline: "On commence ensemble",
-    s1Title: "Marge n’est pas un réseau comme les autres.",
+    s1Title: "marge n’est pas un réseau comme les autres.",
     s1Roadmap:
-      "On va te présenter Marge, puis paramétrer ton compte et ton fil. Cinq étapes, pas plus.",
+      "On va te présenter marge, puis paramétrer ton compte et ton fil. Cinq étapes, pas plus.",
     s1Question: "Tu utilises déjà des réseaux sociaux ?",
     choiceNeophyte: "Les réseaux sociaux, ce n’est pas trop mon truc",
     choiceMainstream:
@@ -177,16 +177,16 @@ const fr = {
       "Ton fil est vide — c’est normal. On va le remplir ensemble, et tu en gardes le contrôle.",
     // ── Écran 2 — Profil ──
     s2Overline: "Étape 2 · Ton identité",
-    s2Title: "Qui es-tu, sur Marge ?",
+    s2Title: "Qui es-tu, sur marge ?",
     nameLabel: "Nom affiché",
     namePlaceholder: "Camille Roussel, La Brèche, un collectif…",
     nameFallback: "Ton nom",
     nameTipLabel: "Quel nom mettre ?",
     nameTip:
       "Ton vrai nom, un pseudonyme, le nom d’une marque ou d’un collectif — c’est toi qui décides.",
-    addrLabel: "Adresse Marge",
+    addrLabel: "Adresse marge",
     addrPlaceholder: "tonpseudo",
-    addrTipLabel: "C’est quoi, une adresse Marge ?",
+    addrTipLabel: "C’est quoi, une adresse marge ?",
     addrTip:
       "Comme une adresse e-mail, mais pour le web social : elle te rend joignable partout, même depuis un autre réseau. Choisis-la bien : ton adresse est définitive — une fois ton compte créé, elle ne pourra plus être modifiée.",
     addrChecking: "Vérification de la disponibilité…",
@@ -206,7 +206,7 @@ const fr = {
     s2PreviewLabel: "Vu de l’extérieur",
     s2PreviewSub: "depuis un autre réseau",
     s2PreviewNote:
-      "Ton profil existe au-delà de Marge : d’autres réseaux peuvent déjà te suivre.",
+      "Ton profil existe au-delà de marge : d’autres réseaux peuvent déjà te suivre.",
     s2HintName: "Renseigne un nom affiché pour continuer",
     s2HintChecking: "Vérification de l’adresse…",
     s2HintAddr: "Choisis une adresse disponible pour continuer",
@@ -216,7 +216,7 @@ const fr = {
     extFollowers: "abonnés",
     extNew: "tout neuf",
     // ── Écran 3 — Compose ton fil ──
-    s3Overline: "Étape 3 · Le cœur de Marge",
+    s3Overline: "Étape 3 · Le cœur de marge",
     s3Title: "Compose ton fil.",
     s3Roadmap:
       "Choisis des packs de départ, ou ajoute toi-même n’importe quelle source. Tout arrive au même endroit.",
@@ -253,7 +253,7 @@ const fr = {
     notifRealtimeHint:
       "Tu es prévenu·e à chaque interaction. Pratique, mais plus sollicitant.",
     notifNoneHint:
-      "Aucune notification : tu reviens sur Marge quand tu en as envie.",
+      "Aucune notification : tu reviens sur marge quand tu en as envie.",
     s4PreviewLabel: "Aperçu en direct",
     s4PreviewEmpty:
       "Ton fil est encore vide. Reviens à l’étape « Ton fil » pour ajouter des sources.",
@@ -263,7 +263,7 @@ const fr = {
     s5Roadmap:
       "Présente-toi à la communauté avec le mot-clé #introduction : c’est la meilleure façon de te faire connaître et d’être suivi·e. Tu peux aussi entrer directement.",
     introPlaceholder:
-      "Présente-toi : qui es-tu, ce que tu comptes partager ou lire, ce qui t’amène sur Marge…",
+      "Présente-toi : qui es-tu, ce que tu comptes partager ou lire, ce qui t’amène sur marge…",
     introTag: "#introduction",
     introChars: { one: "{n} caractère", other: "{n} caractères" },
     s5Enter: "Entrer dans mon fil",
@@ -280,7 +280,7 @@ const fr = {
   },
   feed: {
     sources: {
-      local: "compte Marge",
+      local: "compte marge",
       fediverse: "Fediverse",
       rss: "flux RSS",
     },
@@ -331,7 +331,7 @@ const fr = {
     fedNoteAfter: ".",
   },
   search: {
-    metaTitle: "Recherche — Marge",
+    metaTitle: "Recherche — marge",
     title: "Recherche",
     inputLabel: "Rechercher des contenus, comptes ou flux",
     placeholder: "Mots-clés, @compte@instance, titre de flux…",
@@ -454,9 +454,9 @@ const fr = {
           off: "Aucune source rattachée pour l’instant",
         },
         margeRef: {
-          name: "Référence à un autre auteur de Marge",
+          name: "Référence à un autre auteur de marge",
           on: "Vous dialoguez avec une publication existante",
-          off: "Aucun lien vers un autre texte de Marge",
+          off: "Aucun lien vers un autre texte de marge",
         },
         structure: {
           name: "Structure de lecture",
@@ -480,7 +480,7 @@ const fr = {
         noSources:
           "Aucune source rattachée. Une référence externe — même légère — alourdit votre texte dans les signaux coûteux du classement.",
         noMargeRef:
-          "Aucune référence à un autre texte de Marge. Pensez-vous à dialoguer avec une publication existante ? Les citations croisées sont fortement pondérées.",
+          "Aucune référence à un autre texte de marge. Pensez-vous à dialoguer avec une publication existante ? Les citations croisées sont fortement pondérées.",
         noStructure:
           "Le texte dépasse 350 mots sans titre intermédiaire. Un découpage par H2 aide les lectures longues et améliore le taux de lecture complète.",
         noArgument:
@@ -503,7 +503,7 @@ const fr = {
         url: "Lien",
         book: "Ouvrage",
         article: "Article",
-        marge: "Marge",
+        marge: "marge",
       },
     },
     // Modale d’ajout de source.
@@ -517,7 +517,7 @@ const fr = {
         url: "Lien web",
         book: "Ouvrage",
         article: "Article",
-        marge: "Texte sur Marge",
+        marge: "Texte sur marge",
       },
       url: "URL",
       urlPlaceholder: "https://…",
@@ -536,11 +536,11 @@ const fr = {
       venue: "Revue",
       doi: "DOI",
       doiPlaceholder: "10.…",
-      margeText: "Texte publié sur Marge",
+      margeText: "Texte publié sur marge",
       margePlaceholder:
         "Rechercher un texte ou coller un permalien marge.social/…",
       margeHint:
-        "Citer un texte de Marge alimente l’indice citations croisées de son auteur — un signal coûteux et donc pondéré fortement.",
+        "Citer un texte de marge alimente l’indice citations croisées de son auteur — un signal coûteux et donc pondéré fortement.",
       cancel: "Annuler",
       add: "Ajouter la source",
     },
@@ -578,7 +578,7 @@ const fr = {
     transparency: {
       title: "Comment ce texte sera classé dans le feed",
       intro:
-        "L’algorithme de Marge est public et paramétrable. Voici les signaux qu’il combine, avec leur poids relatif. Ils sont décomposés volontairement : aucun score agrégé n’est calculé en coulisses.",
+        "L’algorithme de marge est public et paramétrable. Voici les signaux qu’il combine, avec leur poids relatif. Ils sont décomposés volontairement : aucun score agrégé n’est calculé en coulisses.",
       signals: {
         replies: {
           n: "Réponses-billets reçues",
@@ -590,7 +590,7 @@ const fr = {
         },
         crossRefs: {
           n: "Citations croisées",
-          d: "Quand votre texte cite — ou est cité par — un autre texte publié sur Marge.",
+          d: "Quand votre texte cite — ou est cité par — un autre texte publié sur marge.",
         },
         annotations: {
           n: "Annotations qualifiées",
@@ -619,7 +619,7 @@ const fr = {
         other:
           "vous avez {n} sources attachées{marge}. Le signal citations croisées jouera en faveur de la remontée.",
       },
-      whyMargeClause: " et une référence à un autre texte de Marge",
+      whyMargeClause: " et une référence à un autre texte de marge",
       whyNoSources:
         "aucune source n’est attachée pour le moment. Le signal sources citées sera neutre — un sourcing même léger améliore la remontée.",
       whyStructured:
@@ -638,7 +638,7 @@ const fr = {
     deleteText: "Supprimer ce texte",
   },
   notifications: {
-    metaTitle: "Notifications — Marge",
+    metaTitle: "Notifications — marge",
     title: "Notifications",
     refresh: "Rafraîchir",
     markAllRead: "Tout marquer comme lu",
@@ -671,7 +671,7 @@ const fr = {
     },
   },
   preferences: {
-    metaTitle: "Préférences — Marge",
+    metaTitle: "Préférences — marge",
     title: "Préférences",
     accountSection: "Compte",
     displayName: "Nom affiché",
@@ -745,7 +745,7 @@ const fr = {
   home: {
     landingTitle: "Un média social pour le débat démocratique.",
     landingP1:
-      "Marge est un média social à contre-courant de l’économie attentionnelle : on y publie des textes long, on agrège des flux qu’on a choisis, et tout est nativement fédéré et interopérable (ActivityPub).",
+      "marge est un média social à contre-courant de l’économie attentionnelle : on y publie des textes long, on agrège des flux qu’on a choisis, et tout est nativement fédéré et interopérable (ActivityPub).",
     landingP2:
       "En ce moment, on pose les fondations. Vous pouvez vous inscrire, mais c’est encore peu utilisable.",
     feedTitle: "Fil",
@@ -761,7 +761,7 @@ const fr = {
     edit: "Modifier",
   },
   admin: {
-    metaTitle: "Administration — Marge",
+    metaTitle: "Administration — marge",
     title: "Administration",
     intro:
       "Supervision de l’instance (comptes et billets en lecture seule) et édition des pages de contenu. Aucune action de modération ici.",
@@ -866,7 +866,7 @@ const fr = {
       "Compte : @compte@instance (ou un handle local). Flux : l’URL d’un blog, d’un flux RSS/Atom ou d’une chaîne YouTube.",
     addPackItem: "Ajouter",
     removePackItem: "retirer",
-    packTypeMarge: "Compte Marge",
+    packTypeMarge: "Compte marge",
     packTypeFediverse: "Fédéré",
     packTypeRss: "Flux RSS",
     packTypeYoutube: "YouTube",
@@ -896,7 +896,7 @@ const fr = {
     optOutTitle: "Confirmer le retrait de ce flux",
     claimTitle: "Prouver que ce flux est le vôtre",
     tokenInstructions:
-      "Insérez ce jeton dans votre flux (par ex. dans le titre ou la description d’un billet, ou une balise du flux), republiez, puis cliquez sur Vérifier. Marge récupère le flux et confirme votre contrôle.",
+      "Insérez ce jeton dans votre flux (par ex. dans le titre ou la description d’un billet, ou une balise du flux), republiez, puis cliquez sur Vérifier. marge récupère le flux et confirme votre contrôle.",
     verifyNow: "Vérifier maintenant",
     yourBlogTitle: "C’est votre blog ?",
     referencedBefore: "Ce flux est référencé",

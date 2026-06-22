@@ -3,7 +3,7 @@
  * de flux Atom public (`/feeds/videos.xml`), et fournit l'embed d'une vidéo pour
  * la lecture dans le fil.
  *
- * Marge n'a aucun accès privilégié à YouTube : on ne s'appuie que sur les deux
+ * marge n'a aucun accès privilégié à YouTube : on ne s'appuie que sur les deux
  * surfaces publiques et stables qu'il expose — le flux Atom par chaîne (anonyme,
  * pas d'authentification) et le lecteur intégrable. Le flux d'abonnements
  * personnel (`/feed/subscriptions`) est authentifié → hors de portée.
@@ -105,7 +105,7 @@ export async function resolveYouTubeFeedUrl(
   try {
     const res = await fetch(url.href, {
       headers: {
-        "User-Agent": opts.userAgent ?? "Marge/0.1 (+https://marge.social)",
+        "User-Agent": opts.userAgent ?? "marge/0.1 (+https://marge.social)",
         Accept: "text/html,*/*",
       },
       redirect: "follow",

@@ -1,6 +1,6 @@
 # Inscription
 
-L'inscription à Marge se fait **en deux temps** : on ne demande d'abord qu'un
+L'inscription à marge se fait **en deux temps** : on ne demande d'abord qu'un
 **email** et un **mot de passe**, puis un **lien d'activation** envoyé par email
 ouvre un **onboarding** où l'on configure son profil (handle, nom, bio…). Le
 compte « réel » ne naît qu'à la fin de l'onboarding.
@@ -106,7 +106,7 @@ dont dépend tout le code de fédération qui résout un acteur par son handle.
 
 À la finalisation (`finishOnboardingAction` → `applyOnboardingExtras`,
 `src/lib/onboarding-finalize.ts`), après la création du compte, on applique —
-**en best-effort**, chaque échec isolé n'empêchant jamais l'entrée dans Marge :
+**en best-effort**, chaque échec isolé n'empêchant jamais l'entrée dans marge :
 
 - l'**avatar** (validé/ré-encodé/EXIF purgé, stocké S3) ;
 - la **préférence de notifications** sur les 4 types interactifs ;
@@ -171,7 +171,7 @@ Variables d'environnement (cf. `.env.example` / `.env.production.example`) :
 | `SMTP_SECURE` | `true` ⇒ TLS implicite (465) ; `false` ⇒ STARTTLS (587/25).  |
 | `SMTP_USER`   | identifiant SMTP (optionnel si relai sans auth).             |
 | `SMTP_PASS`   | mot de passe SMTP.                                           |
-| `MAIL_FROM`   | adresse d'expéditeur, ex. `Marge <no-reply@marge.social>`.   |
+| `MAIL_FROM`   | adresse d'expéditeur, ex. `marge <no-reply@marge.social>`.   |
 | `CRON_SECRET` | protège `/api/cron/signups` (et les autres endpoints cron).  |
 
 !!! warning "Production"

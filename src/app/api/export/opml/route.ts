@@ -34,7 +34,7 @@ export async function GET(): Promise<Response> {
   const opml = `<?xml version="1.0" encoding="UTF-8"?>
 <opml version="2.0">
   <head>
-    <title>Abonnements RSS de ${escapeXml(fediverseHandle(user.handle))} — Marge</title>
+    <title>Abonnements RSS de ${escapeXml(fediverseHandle(user.handle))} — marge</title>
   </head>
   <body>
 ${outlines}

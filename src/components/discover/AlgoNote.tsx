@@ -26,14 +26,14 @@ function AboutAlgoModal({ onClose }: { onClose: () => void }) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="modal-hd">
-          <h3 id="algo-note-title">Note algorithmique — Marge</h3>
+          <h3 id="algo-note-title">Note algorithmique — marge</h3>
           <button type="button" className="x" onClick={onClose} aria-label="Fermer">
             ✕
           </button>
         </div>
         <div className="modal-body">
           <p>
-            Marge utilise un classement algorithmique, comme toute plateforme qui publie plus de
+            marge utilise un classement algorithmique, comme toute plateforme qui publie plus de
             textes qu’il n’y a d’heures pour les lire. Ce qui change ici :
           </p>
           <ul>
@@ -69,13 +69,13 @@ function AboutAlgoModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-/** Encart « Comment Marge classe » + ouverture de la note algorithmique. */
+/** Encart « Comment marge classe » + ouverture de la note algorithmique. */
 export function AlgoNote() {
   const [open, setOpen] = useState(false);
   return (
     <>
       <div className="panel algo-card">
-        <h3>Comment Marge classe</h3>
+        <h3>Comment marge classe</h3>
         <p>
           Trois curseurs en haut du fil. Aucun score caché. Chaque texte affiche la raison concrète
           de sa remontée.

@@ -44,7 +44,7 @@ function autosize(el: HTMLTextAreaElement | null) {
 }
 
 /**
- * Surface d'écriture de Marge — recrée le prototype « edition-article.html »
+ * Surface d'écriture de marge — recrée le prototype « edition-article.html »
  * (corps WYSIWYG sérif + barre flottante, image d'illustration, panneau miroir,
  * rail des sources, sélecteur de format, modales source/transparence) tout en
  * réémettant le contrat FormData attendu par `saveArticleAction` (le stockage

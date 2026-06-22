@@ -1,6 +1,6 @@
-# Marge — Documentation
+# marge — Documentation
 
-**Marge** est un média social du temps long : un espace de lecture lente et de
+**marge** est un média social du temps long : un espace de lecture lente et de
 production exigeante, à contre-courant de l'économie attentionnelle des
 plateformes dominantes. Il agrège des flux (RSS), permet d'écrire et de débattre
 en contenus longs, et fédère via ActivityPub dans une logique de **numérique
@@ -12,8 +12,8 @@ documentation qui ne dérive pas :
 
 | Artefact | Temporalité | Mutabilité | Question à laquelle il répond |
 |---|---|---|---|
-| [Cahier des charges](cahier-des-charges/index.md) | Présent | Mutable | *Ce que Marge **est** aujourd'hui* |
-| [Journal de décisions (ADR)](decisions/index.md) | Passé | Append-only | *Pourquoi Marge est ainsi* |
+| [Cahier des charges](cahier-des-charges/index.md) | Présent | Mutable | *Ce que marge **est** aujourd'hui* |
+| [Journal de décisions (ADR)](decisions/index.md) | Passé | Append-only | *Pourquoi marge est ainsi* |
 | [Roadmap](roadmap.md) | Futur | Mutable, priorisée | *Ce qu'on implémente ensuite* |
 
 ## Comment naviguer

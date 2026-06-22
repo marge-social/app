@@ -1,6 +1,6 @@
-site_name: Marge — Documentation
+site_name: marge — Documentation
 site_description: >-
-  Spécifications, décisions de conception (ADR) et roadmap de Marge,
+  Spécifications, décisions de conception (ADR) et roadmap de marge,
   média social du temps long, fédéré et d'intérêt général.
 
 repo_url: https://github.com/marge-social/app
@@ -69,4 +69,5 @@ nav:
       - "0004 — Affichage des compteurs": decisions/0004-affichage-compteurs-engagement.md
       - "0005 — Choix du handle de l'utilisateur": decisions/0005-handles-jeu-de-caracteres.md
       - "0006 — Inscription en deux temps": decisions/0006-inscription-deux-temps-email.md
+      - "0007 — Nom de marque en minuscule": decisions/0007-nom-marque-minuscule.md
   - Roadmap: roadmap.md

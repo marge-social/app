@@ -21,21 +21,21 @@
       `await`). Vérifier dans les logs qu'il tourne.
 - [ ] Un compte Mastodon de test prêt (instance tierce).
 - [ ] Découverte OK : depuis Mastodon, chercher `@<handle>@<host-tunnel>` →
-      l'acteur Marge apparaît (Person, avatar, bio). WebFinger + NodeInfo OK.
+      l'acteur marge apparaît (Person, avatar, bio). WebFinger + NodeInfo OK.
 
 ---
 
 ## 1. Like (§2.1) — bascule + Undo
 
-**Émission (Marge → Mastodon)**
-- [ ] Depuis Marge, liker un statut **distant** (Mastodon) → un `Like` arrive sur
+**Émission (marge → Mastodon)**
+- [ ] Depuis marge, liker un statut **distant** (Mastodon) → un `Like` arrive sur
       l'instance distante (favori visible côté Mastodon).
 - [ ] Dé-liker → un `Undo(Like)` fédère → le favori disparaît côté Mastodon.
 - [ ] Re-liker le même objet → réactivation (pas de doublon ; 1 seule ligne
       `interactions`).
 
-**Réception (Mastodon → Marge)**
-- [ ] Depuis Mastodon, mettre en favori un **billet/Note Marge** → reçu en inbox
+**Réception (Mastodon → marge)**
+- [ ] Depuis Mastodon, mettre en favori un **billet/Note marge** → reçu en inbox
       → `interactions` (type Like, origin `federated`) + compteur public mis à jour.
 - [ ] Retirer le favori → `Undo(Like)` reçu → compteur décrémenté.
 - [ ] ⚠️ Certaines instances **n'émettent pas les Like** (choix de confidentialité)
@@ -52,8 +52,8 @@
 - [ ] La Note est déréférençable : ouvrir `/users/:handle/notes/:id` (Accept JSON-LD).
 
 **Réception**
-- [ ] Répondre depuis Mastodon à un **billet/Note Marge** → reçu en inbox →
-      s'affiche **sous** le contenu d'origine dans le fil Marge (commentaire en entier).
+- [ ] Répondre depuis Mastodon à un **billet/Note marge** → reçu en inbox →
+      s'affiche **sous** le contenu d'origine dans le fil marge (commentaire en entier).
 - [ ] Le commentaire reçu **n'apparaît pas** en top-level du fil.
 
 ---
@@ -63,14 +63,14 @@
 **Émission**
 - [ ] Depuis le fil, « Répondre par un billet » → `/compose?replyTo=…` (bandeau
       « En réponse à… ») → publier → `Create(Article)` avec `inReplyTo`.
-- [ ] **Double existence** côté Marge : le billet apparaît (a) en **top-level**
+- [ ] **Double existence** côté marge : le billet apparaît (a) en **top-level**
       du fil (publication autonome) ET (b) en **référence titrée** dans le thread
       du parent.
 - [ ] Côté Mastodon : la réponse-billet apparaît comme statut threadé sous
       l'original (selon le rendu d'Article de l'instance).
 
 **Réception**
-- [ ] Un `Create(Article)+inReplyTo` distant ciblant un objet Marge → reçu →
+- [ ] Un `Create(Article)+inReplyTo` distant ciblant un objet marge → reçu →
       référence titrée dans le thread + (si auteur distant suivi) visible top-level.
 
 ---
@@ -83,8 +83,8 @@
 - [ ] Dé-partager → `Undo(Announce)` fédère → boost retiré côté Mastodon.
 
 **Réception + ré-émission (cœur du §2.4)**
-- [ ] Booster un **billet/Note Marge** depuis Mastodon → reçu en inbox.
-- [ ] Un abonné Marge de l'acteur Mastodon (qui ne suit pas l'auteur original)
+- [ ] Booster un **billet/Note marge** depuis Mastodon → reçu en inbox.
+- [ ] Un abonné marge de l'acteur Mastodon (qui ne suit pas l'auteur original)
       voit l'objet **ré-émis** dans son fil, libellé « partagé par X », daté à
       l'instant du partage, et l'objet partagé a bien été **ingéré** (déréférencé).
 - [ ] Transmis **tel quel** : aucune surcouche d'amplification, pas de tendance,
@@ -107,7 +107,7 @@
 - [ ] Régler un type → **désactivé** → aucune notif ni item de digest.
 
 **Portée**
-- [ ] Régler un type → **fédéré seulement** : une interaction **locale** (Marge↔Marge)
+- [ ] Régler un type → **fédéré seulement** : une interaction **locale** (marge↔marge)
       est filtrée (rien) ; une interaction **fédérée** passe.
 - [ ] Inverse avec **local seulement**.
 
@@ -134,7 +134,7 @@
       notification »).
 - [ ] Indicateur de non-lues **binaire/sobre** (pas de badge rouge qui gonfle de
       façon anxiogène — à confirmer/ajuster sur le badge nav actuel).
-- [ ] Compteurs d'engagement RSS / Fediverse distants **non réaffichés** côté Marge.
+- [ ] Compteurs d'engagement RSS / Fediverse distants **non réaffichés** côté marge.
 
 ---
 

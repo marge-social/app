@@ -33,7 +33,7 @@ const APP_URL = (process.env.APP_URL ?? "https://marge.social").replace(
   /\/+$/,
   "",
 );
-const USER_AGENT = `Marge/0.1 (+${APP_URL}/about; agrégateur d'intérêt général ; réclamation/opt-out sur cette page)`;
+const USER_AGENT = `marge/0.1 (+${APP_URL}/about; agrégateur d'intérêt général ; réclamation/opt-out sur cette page)`;
 
 /** Résout une URL (possiblement relative) en absolue http(s), sinon null. */
 function absoluteHttpUrl(raw, baseUrl) {

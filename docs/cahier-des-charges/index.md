@@ -1,6 +1,6 @@
 # Cahier des charges
 
-> Spécification **vivante** de Marge — décrit l'état présent du produit.
+> Spécification **vivante** de marge — décrit l'état présent du produit.
 > Mutable : à mettre à jour dès que le périmètre évolue. Le *pourquoi* des choix
 > n'est pas ici mais dans le [journal de décisions](../decisions/index.md).
 

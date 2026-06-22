@@ -7,7 +7,7 @@
 ## Contexte et forces en présence
 
 Le « Like » est un signal pauvre, emblématique des mécaniques attentionnelles
-que Marge veut éviter. Deux forces s'opposent :
+que marge veut éviter. Deux forces s'opposent :
 
 - le **positionnement anti-attentionnel** pousse à se méfier du like, voire à le
   supprimer ;
@@ -33,7 +33,7 @@ que Marge veut éviter. Deux forces s'opposent :
 
 ## Conséquences
 
-- Marge parle normalement au Fediverse ; les `Like` entrants/sortants
+- marge parle normalement au Fediverse ; les `Like` entrants/sortants
   interopèrent avec Mastodon.
 - L'effort de design se reporte sur les notifications et l'absence de mise en
   avant par l'engagement.

@@ -1,7 +1,7 @@
 /**
  * Configuration i18n — neutre (utilisable côté serveur ET client).
  *
- * Marge traduit son **interface** seulement : les contenus (articles, notes)
+ * marge traduit son **interface** seulement : les contenus (articles, notes)
  * restent dans la langue de leur auteur. La langue ne vit JAMAIS dans l'URL
  * (cookie + préférence en base) pour ne pas perturber les permaliens fédérés.
  */

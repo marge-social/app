@@ -31,7 +31,7 @@ Les deux portent `inReplyTo` vers le contenu d'origine.
 ## Conséquences
 
 - Avec le `Like` ([0001](0001-like-activitypub-standard.md)) et le partage
-  (`Announce`), Marge compte **quatre** primitives sociales — pas trois.
+  (`Announce`), marge compte **quatre** primitives sociales — pas trois.
 - Justifie une **table d'interactions typée** plutôt qu'un compteur générique.
 - Une réponse-billet apparaît à deux endroits : sous le contenu d'origine **et**
   dans le fil de son auteur.

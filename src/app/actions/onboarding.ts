@@ -113,7 +113,7 @@ export async function finishOnboardingAction(
   await db.delete(pendingSignups).where(eq(pendingSignups.id, pending.id));
 
   // Choix de l'onboarding (avatar, abonnements, notifications, présentation) :
-  // best-effort, n'empêche jamais l'entrée dans Marge en cas d'échec partiel.
+  // best-effort, n'empêche jamais l'entrée dans marge en cas d'échec partiel.
   const avatar = formData.get("avatar");
   const notifyRaw = String(formData.get("notify") ?? "résumé");
   const notify: NotifyChoice =

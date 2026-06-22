@@ -45,13 +45,13 @@ export async function generateMetadata({
   const decoded = decodeURIComponent(raw);
   if (!decoded.startsWith("@")) {
     const page = await getPage(decoded.toLowerCase());
-    return { title: page ? `${page.title} — Marge` : "Marge" };
+    return { title: page ? `${page.title} — marge` : "marge" };
   }
   const profile = await db.query.users.findFirst({
     where: eq(users.handle, decoded.slice(1).toLowerCase()),
     columns: { displayName: true },
   });
-  return { title: profile ? `${profile.displayName} — Marge` : "Marge" };
+  return { title: profile ? `${profile.displayName} — marge` : "marge" };
 }
 
 export default async function ProfilePage({ params }: ProfileParams) {

@@ -1,4 +1,4 @@
-# Marge — Cahier des charges fonctionnel du MVP
+# marge — Cahier des charges fonctionnel du MVP
 
 > Document de spécification destiné à piloter le développement avec Claude Code.
 > Version 0.4 — à itérer.
@@ -7,7 +7,7 @@
 
 ## 1. Contexte et vision
 
-**Marge** est un média social de contenus longs, sourcés et argumentés, conçu à
+**marge** est un média social de contenus longs, sourcés et argumentés, conçu à
 contre-courant de l'économie attentionnelle. Il s'inscrit dans une vision de
 **numérique d'intérêt général** : interopérabilité par les standards ouverts,
 souveraineté des données, accessibilité, absence de dark patterns.
@@ -16,12 +16,12 @@ Le présent document spécifie le **MVP**, dont l'ambition est volontairement
 resserrée : démontrer trois choses, et seulement trois.
 
 1. **J'agrège** — un compte peut déclarer ses flux RSS, et chacun peut être
-   suivi indépendamment du compte ; les items suivis se lisent dans Marge.
+   suivi indépendamment du compte ; les items suivis se lisent dans marge.
 2. **Je publie** — je peux écrire et publier des textes sur la plateforme.
 3. **C'est décentralisé** — mes textes sont nativement fédérés (ActivityPub) et
    suivables depuis le Fediverse (Mastodon et autres).
 
-Tout le reste de la vision Marge (index de réputation, algorithme paramétrable
+Tout le reste de la vision marge (index de réputation, algorithme paramétrable
 transparent, annotations marginales, réponses-billets, friction temporelle)
 est **explicitement hors périmètre** du MVP. Voir §10.
 
@@ -33,36 +33,36 @@ est **explicitement hors périmètre** du MVP. Voir §10.
 |---|---|---|
 | Rôle du RSS | **Flux déclaré par un compte, suivable séparément** | Un compte déclare ses flux ; chaque flux est un objet suivable distinct du compte. Interne uniquement : le contenu RSS ne ressort **jamais** vers le Fediverse. |
 | Follow de compte vs follow de flux | **Indépendants** | Suivre un auteur n'abonne pas à ses flux. Levier de maîtrise de la diffusion par l'auteur. |
-| Degré de fédération | **Fédéré nativement dès le MVP** | Chaque auteur Marge est un acteur ActivityPub suivable depuis Mastodon. |
-| Modèle d'instance | **Multi-comptes** | Une instance Marge héberge plusieurs auteurs, chacun avec sa propre identité fédérée. |
+| Degré de fédération | **Fédéré nativement dès le MVP** | Chaque auteur marge est un acteur ActivityPub suivable depuis Mastodon. |
+| Modèle d'instance | **Multi-comptes** | Une instance marge héberge plusieurs auteurs, chacun avec sa propre identité fédérée. |
 | Type d'objet publié | **`Article`** (format long) | Fidèle au positionnement. Stratégie de dégradation gracieuse côté Mastodon (résumé + permalien). |
 | Tri du feed | **Chronologique pur** | Pas d'algorithme dans le MVP. Position assumée, pas un manque. |
 
 ### Deux objets suivables, deux follows indépendants
 
-Marge distingue **deux types d'objets suivables**, chacun avec son propre
+marge distingue **deux types d'objets suivables**, chacun avec son propre
 bouton « Suivre ». Ils ne sont jamais couplés : suivre un compte n'abonne pas
 à ses flux, et inversement.
 
 | Objet suivable | Ce qu'on reçoit en le suivant | Nature | Portée du follow |
 |---|---|---|---|
-| **Compte** (acteur AP) | Les textes natifs Marge (`Article`) de l'auteur | ActivityPub | Interne **et** fédéré (suivable depuis Mastodon) |
+| **Compte** (acteur AP) | Les textes natifs marge (`Article`) de l'auteur | ActivityPub | Interne **et** fédéré (suivable depuis Mastodon) |
 | **Flux RSS** (déclaré par un compte) | Les items du flux externe de l'auteur | RSS, interne | Interne uniquement (ne fédère pas) |
 
 Un compte peut déclarer **zéro, un ou plusieurs** flux. C'est le levier de
-**maîtrise de la diffusion** : un auteur sépare ses essais natifs Marge de ses
+**maîtrise de la diffusion** : un auteur sépare ses essais natifs marge de ses
 billets de blog crosspostés, et laisse chaque lecteur choisir ses canaux.
 
 ### Architecture des flux
 
 ```
   ENTRANTS (surface de lecture unifiée, chronologique)
-  ├── Articles des COMPTES suivis (auteurs Marge)     [ActivityPub, interne]
+  ├── Articles des COMPTES suivis (auteurs marge)     [ActivityPub, interne]
   ├── Contenus des COMPTES Fediverse distants suivis  [ActivityPub, fédéré]
   └── Items des FLUX RSS suivis (déclarés par un compte) [interne, ne ressort jamais]
 
   SORTANT
-  └── Textes publiés par les auteurs Marge → fédèrent vers le Fediverse
+  └── Textes publiés par les auteurs marge → fédèrent vers le Fediverse
       (les items RSS ne sortent jamais)
 ```
 
@@ -102,7 +102,7 @@ seul dépôt, et une bibliothèque qui absorbe la complexité du protocole.
 - **Article** — texte publié. Champs : id, auteur (User), titre, contenu
   (Markdown source + HTML rendu), résumé, slug/permalien, statut
   (brouillon/publié), date de publication, URI ActivityPub.
-- **Feed** — flux RSS référencé sur Marge. Il a un **statut de propriété** :
+- **Feed** — flux RSS référencé sur marge. Il a un **statut de propriété** :
   `orphelin` (référencé par un utilisateur, sans propriétaire), `réclamé`
   (rattaché à un compte vérifié) ou `opt-out` (refusé, dé-référencé). Champs : id,
   propriétaire (User, **nullable** — null si orphelin), URL du flux, titre,
@@ -162,14 +162,14 @@ seul dépôt, et une bibliothèque qui absorbe la complexité du protocole.
      acteur auteur).
   3. Émission d'un `Create(Article)` vers les inboxes des followers via Fedify.
 - **Dégradation gracieuse côté Mastodon** : comme Mastodon tronque les `Article`,
-  prévoir un `summary` soigné + le permalien Marge bien visible.
+  prévoir un `summary` soigné + le permalien marge bien visible.
 - Édition / suppression d'un texte → émission des activités `Update` / `Delete`
   correspondantes.
 
 ### F3 — Flux RSS : référencement, suivi, réclamation, opt-out (interne)
 
 **Modèle « permissionless mais contestable »** : un flux peut être référencé sur
-Marge sans l'accord préalable de son auteur (c'est l'esprit de la syndication
+marge sans l'accord préalable de son auteur (c'est l'esprit de la syndication
 RSS), mais l'auteur garde à tout moment la main — il peut le réclamer ou le
 refuser. Un flux a un **statut de propriété** : orphelin, réclamé, ou opt-out.
 
@@ -193,7 +193,7 @@ refuser. Un flux a un **statut de propriété** : orphelin, réclamé, ou opt-ou
 **Les trois choix offerts au blogueur** (sur la page publique du flux)
 
 1. **Ne rien faire** → le flux reste orphelin et accessible.
-2. **Réclamer la propriété** → l'auteur crée (ou relie) un compte Marge, prouve
+2. **Réclamer la propriété** → l'auteur crée (ou relie) un compte marge, prouve
    le contrôle du flux (voir Vérification), et le flux passe en **réclamé** :
    propriétaire renseigné, l'auteur peut l'éditer, activer le texte intégral, et
    il devient un flux déclaré comme en F1.
@@ -204,8 +204,8 @@ refuser. Un flux a un **statut de propriété** : orphelin, réclamé, ou opt-ou
 
 **Vérification de contrôle** (commune à réclamation et opt-out)
 
-- **Mécanisme MVP : jeton unique.** Marge génère un jeton que le blogueur insère
-  une fois dans son flux (item ou balise dédiée) ou sur une page du blog ; Marge
+- **Mécanisme MVP : jeton unique.** marge génère un jeton que le blogueur insère
+  une fois dans son flux (item ou balise dédiée) ou sur une page du blog ; marge
   le récupère au polling et valide automatiquement. Universel (marche même sans
   support `rel="me"`) et simple à implémenter.
 - En V2 : ajout de la vérification par lien `rel="me"` réciproque (IndieWeb).
@@ -226,12 +226,12 @@ ré-émis en ActivityPub.
   inbox, outbox, collection followers.
 - **Suivre / être suivi** (le suivi cible toujours un **compte/acteur**, jamais
   un flux) :
-  - **Interne** : un User Marge peut suivre un autre User Marge → relation Follow
+  - **Interne** : un User marge peut suivre un autre User marge → relation Follow
     locale, `Accept` immédiat. C'est le cœur du « média social » : un compte
     s'abonne à un autre compte.
-  - **Sortant** : un User Marge peut suivre un acteur distant (ex. compte
+  - **Sortant** : un User marge peut suivre un acteur distant (ex. compte
     Mastodon) → émission d'un `Follow`, traitement de l'`Accept`.
-  - **Entrant** : un acteur distant peut suivre un User Marge → réception du
+  - **Entrant** : un acteur distant peut suivre un User marge → réception du
     `Follow` dans l'inbox, `Accept` automatique au MVP.
 - **Réception (inbox)** : traiter au minimum `Follow`, `Undo(Follow)`,
   `Create(Note/Article)` (pour alimenter le feed), `Delete`, `Update`.
@@ -242,7 +242,7 @@ ré-émis en ActivityPub.
 ### F5 — Surface de lecture unifiée (le feed)
 
 - Fil unique fusionnant les **trois sources entrantes** : Articles des **comptes
-  Marge suivis**, contenus des **comptes Fediverse distants suivis**, et items
+  marge suivis**, contenus des **comptes Fediverse distants suivis**, et items
   des **flux RSS suivis**. (Suivre un compte et suivre un flux étant indépendants,
   un lecteur voit exactement les canaux qu'il a choisis.)
 - **Tri chronologique strict** (du plus récent au plus ancien). Pas de score,
@@ -250,7 +250,7 @@ ré-émis en ActivityPub.
 - Chaque entrée affiche un **aperçu honnête** : titre, auteur/source, date,
   premier paragraphe ou extrait, et le cas échéant le temps de lecture estimé.
   Pas d'accroche-piège, pas de compteur d'engagement.
-- Clic → lecture du texte complet (interne pour les Articles Marge ; lien
+- Clic → lecture du texte complet (interne pour les Articles marge ; lien
   sortant pour les items RSS et contenus distants).
 
 ---
@@ -261,7 +261,7 @@ ré-émis en ActivityPub.
    `@claire@marge.tld`.
 2. *En tant qu'auteure*, je réclame le flux RSS de mon blog Wordpress en prouvant
    que je le contrôle ; il se rattache à mon compte.
-3. *En tant que lecteur*, je référence sur Marge un blog externe qui n'a pas de
+3. *En tant que lecteur*, je référence sur marge un blog externe qui n'a pas de
    compte ; il devient un flux orphelin que d'autres peuvent suivre (extrait +
    lien seulement).
 4. *En tant que blogueur sans compte*, je découvre via le `User-Agent` du crawler
@@ -273,9 +273,9 @@ ré-émis en ActivityPub.
    devient suivable depuis Mastodon.
 7. *En tant qu'utilisateur Mastodon*, je suis `@claire@marge.tld` et je vois ses
    nouveaux textes natifs arriver dans mon fil Mastodon (mais pas son flux RSS).
-8. *En tant que lecteur Marge*, sur le profil de Claire je peux suivre **son
+8. *En tant que lecteur marge*, sur le profil de Claire je peux suivre **son
    compte**, **son flux**, ou **les deux** — ce sont des gestes séparés.
-9. *En tant que lecteur Marge*, je suis un autre compte Marge, un compte Mastodon
+9. *En tant que lecteur marge*, je suis un autre compte marge, un compte Mastodon
    et un flux RSS ; mon fil chronologique fusionne exactement ces canaux choisis.
 
 ---
@@ -313,7 +313,7 @@ Séquence de build proposée — chaque lot est livrable et testable seul.
    clés, outbox. Un `Article` publié devient suivable et livrable. Test : se
    faire suivre depuis un compte Mastodon de test et recevoir un texte.
 4. **Lot 3 — Fédération entrante + follow interne.** Inbox : traiter `Follow`,
-   `Create`. Follow compte-à-compte interne (Marge ↔ Marge). Suivre un acteur
+   `Create`. Follow compte-à-compte interne (marge ↔ marge). Suivre un acteur
    distant. Les contenus distants alimentent le feed.
 5. **Lot 4 — Flux RSS : référencement + suivi.** Référencer un flux (statut
    orphelin), polling cron mutualisé, dé-doublonnage, affichage extrait + lien,
@@ -334,11 +334,11 @@ Le MVP est atteint quand, sur une instance déployée :
 
 - [ ] Plusieurs comptes coexistent, chacun avec un handle fédéré valide
       (résolvable via WebFinger).
-- [ ] Un texte publié sur Marge est visible et suivable depuis un compte
+- [ ] Un texte publié sur marge est visible et suivable depuis un compte
       Mastodon externe.
-- [ ] Un utilisateur Marge peut suivre un autre compte Marge (follow interne) et
+- [ ] Un utilisateur marge peut suivre un autre compte marge (follow interne) et
       voir ses textes dans son fil.
-- [ ] Un utilisateur Marge peut suivre un compte Mastodon et en voir les
+- [ ] Un utilisateur marge peut suivre un compte Mastodon et en voir les
       contenus dans son fil.
 - [ ] Un compte peut réclamer un flux après preuve de contrôle ; il en devient
       propriétaire et peut activer le texte intégral.
@@ -358,7 +358,7 @@ Le MVP est atteint quand, sur une instance déployée :
 ## 10. Hors périmètre (renvoyé en V2 et au-delà)
 
 Pour éviter toute dérive de périmètre, les fonctionnalités suivantes — pourtant
-au cœur de la vision Marge — sont **explicitement exclues du MVP** :
+au cœur de la vision marge — sont **explicitement exclues du MVP** :
 
 - Index de réputation décomposé.
 - Algorithme de feed paramétrable et transparent (curseurs récence ↔ profondeur,

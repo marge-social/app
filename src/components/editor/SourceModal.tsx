@@ -11,7 +11,7 @@ function newId(): string {
   return "s_" + Math.random().toString(36).slice(2, 8);
 }
 
-/** Modale d'ajout de source (onglets Lien / Ouvrage / Article / Texte sur Marge). */
+/** Modale d'ajout de source (onglets Lien / Ouvrage / Article / Texte sur marge). */
 export function SourceModal({
   initialPassage,
   onClose,

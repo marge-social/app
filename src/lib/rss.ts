@@ -10,7 +10,7 @@ import { resolveYouTubeFeedUrl } from "@/lib/youtube";
  */
 export function crawlerUserAgent(feedId?: string): string {
   const info = feedId ? `${APP_URL}/feeds/${feedId}` : `${APP_URL}/about`;
-  return `Marge/0.1 (+${info}; agrégateur d'intérêt général ; réclamation/opt-out sur cette page)`;
+  return `marge/0.1 (+${info}; agrégateur d'intérêt général ; réclamation/opt-out sur cette page)`;
 }
 
 function looksLikeFeed(text: string, contentType: string | null): boolean {
