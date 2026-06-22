@@ -94,3 +94,24 @@ tout le flux en local sans serveur mail.
   passe** (« mot de passe oublié ») réutilisera la même brique email + jeton
   haché, mais n'est pas traitée ici ; le ramasse-miettes des inscriptions
   **activées mais jamais finalisées** (horizon long) reste à définir.
+
+## Addendum — 2026-06-22 : connexion sur un compte non activé
+
+Le découplage `pending_signups` / `users` a un angle mort d'expérience : une
+personne qui s'est inscrite mais n'a **jamais cliqué** sur le lien d'activation
+n'a **aucune ligne `users`**. À sa tentative de connexion, `loginAction` ne
+trouvait rien et renvoyait le message générique « email ou mot de passe
+incorrect » — l'utilisateur n'avait aucun moyen de comprendre que son compte
+existe et n'attend qu'une activation, ni de relancer l'email (souvent perdu ou
+classé en indésirable).
+
+**Précision de la décision** (ne révise pas l'option 3, l'étend) : à la
+connexion, si aucun compte activé ne correspond, on cherche une inscription en
+attente par email (`findPendingByEmail`). On ne dévoile son existence et on ne
+**renvoie un lien d'activation** (`resendActivation`, jeton tourné — seul le hash
+est stocké, le précédent est invalidé) **qu'après vérification du mot de passe** :
+un mot de passe erroné conserve le message générique. L'invariant
+**anti-énumération** est ainsi préservé — l'information « compte en attente
+d'activation » n'est accessible qu'à qui détient déjà les identifiants — tout en
+offrant une sortie de secours claire. Aucun schéma ni session n'est touché : on
+reste dans le flux tokenisé jusqu'à la finalisation de l'onboarding.

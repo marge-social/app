@@ -108,6 +108,9 @@ const en: Messages = {
     emailSentHint:
       "The link is valid for 96 hours. Don’t forget to check your spam folder.",
     emailSentBack: "Back to log in",
+    notActivatedHeading: "Your account isn’t activated yet",
+    notActivatedBody:
+      "You still need to confirm your address to finish signing up. We’ve just sent you a fresh activation link: click it to set up your profile and enter Marge.",
   },
   onboarding: {
     metaTitle: "Welcome — Marge",

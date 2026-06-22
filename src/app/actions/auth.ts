@@ -13,13 +13,22 @@ import {
   verifyPassword,
 } from "@/lib/auth";
 import { getServerI18n } from "@/lib/i18n/server";
-import { createPendingSignup } from "@/lib/signups";
+import {
+  createPendingSignup,
+  findPendingByEmail,
+  resendActivation,
+} from "@/lib/signups";
 import { loginSchema, signupSchema } from "@/lib/validation";
 
 export interface AuthState {
   error?: string;
   /** Vrai quand l'email d'activation vient (potentiellement) d'être envoyé. */
   ok?: boolean;
+  /**
+   * Vrai quand la connexion visait un compte **jamais activé** (inscription en
+   * attente, mot de passe correct) : on vient de renvoyer l'email d'activation.
+   */
+  pendingActivation?: boolean;
 }
 
 /**
@@ -84,7 +93,19 @@ export async function loginAction(
   });
   const invalid = { error: "invalidCredentials" };
   if (!user) {
-    // Coût constant : on hache quand même pour limiter l'oracle de timing.
+    // Pas de compte activé pour cet identifiant. Peut-être une inscription en
+    // attente d'activation (cf. ADR 0006) ? On ne le révèle qu'après avoir
+    // vérifié le mot de passe — sinon on ouvrirait un oracle d'énumération.
+    const pending = await findPendingByEmail(asEmail);
+    if (pending) {
+      if (await verifyPassword(pending.passwordHash, password)) {
+        await resendActivation(pending.id, pending.email, pending.locale);
+        return { pendingActivation: true };
+      }
+      // Mauvais mot de passe : verifyPassword a déjà payé le coût de timing.
+      return invalid;
+    }
+    // Aucune inscription : on hache quand même pour limiter l'oracle de timing.
     await hashPassword(password);
     return invalid;
   }
