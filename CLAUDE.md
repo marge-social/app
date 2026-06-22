@@ -100,6 +100,21 @@ et rédiger un ADR (`docs/decisions/`) consignant l'alternative locale écartée
 le pourquoi. Une micro-dépendance ciblée n'a pas besoin d'ADR, seulement de la
 justification en PR.
 
+## Rédaction (contenu visible en français)
+
+- **Interdiction du tiret cadratin `—`** dans tout texte français destiné à
+  l'utilisateur (libellés UI, dictionnaire `src/lib/i18n/messages/fr.ts`,
+  contenu de pages, messages…). Le remplacer par une **formule française**
+  adaptée au sens :
+  - liste / énumération qui suit → deux-points `:` (« les grands réseaux :
+    Instagram, TikTok… ») ;
+  - incise / précision → virgule, parenthèses, ou couper en deux phrases
+    (« Ton fil est vide, c'est normal. ») ;
+  - opposition / dialogue → tiret demi-cadratin `–` seulement si vraiment
+    nécessaire, sinon reformuler.
+- S'applique au contenu ; le code et les commentaires techniques ne sont pas
+  concernés.
+
 ## Conventions
 
 - Routes profil : `/@handle` via la route dynamique racine `src/app/[handle]/`.

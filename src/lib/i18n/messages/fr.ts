@@ -127,7 +127,6 @@ const fr = {
   },
   onboarding: {
     metaTitle: "Bienvenue — marge",
-    quit: "Quitter",
     // Lien d'activation invalide / expiré.
     invalidTitle: "Lien d’activation invalide",
     invalidBody:
@@ -149,7 +148,7 @@ const fr = {
     continue: "Continuer",
     whyTag: "Pourquoi ?",
     // Phrases de sens (encart « Pourquoi ? »).
-    why1: "Juste pour adapter le vocabulaire — on ne stocke rien et on ne te juge pas.",
+    why1: "Juste pour adapter le vocabulaire, on ne stocke rien et on ne te juge pas.",
     why2: "Ton profil est une identité publique : tu choisis qui tu es — vraie identité, pseudo ou marque — et il existe au-delà de marge.",
     why3: "T’abonner à un compte, à un blog (RSS) ou à une chaîne YouTube, c’est le même geste. Tout arrive dans ton fil.",
     why4: "Ici, tu règles ton fil toi-même — pas de « pour toi » imposé.",
@@ -167,14 +166,14 @@ const fr = {
     s1Question: "Tu utilises déjà des réseaux sociaux ?",
     choiceNeophyte: "Les réseaux sociaux, ce n’est pas trop mon truc",
     choiceMainstream:
-      "J’utilise surtout les grands réseaux — Instagram, TikTok, LinkedIn, X…",
+      "J’utilise surtout les grands réseaux : Instagram, TikTok, LinkedIn, X…",
     choiceFedi:
-      "Je connais déjà le web social ouvert — Mastodon, Bluesky, PeerTube…",
+      "Je connais déjà le web social ouvert : Mastodon, Bluesky, PeerTube…",
     s1Primary: "C’est parti",
     s1PreviewLabel: "Ton fil · pour l’instant",
     s1PreviewSub: "vide",
     s1EmptyTxt:
-      "Ton fil est vide — c’est normal. On va le remplir ensemble, et tu en gardes le contrôle.",
+      "Ton fil est vide, c’est normal. On va le remplir ensemble, et tu en gardes le contrôle.",
     // ── Écran 2 — Profil ──
     s2Overline: "Étape 2 · Ton identité",
     s2Title: "Qui es-tu, sur marge ?",

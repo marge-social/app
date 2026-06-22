@@ -114,7 +114,6 @@ const en: Messages = {
   },
   onboarding: {
     metaTitle: "Welcome — marge",
-    quit: "Quit",
     invalidTitle: "Invalid activation link",
     invalidBody:
       "This link is invalid or has expired. Sign up again from the portal to get a new one.",

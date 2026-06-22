@@ -21,7 +21,7 @@ async function InvalidLink() {
       <div className="wz-shell wz-shell-narrow">
         <header className="wz-top">
           <Link href="/" className="wz-brand">
-            marge<span className="wz-dot">.</span>
+            marge<span className="wz-brand-dot">.</span>
           </Link>
         </header>
         <div className="wz-card">
