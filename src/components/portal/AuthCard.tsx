@@ -267,6 +267,23 @@ function LoginPanel() {
   const [state, action] = useActionState<AuthState, FormData>(loginAction, {});
   const ids = useId();
 
+  // Connexion sur un compte jamais activé : on a renvoyé l'email d'activation.
+  if (state.pendingActivation) {
+    return (
+      <div className="portal-confirm" role="status">
+        <div className="portal-confirm-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+            <rect x="3" y="5" width="18" height="14" rx="2" />
+            <path d="M4 7l8 6 8-6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
+        <h2 className="portal-confirm-title">{p.notActivatedHeading}</h2>
+        <p className="portal-confirm-body">{p.notActivatedBody}</p>
+        <p className="portal-confirm-hint">{p.emailSentHint}</p>
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="portal-card-head">

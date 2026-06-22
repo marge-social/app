@@ -185,6 +185,26 @@ La connexion accepte désormais un **email ou un handle** (champ « Email ou
 handle » du portail). Le message d'erreur reste **générique** pour ne pas révéler
 l'existence d'un compte.
 
+### Compte inscrit mais jamais activé
+
+Une personne peut s'être inscrite sans avoir cliqué sur le lien d'activation : il
+n'existe alors **aucune ligne `users`**, seulement une ligne `pending_signups`.
+Plutôt que de renvoyer l'erreur générique (qui laisserait croire à un mauvais mot
+de passe), `loginAction` (`src/app/actions/auth.ts`) :
+
+1. ne trouvant pas de compte activé, cherche une inscription en attente par email
+   (`findPendingByEmail`) ;
+2. **vérifie d'abord le mot de passe** contre `pending_signups.password_hash` —
+   un mot de passe erroné retombe sur le message générique (l'existence du compte
+   en attente n'est révélée qu'à qui détient déjà les identifiants :
+   **anti-énumération** préservé) ;
+3. si le mot de passe est bon, **renvoie un email d'activation** (`resendActivation`
+   : nouveau jeton, l'ancien est invalidé puisqu'on ne stocke que le hash) et
+   affiche un écran dédié « Votre compte n'est pas encore activé ».
+
+Aucune session n'est ouverte et aucun compte n'est créé : on reste dans le flux
+tokenisé, l'utilisateur n'a qu'à rouvrir le lien reçu pour reprendre l'onboarding.
+
 ## Sécurité — points clés
 
 - Jetons d'activation **à usage unique**, dont seul le **hash SHA-256** est

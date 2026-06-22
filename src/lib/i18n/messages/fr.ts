@@ -121,6 +121,9 @@ const fr = {
     emailSentHint:
       "Le lien reste valable 96 heures. Pensez à vérifier vos courriers indésirables.",
     emailSentBack: "Retour à la connexion",
+    notActivatedHeading: "Votre compte n’est pas encore activé",
+    notActivatedBody:
+      "Vous deviez confirmer votre adresse pour finir votre inscription. Nous venons de vous renvoyer un lien d’activation : cliquez dessus pour configurer votre profil et entrer dans Marge.",
   },
   onboarding: {
     metaTitle: "Bienvenue — Marge",

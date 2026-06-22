@@ -55,6 +55,35 @@ export async function createPendingSignup(
   await sendActivationEmail(email, activationUrl(token), locale);
 }
 
+/** Résout une inscription en attente à partir de l'email (ou null). */
+export async function findPendingByEmail(
+  email: string,
+): Promise<PendingSignup | null> {
+  const row = await db.query.pendingSignups.findFirst({
+    where: eq(pendingSignups.email, email),
+  });
+  return row ?? null;
+}
+
+/**
+ * Renvoie un email d'activation pour une inscription en attente (ex. : tentative
+ * de connexion sur un compte jamais activé). Fait tourner le jeton — on ne
+ * stocke que son hash, le précédent (toujours valable) est invalidé — et remet à
+ * zéro l'horloge des rappels.
+ */
+export async function resendActivation(
+  id: string,
+  email: string,
+  locale: string,
+): Promise<void> {
+  const token = generateToken();
+  await db
+    .update(pendingSignups)
+    .set({ tokenHash: hashToken(token), reminderSentAt: null })
+    .where(eq(pendingSignups.id, id));
+  await sendActivationEmail(email, activationUrl(token), locale);
+}
+
 /** Résout une inscription en attente à partir du jeton brut (ou null). */
 export async function findPendingByToken(
   token: string,
