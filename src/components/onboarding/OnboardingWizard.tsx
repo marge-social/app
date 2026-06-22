@@ -1,13 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { startTransition, useEffect, useRef, useState } from "react";
 import { useActionState } from "react";
 import {
   checkHandleAvailabilityAction,
   finishOnboardingAction,
   type HandleAvailability,
+  type LocalAccountSuggestion,
   type OnboardingState,
+  searchLocalAccountsAction,
 } from "@/app/actions/onboarding";
 import { useActionMessage, useT } from "@/components/I18nProvider";
 import type { OnboardingItemType, PackView } from "@/lib/onboarding-packs";
@@ -411,6 +413,10 @@ export function OnboardingWizard({
   const [recent, setRecent] = useState<Set<string>>(new Set());
   const recentTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [manual, setManual] = useState("");
+  const [addError, setAddError] = useState<string | null>(null);
+  const [addBusy, setAddBusy] = useState(false);
+  const [suggestions, setSuggestions] = useState<LocalAccountSuggestion[]>([]);
+  const suggestTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [notify, setNotify] = useState<"résumé" | "direct" | "aucune">("résumé");
   const [introText, setIntroText] = useState("");
@@ -421,7 +427,22 @@ export function OnboardingWizard({
   useEffect(() => () => {
     if (addrTimer.current) clearTimeout(addrTimer.current);
     if (recentTimer.current) clearTimeout(recentTimer.current);
+    if (suggestTimer.current) clearTimeout(suggestTimer.current);
   }, []);
+
+  // Un compte local (marge) saisi en clair, p. ex. `@hubert` ou
+  // `@hubert@marge.social`, sans `/` ni point de domaine résiduel.
+  const localHandleQuery = (raw: string): string | null => {
+    const v = raw.trim();
+    if (!v || v.includes("/")) return null;
+    if (/^@?[^@\s]+@/.test(v)) {
+      const inst = v.split("@")[2] || "";
+      if (inst && inst.toLowerCase() !== instanceDomain.toLowerCase()) return null;
+    } else if (!/^@?[a-z0-9_-]+$/i.test(v)) {
+      return null; // ressemble à une URL / un domaine → pas un compte local
+    }
+    return v.replace(/^@+/, "").split("@")[0].toLowerCase();
+  };
 
   function onHandleChange(raw: string) {
     const v = raw.toLowerCase().replace(/[^a-z0-9_-]/g, "");
@@ -460,11 +481,64 @@ export function OnboardingWizard({
     }
   }
 
-  function addManual(raw: string) {
-    const it = detectManualSource(raw, instanceDomain);
-    if (!it) return;
+  function pushSource(it: SelectedSource) {
     setSources((s) => (s.some((x) => x.ref === it.ref) ? s : [it, ...s]));
     markRecent([it.ref]);
+  }
+
+  // Saisie de la barre : suggère les comptes locaux correspondants (débounce) et
+  // efface l'éventuel message d'erreur précédent.
+  function onManualChange(raw: string) {
+    setManual(raw);
+    setAddError(null);
+    const q = localHandleQuery(raw);
+    if (suggestTimer.current) clearTimeout(suggestTimer.current);
+    if (!q || q.length < 2) {
+      setSuggestions([]);
+      return;
+    }
+    suggestTimer.current = setTimeout(() => {
+      searchLocalAccountsAction(q)
+        .then(setSuggestions)
+        .catch(() => setSuggestions([]));
+    }, 250);
+  }
+
+  function addSuggestion(s: LocalAccountSuggestion) {
+    const ref = `@${s.handle}@${instanceDomain}`;
+    pushSource({ id: `manual-${ref}`, type: "marge", label: s.displayName || s.handle, ref });
+    setManual("");
+    setSuggestions([]);
+    setAddError(null);
+  }
+
+  // Ajout manuel : pour un compte marge, contrôle de réalité (le compte doit
+  // exister sur l'instance) avant de l'ajouter au fil.
+  async function addManual(raw: string) {
+    const it = detectManualSource(raw, instanceDomain);
+    if (!it) return;
+    setSuggestions([]);
+    if (it.type === "marge") {
+      const q = localHandleQuery(raw);
+      if (!q) return;
+      setAddBusy(true);
+      try {
+        const matches = await searchLocalAccountsAction(q);
+        const hit = matches.find((m) => m.handle === q);
+        if (!hit) {
+          setAddError(interpolate(o.s3AccountNotFound, { handle: `@${q}` }));
+          return;
+        }
+        it.label = hit.displayName || it.label;
+      } catch {
+        setAddError(interpolate(o.s3AccountNotFound, { handle: `@${q}` }));
+        return;
+      } finally {
+        setAddBusy(false);
+      }
+    }
+    pushSource(it);
+    setManual("");
   }
 
   function readImage(file: File | undefined) {
@@ -493,7 +567,13 @@ export function OnboardingWizard({
     fd.set("intro", introText);
     fd.set("sources", JSON.stringify(sources.map((s) => ({ type: s.type, ref: s.ref, label: s.label }))));
     if (avatarFile) fd.set("avatar", avatarFile);
-    formAction(fd);
+    // `formAction` (dispatch de useActionState) DOIT être appelé dans une
+    // transition, sinon React n'enclenche pas la navigation de la server action :
+    // le `redirect("/")` et le cookie de session étaient perdus, et l'utilisateur
+    // (pourtant créé en base) se retrouvait renvoyé au début de l'onboarding.
+    startTransition(() => {
+      formAction(fd);
+    });
   }
 
   const nameOk = name.trim().length > 0;
@@ -603,7 +683,6 @@ export function OnboardingWizard({
                     <textarea id="wz-bio" className="wz-textarea" rows={2} value={bio} placeholder={o.bioPlaceholder} maxLength={500} onChange={(e) => setBio(e.target.value)} />
                   </div>
 
-                  <WhyCard>{o.why2}</WhyCard>
                   <NavRow step={step} onBack={back} onNext={next} primaryLabel={o.continue} disabled={!(nameOk && addrOk)} hint={step2Hint} />
                 </div>
                 <div className="wz-col-side">
@@ -635,10 +714,37 @@ export function OnboardingWizard({
                   )}
 
                   <div className="wz-sub-h">{o.s3AddLabel}</div>
-                  <form className="add-bar" onSubmit={(e) => { e.preventDefault(); addManual(manual); setManual(""); }}>
-                    <input className="add-input" type="text" value={manual} placeholder={o.s3AddPlaceholder} spellCheck={false} onChange={(e) => setManual(e.target.value)} />
-                    <button type="submit" className="add-btn">{o.s3AddBtn}</button>
-                  </form>
+                  <div className="add-wrap">
+                    <form className="add-bar" onSubmit={(e) => { e.preventDefault(); void addManual(manual); }}>
+                      <input className="add-input" type="text" value={manual} placeholder={o.s3AddPlaceholder} spellCheck={false} autoComplete="off" onChange={(e) => onManualChange(e.target.value)} />
+                      <button type="submit" className="add-btn" disabled={addBusy}>{addBusy ? o.s3Checking : o.s3AddBtn}</button>
+                    </form>
+                    {suggestions.length > 0 && (
+                      <ul className="add-suggest" aria-label={o.s3SuggestLabel}>
+                        {suggestions.map((s) => (
+                          <li key={s.handle}>
+                            <button type="button" className="add-suggest-item" onClick={() => addSuggestion(s)}>
+                              <span className="add-suggest-av" style={{ background: s.avatarSrc ? "#fff" : colorFor(s.handle) }}>
+                                {s.avatarSrc ? (
+                                  // Vignette éphémère servie par l'API : next/image inutile ici.
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img src={s.avatarSrc} alt="" />
+                                ) : (
+                                  initialOf(s.displayName || s.handle)
+                                )}
+                              </span>
+                              <span className="add-suggest-id">
+                                <span className="add-suggest-name">{s.displayName || s.handle}</span>
+                                <span className="add-suggest-addr">@{s.handle}@{instanceDomain}</span>
+                              </span>
+                              <SourceTag type="marge" />
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                  {addError && <p className="add-error" role="alert">{addError}</p>}
                   <div className="add-chips">
                     <span className="add-chips-lbl">{o.s3ExamplesLabel}</span>
                     {[
@@ -646,7 +752,7 @@ export function OnboardingWizard({
                       { ex: o.s3ExampleRss, fill: "monblog.fr/rss" },
                       { ex: o.s3ExampleYoutube, fill: "youtube.com/@archipel" },
                     ].map((e) => (
-                      <button key={e.ex} type="button" className="add-chip" onClick={() => setManual(e.fill)}>{e.ex}</button>
+                      <button key={e.ex} type="button" className="add-chip" onClick={() => onManualChange(e.fill)}>{e.ex}</button>
                     ))}
                   </div>
 
@@ -683,7 +789,6 @@ export function OnboardingWizard({
                     <p className="wz-seg-hint">{notify === "résumé" ? o.notifDigestHint : notify === "direct" ? o.notifRealtimeHint : o.notifNoneHint}</p>
                   </div>
 
-                  <WhyCard>{o.why4}</WhyCard>
                   <NavRow step={step} onBack={back} onNext={next} primaryLabel={o.continue} />
                 </div>
                 <div className="wz-col-side">
@@ -721,7 +826,6 @@ export function OnboardingWizard({
                     </div>
                   </div>
 
-                  <WhyCard>{o.why5}</WhyCard>
                   <div className="wz-nav wz-nav-final">
                     <button type="button" className="wz-btn wz-btn-ghost" onClick={back}><ArrowL /> {o.back}</button>
                     <button type="button" className="wz-btn wz-btn-primary wz-btn-cta" onClick={submitFinalize} disabled={pending}>

@@ -147,12 +147,9 @@ const fr = {
     back: "Retour",
     continue: "Continuer",
     whyTag: "Pourquoi ?",
-    // Phrases de sens (encart « Pourquoi ? »).
+    // Phrases de sens (encart « Pourquoi ? », écrans 1 et 3 seulement).
     why1: "Juste pour adapter le vocabulaire, on ne stocke rien et on ne te juge pas.",
-    why2: "Ton profil est une identité publique : tu choisis qui tu es — vraie identité, pseudo ou marque — et il existe au-delà de marge.",
     why3: "T’abonner à un compte, à un blog (RSS) ou à une chaîne YouTube, c’est le même geste. Tout arrive dans ton fil.",
-    why4: "Ici, tu règles ton fil toi-même — pas de « pour toi » imposé.",
-    why5: "Te présenter avec #introduction, c’est rejoindre le flux des nouveaux venus — la communauté vient y accueillir et suivre les arrivant·es.",
     // Types de source.
     sourceMarge: "Compte marge",
     sourceFediverse: "Fédéré",
@@ -182,12 +179,12 @@ const fr = {
     nameFallback: "Ton nom",
     nameTipLabel: "Quel nom mettre ?",
     nameTip:
-      "Ton vrai nom, un pseudonyme, le nom d’une marque ou d’un collectif — c’est toi qui décides.",
+      "Ton vrai nom, un pseudonyme, le nom d’une marque ou d’un collectif, c’est toi qui décides.",
     addrLabel: "Adresse marge",
     addrPlaceholder: "tonpseudo",
     addrTipLabel: "C’est quoi, une adresse marge ?",
     addrTip:
-      "Comme une adresse e-mail, mais pour le web social : elle te rend joignable partout, même depuis un autre réseau. Choisis-la bien : ton adresse est définitive — une fois ton compte créé, elle ne pourra plus être modifiée.",
+      "Comme une adresse e-mail, mais pour le web social : elle te rend joignable partout, même depuis un autre réseau. Choisis-la bien : ton adresse est définitive. Une fois ton compte créé, elle ne pourra plus être modifiée.",
     addrChecking: "Vérification de la disponibilité…",
     addrAvailable: "{handle} est disponible.",
     addrTaken: "{handle} est déjà pris — essaie une autre adresse.",
@@ -233,6 +230,9 @@ const fr = {
     s3ExampleAccount: "@uncompte",
     s3ExampleRss: "un flux RSS",
     s3ExampleYoutube: "une chaîne YouTube",
+    s3SuggestLabel: "Comptes sur marge",
+    s3Checking: "Vérification…",
+    s3AccountNotFound: "Aucun compte {handle} sur marge.",
     s3PreviewLabel: "Ton fil se remplit",
     s3PreviewEmptySub: "ajoute une première source",
     s3PreviewSub: "{n} sources · 1 seul fil",
@@ -248,7 +248,7 @@ const fr = {
     notifRealtime: "En temps réel",
     notifNone: "Aucune",
     notifDigestHint:
-      "Une seule notification par jour, qui regroupe l’essentiel — sans te happer en continu.",
+      "Une seule notification par jour, qui regroupe l’essentiel.",
     notifRealtimeHint:
       "Tu es prévenu·e à chaque interaction. Pratique, mais plus sollicitant.",
     notifNoneHint:

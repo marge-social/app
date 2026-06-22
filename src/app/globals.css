@@ -4474,6 +4474,31 @@ body {
   transition: border-color 0.12s, background 0.12s, color 0.12s;
 }
 .add-chip:hover { border-color: #c9c9c9; background: var(--bg-soft); color: var(--ink); }
+.add-wrap { position: relative; }
+.add-suggest {
+  position: absolute; z-index: 20; left: 0; right: 0; top: calc(100% + 4px);
+  margin: 0; padding: 5px; list-style: none;
+  background: #fff; border: 1px solid var(--rule); border-radius: 11px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+.add-suggest li { margin: 0; }
+.add-suggest-item {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  appearance: none; border: 0; background: none; cursor: pointer;
+  padding: 7px 9px; border-radius: 8px; text-align: left;
+  transition: background 0.12s;
+}
+.add-suggest-item:hover, .add-suggest-item:focus-visible { background: var(--bg-soft); }
+.add-suggest-av {
+  flex-shrink: 0; width: 30px; height: 30px; border-radius: 50%; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: #fff;
+}
+.add-suggest-av img { width: 100%; height: 100%; object-fit: cover; }
+.add-suggest-id { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.add-suggest-name { font-size: 13.5px; font-weight: 600; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.add-suggest-addr { font-size: 12px; color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.add-error { margin: 2px 0 9px; font-size: 13px; color: var(--brick); font-weight: 500; }
 
 /* Réglage segmenté (écran 4) */
 .seg { display: inline-flex; gap: 3px; background: var(--bg-soft); border-radius: 10px; padding: 3px; width: 100%; }
